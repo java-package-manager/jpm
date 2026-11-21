@@ -47,4 +47,28 @@ class SmallGapsTest {
         assertEquals("version=1.10.182\\nby=p 2.0.0\\n", Fs.read(classes.resolve("spark-internal.properties")));
         assertEquals("${SPARK_VERSION}", Fs.read(classes.resolve("raw.txt")), "only listed resources are filtered");
     }
+
+    @Test
+    void filtersWithManifestAndPropertiesValues(@TempDir Path dir) {
+        System.setProperty("jpm.home", dir.resolve("home").toString());
+        Path w = dir.resolve("w");
+        Fs.write(w.resolve("project.jsonc"), """
+                { "name": "w", "version": "3.1.0", "description": "root", "url": "https://root",
+                  "extensions": { "x": { "tag": "r", "n": 2 } }, "workspace": ["app"] }
+                """);
+        Fs.write(w.resolve("gradle.properties"), "a=root\nb=root\nc=root\nurl=props\n");
+        Fs.write(w.resolve("app/project.jsonc"), """
+                { "name": "app", "description": "module", "filter": ["info.txt"] }
+                """);
+        Fs.write(w.resolve("app/gradle.properties"), "b=module\n");
+        Fs.write(w.resolve("app/src/A.java"), "public class A { }");
+        Fs.write(w.resolve("app/src/assets/info.txt"),
+                "${name} ${version} ${description} ${url} ${extensions.x.tag} ${extensions.x.n} ${workspace.0} ${a} ${b} ${NAME}");
+        Project project = Project.load(w);
+        Project.Module app = project.modules.stream().filter(m -> m.name().equals("app")).findFirst().orElseThrow();
+        MavenRepo r = new MavenRepo(List.of());
+        Builder b = new Builder(project, Install.run(project, r, Install.Options.normal()), r, Env.Mode.PRODUCTION);
+        b.compileMain(app);
+        assertEquals("app 3.1.0 module props r 2 app root module app", Fs.read(Builder.classesDir(app).resolve("info.txt")));
+    }
 }

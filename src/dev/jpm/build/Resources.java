@@ -1,8 +1,11 @@
 package dev.jpm.build;
 
+import dev.jpm.json.Jsonc;
 import dev.jpm.util.Fs;
+import dev.jpm.util.JpmException;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
@@ -13,7 +16,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -102,6 +107,46 @@ public final class Resources {
         }
         m.appendTail(sb);
         return sb.toString();
+    }
+
+    /**
+     * Adds the scalar values (strings, numbers, booleans) under {@code node} to {@code out}, nested keys joined with
+     * dots and array items by index: {@code {"a": {"b": [1]}}} gives {@code a.b.0 = 1}.
+     */
+    static void flatten(Jsonc.Node node, String prefix, Map<String, String> out) {
+        if (node == null) return;
+        if (node.isObject()) {
+            for (Jsonc.Member mb : node.members.values()) {
+                if (prefix.isEmpty() && mb.key.equals("$schema")) continue;
+                flatten(mb.value, prefix.isEmpty() ? mb.key : prefix + "." + mb.key, out);
+            }
+        } else if (node.isArray()) {
+            for (int i = 0; i < node.items.size(); i++) flatten(node.items.get(i), prefix + "." + i, out);
+        } else if (node.value != null && !prefix.isEmpty()) {
+            out.put(prefix, node.value instanceof java.math.BigDecimal bd ? bd.toPlainString() : node.value.toString());
+        }
+    }
+
+    /** The values in the {@code *.properties} files directly in {@code dir} (read as UTF-8), files in name order. */
+    static Map<String, String> properties(Path dir) {
+        Map<String, String> out = new LinkedHashMap<>();
+        if (!Files.isDirectory(dir)) return out;
+        List<Path> files;
+        try (var s = Files.list(dir)) {
+            files = s.filter(f -> f.getFileName().toString().endsWith(".properties") && Files.isRegularFile(f)).sorted().toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        for (Path f : files) {
+            Properties p = new Properties();
+            try (Reader r = Files.newBufferedReader(f, StandardCharsets.UTF_8)) {
+                p.load(r);
+            } catch (IOException | IllegalArgumentException e) {
+                throw new JpmException(f + ": cannot read properties: " + e.getMessage());
+            }
+            for (String k : new TreeSet<>(p.stringPropertyNames())) out.put(k, p.getProperty(k));
+        }
+        return out;
     }
 
     /** Same size and time (to the millisecond, as file systems round differently), else same bytes. */

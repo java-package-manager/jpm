@@ -290,12 +290,23 @@ public final class Builder {
         return jar;
     }
 
-    /** What {@code "filter"}ed resources can use: the module's define values, NAME and VERSION. */
+    /**
+     * What {@code "filter"}ed resources can use, later sources winning: the module's NAME and VERSION, the fields of
+     * the workspace root's project.jsonc, then the module's (dotted for nested ones, e.g. {@code extensions.publish.repo};
+     * {@code version} is the module's version), the {@code *.properties} files next to the root's project.jsonc, then
+     * those next to the module's, and last the module's define values.
+     */
     private Map<String, String> filterValues(Project.Module m) {
         if (m.manifest.filter.isEmpty()) return Map.of();
         Map<String, String> out = new LinkedHashMap<>();
         out.put("NAME", m.name());
         out.put("VERSION", m.version());
+        boolean workspace = !m.dir.equals(m.project.dir);
+        if (workspace) Resources.flatten(m.project.root.root, "", out);
+        Resources.flatten(m.manifest.root, "", out);
+        out.put("version", m.version());
+        if (workspace) out.putAll(Resources.properties(m.project.dir));
+        out.putAll(Resources.properties(m.dir));
         for (Defines.Value v : Defines.resolve(m.manifest, null, null, null, env)) out.put(v.name(), String.valueOf(v.value()));
         return out;
     }

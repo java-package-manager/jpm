@@ -333,7 +333,7 @@
       "items": {
         "type": "string"
       },
-      "description": "Resources (globs relative to the resource folder, e.g. \"*.properties\") copied with each ${NAME} replaced by the define value NAME; NAME and VERSION are the module's."
+      "description": "Resources (globs relative to the resource folder, e.g. \"*.properties\") copied with each ${name} replaced. Values, later ones winning: the module's NAME and VERSION; fields of the workspace root's project.jsonc, then the module's (nested ones dotted, e.g. ${extensions.publish.repo}); *.properties next to the root's project.jsonc, then next to the module's; then the module's define values."
     },
     "relocate": {
       "type": "object",

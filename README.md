@@ -214,8 +214,11 @@ Other fields:
 - `exclude`: packages left out of everything the `runtime` and `dev` dependencies bring in, like an exclusion
   on each of them (Gradle's `configurations.all { exclude(...) }`), e.g. `["org.slf4j"]` for what the platform
   provides; `test` dependencies keep theirs. A workspace module adds its own to the root's
-- `filter`: resources copied with `${NAME}` replaced by define values (and the module's `NAME`, `VERSION`),
-  e.g. `"filter": ["app.properties"]`
+- `filter`: resources copied with each `${name}` replaced, e.g. `"filter": ["app.properties"]`. Values come from,
+  later ones winning: the module's `NAME` and `VERSION`; the fields of the workspace root's project.jsonc, then the
+  module's (`${name}`, `${version}`, `${description}`, nested ones dotted: `${extensions.publish.repo}`, array items by
+  index: `${javacArgs.0}`); the `*.properties` files next to the root's project.jsonc (such as `gradle.properties`),
+  then those next to the module's; and the module's define values. Unknown names are left as they are
 - `description`, `license`, `url` (used by publishing)
 - `extensions`: settings for extensions, by name, e.g. `"extensions": { "publish": { ... } }`; jpm passes
   them through untouched (`jpm info --json`)
