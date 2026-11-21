@@ -2,7 +2,7 @@
 {
   "$schema": "./src/assets/dev/jpm/project.schema.json",
   "name": "jpm",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "license": "MIT",
   "java": "21",
   "main": "dev.jpm.cli.Main",
