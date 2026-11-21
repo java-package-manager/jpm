@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** {@code jpm info --json --classpath}: every classpath as packages with coordinates, jars and edges. */
@@ -89,5 +90,45 @@ class InfoClasspathTest {
         List<Map<String, Object>> proc = (List<Map<String, Object>>) cps.get("processor");
         assertEquals(List.of("g:proc"), proc.stream().map(p -> p.get("id")).toList());
         assertEquals(Map.of("GREETING", "hi"), app.get("defines"));
+        assertNull(app.get("compileModule"), "no module-info, no compileModule");
+    }
+
+    /**
+     * A named module gets the module path / class path split javac compiles it with, so an extension
+     * running javadoc does not put every jar on the module path, where two jars without module-info
+     * sharing a package stop it ("reads package p from both a and b").
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void splitsCompileClasspathForNamedModule(@TempDir Path dir) throws Exception {
+        System.setProperty("jpm.home", dir.resolve("home").toString());
+        Path repo = dir.resolve("repo");
+        publish(repo, "a", "<dependency><groupId>g</groupId><artifactId>b</artifactId><version>1.0</version></dependency>");
+        publish(repo, "b", "");
+        Path ws = dir.resolve("ws");
+        Fs.write(ws.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\","
+                + " \"repositories\": [\"" + repo.toUri() + "\"], \"runtime\": { \"g:a\": \"1.0\" } }");
+        Fs.write(ws.resolve("src/module-info.java"), "module com.example.app { requires a; }");
+        Fs.write(ws.resolve("src/com/example/app/App.java"), "package com.example.app; public class App {}");
+
+        PrintStream old = System.out;
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(buf, true));
+        try {
+            assertEquals(0, new Commands(ws).info(new ArrayList<>(List.of("--json", "--classpath"))));
+        } finally {
+            System.setOut(old);
+        }
+        Map<String, Object> info = (Map<String, Object>) Jsonc.parse(buf.toString());
+        Map<String, Object> app = (Map<String, Object>) ((List<Object>) info.get("modules")).get(0);
+        Map<String, Object> cm = (Map<String, Object>) app.get("compileModule");
+        assertEquals("com.example.app", cm.get("name"));
+        List<String> mp = (List<String>) cm.get("modulePath"), cp = (List<String>) cm.get("classPath");
+        assertEquals(1, mp.size());
+        assertTrue(mp.get(0).endsWith("a-1.0.jar"), mp.get(0));
+        assertEquals(1, cp.size());
+        assertTrue(cp.get(0).endsWith("b-1.0.jar"), cp.get(0));
+        assertEquals(List.of("--module-path", mp.get(0), "-cp", cp.get(0), "--add-reads", "com.example.app=ALL-UNNAMED"),
+                cm.get("options"));
     }
 }

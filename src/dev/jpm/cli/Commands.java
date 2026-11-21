@@ -796,6 +796,38 @@ final class Commands {
     }
 
     /**
+     * {@code --classpath}, for a module with {@code module-info.java}: how javac is given the compile
+     * classpath, so tools that read the same sources (javadoc, for one) can pass it the same way. Jars
+     * that are not modules stay on the class path, which the module reads: on the module path they would
+     * become automatic modules, and two of them sharing a package stop the tool. Null without module-info.
+     */
+    static Map<String, Object> compileModule(Project.Module m, List<Path> compileClasspath) {
+        Path moduleInfo = dev.jpm.build.Modules.moduleInfo(m.srcDirs());
+        if (moduleInfo == null) return null;
+        dev.jpm.build.Modules.Declaration decl = dev.jpm.build.Modules.parse(moduleInfo);
+        List<List<Path>> split = dev.jpm.build.Modules.split(decl, compileClasspath);
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (decl.name() != null) out.put("name", decl.name());
+        out.put("modulePath", split.get(0).stream().map(Path::toString).toList());
+        out.put("classPath", split.get(1).stream().map(Path::toString).toList());
+        List<String> options = new ArrayList<>();
+        if (!split.get(0).isEmpty()) {
+            options.add("--module-path");
+            options.add(Compiler.join(split.get(0)));
+        }
+        if (!split.get(1).isEmpty()) {
+            options.add("-cp");
+            options.add(Compiler.join(split.get(1)));
+            if (decl.name() != null) {
+                options.add("--add-reads");
+                options.add(decl.name() + "=ALL-UNNAMED");
+            }
+        }
+        out.put("options", options);
+        return out;
+    }
+
+    /**
      * {@code --classpath}: each of a module's classpaths (compile, processor, runtime, testCompile,
      * testRuntime) as packages in classpath order. A package has its id, kind (maven, git, patched or
      * workspace), version, Maven coordinates, its jars (for workspace modules, their classes directory and
@@ -969,7 +1001,10 @@ final class Commands {
             mod.put("dependencies", deps);
             mod.put("extensions", mf.extensions);
             if (withClasspath) {
-                mod.put("compileClasspath", b.classpath(m, Builder.Cp.COMPILE).stream().map(Path::toString).toList());
+                List<Path> compileCp = b.classpath(m, Builder.Cp.COMPILE);
+                mod.put("compileClasspath", compileCp.stream().map(Path::toString).toList());
+                Map<String, Object> compileModule = compileModule(m, compileCp);
+                if (compileModule != null) mod.put("compileModule", compileModule);
                 mod.put("classpaths", classpaths(c, b, m));
                 mod.put("defines", defines(b, m));
             }
