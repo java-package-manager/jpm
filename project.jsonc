@@ -1,6 +1,6 @@
 // jpm builds itself: `./bootstrap.sh` once, then `bin/jpm build`, `bin/jpm test` and `bin/jpm build --native`.
 {
-  "$schema": "./schema/project.schema.json",
+  "$schema": "./src/assets/dev/jpm/project.schema.json",
   "name": "jpm",
   "version": "0.7.2",
   "license": "MIT",
@@ -19,6 +19,8 @@
     // The JDK's XML parser (used for POMs) loads its messages from resource bundles at run time.
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.XMLMessages",
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.DOMMessages",
-    "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.xpath.regex.message"
+    "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.xpath.regex.message",
+    // `jpm schema` serves the manifest schema from the binary.
+    "-H:IncludeResources=dev/jpm/project\\.schema\\.json"
   ]
 }

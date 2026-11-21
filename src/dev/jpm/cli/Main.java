@@ -31,6 +31,8 @@ public final class Main {
               why <dep>                   Show why a dependency is in the graph
               info [--json]               Describe the project (modules, dependencies); --json for extensions
               import [dir]                Create project.jsonc from a Maven or Gradle build (--dry-run, --force)
+              schema [--path]             Print the JSON Schema of project.jsonc (--path writes it to ~/.jpm
+                                          and prints where, for editors)
 
             Build and run
               build                       Compile and package into dist/ (--release, --profile <name>)
@@ -180,6 +182,7 @@ public final class Main {
             case "patch" -> c.patch(args);
             case "import" -> c.importBuild(args);
             case "info" -> c.info(args);
+            case "schema" -> Schema.run(args);
             case "java" -> c.java(args, false);
             case "jvm" -> c.java(args, true);
             default -> c.extension(cmd, args);

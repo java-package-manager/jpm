@@ -23,9 +23,9 @@ import java.util.TreeMap;
 public final class Manifest {
     public static final String FILE = "project.jsonc";
     public static final String LOCK = "project.lock";
-    /** The JSON Schema of project.jsonc, schema/project.schema.json, as attached to every release. */
+    /** The JSON Schema of project.jsonc, src/assets/dev/jpm/project.schema.json, as attached to every release. */
     public static final String SCHEMA_URL = "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json";
-    /** Every top-level field jpm reads. schema/project.schema.json describes the same set (SchemaTest checks). */
+    /** Every top-level field jpm reads. The schema describes the same set (SchemaTest checks). */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
             "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "$schema");

@@ -84,6 +84,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `update [dep…] [--latest]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |
 | `outdated`, `why <dep>` | Inspect the graph |
 | `info [--json]` | Describe the project: modules, versions, folders, dependencies; `--json` is a stable format for extensions, `--ide` adds test folders, scripts and scoped dependencies with sources (used by the IntelliJ plugin), `--classpath` adds every classpath (compile, processor, runtime, testCompile, testRuntime) as packages with coordinates, kind, jars and edges, and the resolved defines, without downloading sources |
+| `schema [--path]` | Print the JSON Schema of `project.jsonc` built into this jpm; `--path` writes it to `~/.jpm/schemas/<version>/project.schema.json` and prints the path instead (used by the IntelliJ plugin), see [Editor support](#editor-support) |
 | `import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
 | `build`, `start`, `test`, `clean` | Build into `dist/`, run main with production env, run tests, delete output |
 | `dev [entry]` | Run main with development env, restarting when sources, assets, manifest or env files change |
@@ -229,8 +230,8 @@ resources), `scripts/`, `patches/`, `.cache/` (build cache, not committed), `dis
 
 ## Editor support
 
-`project.jsonc` has a JSON Schema, [`schema/project.schema.json`](schema/project.schema.json), attached to every
-release at a stable address:
+`project.jsonc` has a JSON Schema, [`src/assets/dev/jpm/project.schema.json`](src/assets/dev/jpm/project.schema.json),
+built into jpm and attached to every release at a stable address:
 
 ```
 https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json
@@ -247,9 +248,11 @@ and validation. Add the line to an existing manifest to get the same:
 }
 ```
 
-The [IntelliJ plugin](https://github.com/java-package-manager/jpm-intellij) bundles the schema, so there every
-`project.jsonc` is covered without the line and offline. The schema also describes the settings of the
-`publish` extension under `"extensions"`.
+`jpm schema` prints the schema of the installed jpm, and `jpm schema --path` writes it to
+`~/.jpm/schemas/<version>/project.schema.json` and prints that path, for editors that want a file that
+matches the jpm they run, offline. The [IntelliJ plugin](https://github.com/java-package-manager/jpm-intellij)
+uses it, so there every `project.jsonc` is covered without the line. The schema also describes the settings
+of the `publish` extension under `"extensions"`.
 
 ## How it works
 

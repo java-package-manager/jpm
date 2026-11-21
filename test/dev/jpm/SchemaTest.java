@@ -11,9 +11,9 @@ import java.util.TreeSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Keeps schema/project.schema.json and the manifest parser in step. */
+/** Keeps src/assets/dev/jpm/project.schema.json and the manifest parser in step. */
 class SchemaTest {
-    private static final Path SCHEMA = Path.of("schema/project.schema.json");
+    private static final Path SCHEMA = Path.of("src/assets/dev/jpm/project.schema.json");
 
     @Test
     @SuppressWarnings("unchecked")
