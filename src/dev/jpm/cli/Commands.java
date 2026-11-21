@@ -230,6 +230,7 @@ final class Commands {
 
     private String latestSpec(MavenRepo repo, DepKey key) {
         if (key.isGradle()) return dev.jpm.resolve.GradleDist.latest();
+        if (key.isExtension()) return dev.jpm.resolve.ExtensionDeps.resolve(key, "latest").version();
         if (key.isMaven()) {
             List<Version> all = repo.versions(key.group(), key.artifact());
             Version best = null;
@@ -454,7 +455,7 @@ final class Commands {
                 Graph.Pkg pkg = c.graph.get(d.key().toString());
                 if (pkg == null) continue;
                 String latest, wanted;
-                if (d.key().isGradle()) {
+                if (d.key().isGradle() || d.key().isExtension()) {
                     latest = latestSpec(c.repo, d.key());
                     wanted = d.spec();
                 } else if (d.key().isMaven()) {
@@ -780,6 +781,8 @@ final class Commands {
                 if (p.kind == Graph.Kind.MAVEN) {
                     DepKey k = DepKey.parse(p.id);
                     if (k.classifier() == null) sources = c.repo().fetch(k.group(), k.artifact(), p.version, "sources", "jar");
+                } else if (p.kind == Graph.Kind.EXTENSION) {
+                    sources = dev.jpm.resolve.ExtensionDeps.resolve(DepKey.parse(p.id), p.version).sources();
                 } else if (p.dir != null) {
                     for (String rel : List.of("src/main/java", "src")) {
                         if (Files.isDirectory(p.dir.resolve(rel))) { sources = p.dir.resolve(rel); break; }
@@ -826,7 +829,7 @@ final class Commands {
                     d.put("jar", b.jarPath(sib).toString());
                 } else {
                     boolean patched = b.isPatched(p.id);
-                    d.put("kind", patched ? "patched" : p.kind == Graph.Kind.GIT ? "git" : p.kind == Graph.Kind.GRADLE ? "gradle" : "maven");
+                    d.put("kind", patched ? "patched" : p.kind == Graph.Kind.GIT ? "git" : p.kind == Graph.Kind.GRADLE ? "gradle" : p.kind == Graph.Kind.EXTENSION ? "extension" : "maven");
                     d.put("version", p.version);
                     if (p.kind == Graph.Kind.MAVEN) {
                         d.put("group", p.group());
@@ -1068,13 +1071,7 @@ final class Commands {
 
     int extension(String cmd, List<String> args) {
         if (!cmd.matches("[A-Za-z0-9][A-Za-z0-9_-]*")) throw new JpmException("Unknown command \"" + cmd + "\". Run `jpm help`.");
-        boolean win = System.getProperty("os.name").toLowerCase().contains("win");
-        Path exe = null;
-        for (String ext : win ? new String[]{".cmd", ".exe", ".bat"} : new String[]{""}) {
-            Path p = globalBin().resolve("jpm-" + cmd + ext);
-            if (Files.isRegularFile(p)) { exe = p; break; }
-        }
-        if (exe == null) exe = Exec.which("jpm-" + cmd);
+        Path exe = dev.jpm.resolve.ExtensionDeps.executable(cmd);
         if (exe == null) {
             throw new JpmException("Unknown command \"" + cmd + "\". Run `jpm help`, or install an extension that provides it"
                     + " with `jpm add -g <dependency>` (it runs as jpm-" + cmd + ").");

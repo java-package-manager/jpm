@@ -83,6 +83,15 @@ public final class Install {
                 p.sha256 = g.sha256();
                 p.artifact = g.home();
             }
+            if (p.kind == Graph.Kind.EXTENSION) {
+                ExtensionDeps.Result r = ExtensionDeps.resolve(dev.jpm.DepKey.parse(p.id), p.version);
+                String sha = r.sha256();
+                if (p.sha256 != null && !p.sha256.equals(sha)) {
+                    throw new JpmException("Checksum mismatch for " + p.id + " " + p.version + " (from jpm-" + dev.jpm.DepKey.parse(p.id).group()
+                            + "):\n  locked:   " + p.sha256 + "\n  provided: " + sha);
+                }
+                p.sha256 = sha;
+            }
         }
         if (todo.isEmpty()) return;
         ExecutorService pool = Executors.newFixedThreadPool(Math.min(8, todo.size()));

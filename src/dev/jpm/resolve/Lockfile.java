@@ -57,7 +57,7 @@ public final class Lockfile {
                 String id = (String) e.getKey();
                 Map<?, ?> entry = (Map<?, ?>) e.getValue();
                 Graph.Kind kind = entry.containsKey("commit") ? Graph.Kind.GIT
-                        : id.equals(GradleDist.ID) ? Graph.Kind.GRADLE : Graph.Kind.MAVEN;
+                        : id.equals(GradleDist.ID) ? Graph.Kind.GRADLE : id.startsWith("ext:") ? Graph.Kind.EXTENSION : Graph.Kind.MAVEN;
                 Graph.Pkg p = new Graph.Pkg(id, kind);
                 p.version = (String) entry.get("version");
                 p.commit = (String) entry.get("commit");

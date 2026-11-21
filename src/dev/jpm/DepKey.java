@@ -13,12 +13,13 @@ import java.util.Locale;
  *   <li>{@code github:user/repo} or {@code github:user/repo/module} — Git (also {@code gitlab:}, {@code codeberg:})</li>
  *   <li>{@code workspace:module} — a sibling module in the same workspace</li>
  *   <li>{@code gradle:api} — the Gradle API, from a Gradle distribution, for Gradle plugins</li>
+ *   <li>{@code ext:extension/name} — provided by the extension {@code jpm-extension}, such as {@code ext:paperweight/server}</li>
  * </ul>
  */
 public record DepKey(Kind kind, String host, String group, String artifact, String module) implements Comparable<DepKey> {
     // `module` is the Git module, or the Maven classifier.
 
-    public enum Kind { MAVEN, GIT, WORKSPACE, GRADLE }
+    public enum Kind { MAVEN, GIT, WORKSPACE, GRADLE, EXTENSION }
 
     public static DepKey parse(String s) {
         s = s.trim();
@@ -42,21 +43,34 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
                 }
                 return new DepKey(Kind.GRADLE, null, null, "api", null);
             }
+            case "ext" -> {
+                // without a slash, ext:artifact is a Maven package of the group "ext"
+                if (!rest.contains("/")) return maven(s);
+                String[] parts = rest.split("/", -1);
+                if (parts.length != 2 || !parts[0].matches("[A-Za-z0-9][A-Za-z0-9_-]*") || !parts[1].matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+                    throw new JpmException("Invalid extension dependency \"" + s + "\": expected ext:<extension>/<name>, e.g. ext:paperweight/server");
+                }
+                return new DepKey(Kind.EXTENSION, null, parts[0], parts[1], null);
+            }
             case "workspace" -> {
                 if (rest.isEmpty() || rest.contains(":")) throw new JpmException("Invalid workspace dependency \"" + s + "\"");
                 return new DepKey(Kind.WORKSPACE, null, null, rest, null);
             }
             default -> {
-                String[] parts = s.split(":", -1);
-                boolean ok = parts.length >= 2 && parts.length <= 3;
-                for (String p : parts) ok &= !p.isEmpty();
-                if (!ok || (parts.length == 3 && Character.isDigit(parts[2].charAt(0)))) {
-                    throw new JpmException("Invalid Maven dependency \"" + s + "\": expected group:artifact or group:artifact:classifier"
-                            + " (put the version on the right-hand side)");
-                }
-                return new DepKey(Kind.MAVEN, null, parts[0], parts[1], parts.length == 3 ? parts[2] : null);
+                return maven(s);
             }
         }
+    }
+
+    private static DepKey maven(String s) {
+        String[] parts = s.split(":", -1);
+        boolean ok = parts.length >= 2 && parts.length <= 3;
+        for (String p : parts) ok &= !p.isEmpty();
+        if (!ok || (parts.length == 3 && Character.isDigit(parts[2].charAt(0)))) {
+            throw new JpmException("Invalid Maven dependency \"" + s + "\": expected group:artifact or group:artifact:classifier"
+                    + " (put the version on the right-hand side)");
+        }
+        return new DepKey(Kind.MAVEN, null, parts[0], parts[1], parts.length == 3 ? parts[2] : null);
     }
 
     public static DepKey maven(String group, String artifact) {
@@ -76,6 +90,7 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
     public boolean isMaven() { return kind == Kind.MAVEN; }
     public boolean isWorkspace() { return kind == Kind.WORKSPACE; }
     public boolean isGradle() { return kind == Kind.GRADLE; }
+    public boolean isExtension() { return kind == Kind.EXTENSION; }
 
     /** The repository part of a Git key without the module, e.g. {@code github:user/repo}. */
     public DepKey repoKey() {
@@ -106,6 +121,7 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
             case GIT -> "git." + host + "." + group.toLowerCase(Locale.ROOT) + "." + artifact.toLowerCase(Locale.ROOT);
             case WORKSPACE -> "workspace";
             case GRADLE -> "gradle";
+            case EXTENSION -> "ext." + group;
         };
     }
 
@@ -113,7 +129,7 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
         return switch (kind) {
             case MAVEN -> artifact;
             case GIT -> module != null ? module : artifact;
-            case WORKSPACE, GRADLE -> artifact;
+            case WORKSPACE, GRADLE, EXTENSION -> artifact;
         };
     }
 
@@ -124,6 +140,7 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
             case GIT -> host + ":" + group + "/" + artifact + (module != null ? "/" + module : "");
             case WORKSPACE -> "workspace:" + artifact;
             case GRADLE -> "gradle:" + artifact;
+            case EXTENSION -> "ext:" + group + "/" + artifact;
         };
     }
 

@@ -206,6 +206,7 @@ public final class Builder {
             }
             case MAVEN -> p.hasJar ? List.of(mavenJar(p, consumer)) : List.of();
             case GIT -> List.of(buildGit(p));
+            case EXTENSION -> dev.jpm.resolve.ExtensionDeps.resolve(DepKey.parse(p.id), p.version).jars();
             case GRADLE -> GradleDist.jars(p.artifact != null ? p.artifact : GradleDist.require(p.version, p.sha256).home());
         };
         artifacts.put(id, out);
@@ -867,9 +868,18 @@ public final class Builder {
                 roots.add(gen);
             }
             Path classes = buildDir.resolve("classes");
-            Compiler.compile(new Compiler.Request(p.id, jdk, release, roots, cp, proc, classes,
+            Path kotlinOut = buildDir.resolve("kotlin-classes");
+            KotlinCompiler.compile(this, new KotlinCompiler.Request(p.id, mod.manifest().name, mod.manifest().kotlin, jdk, release,
+                    roots, mod.manifest().resourceDirs(src), cp, List.of(), kotlinOut, buildDir.resolve("kotlin-classes.key")));
+            List<Path> javaCp = cp;
+            if (Files.isDirectory(kotlinOut)) {
+                javaCp = new ArrayList<>(cp);
+                javaCp.add(0, kotlinOut);
+            }
+            Compiler.compile(new Compiler.Request(p.id, jdk, release, roots, javaCp, proc, classes,
                     buildDir.resolve("state.json"), mod.manifest().javacArgs, key,
                     mod.manifest().resourceDirs(src)));
+            Resources.sync(Files.isDirectory(kotlinOut) ? List.of(kotlinOut) : List.of(), classes, buildDir.resolve("kotlin-classes.list"));
             Resources.sync(mod.manifest().resourceDirs(src), classes, buildDir.resolve("resources.list"));
             List<Path> dirs = new ArrayList<>();
             dirs.add(classes);

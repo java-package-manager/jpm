@@ -173,7 +173,7 @@ public final class Resolver {
     }
 
     static Graph.Kind kindOf(DepKey k) {
-        return k.isGit() ? Graph.Kind.GIT : k.isGradle() ? Graph.Kind.GRADLE : Graph.Kind.MAVEN;
+        return k.isGit() ? Graph.Kind.GIT : k.isGradle() ? Graph.Kind.GRADLE : k.isExtension() ? Graph.Kind.EXTENSION : Graph.Kind.MAVEN;
     }
 
     // ------------------------------------------------------------------ resolution
@@ -312,8 +312,21 @@ public final class Resolver {
         return switch (kinds.get(id)) {
             case GIT -> chooseGit(id, reqs);
             case GRADLE -> chooseGradle(id, reqs);
+            case EXTENSION -> chooseExtension(id, reqs);
             default -> chooseMaven(id, reqs);
         };
+    }
+
+    /** ext:<extension>/<name>: the extension says which version a spec is; locked versions are kept while the spec is unchanged. */
+    private Selected chooseExtension(String id, List<Request> reqs) {
+        String spec = null;
+        for (Request r : reqs) {
+            String s = r.spec == null ? "" : r.spec.strip();
+            if (spec != null && !spec.equals(s)) throw conflict(id, reqs);
+            spec = s;
+        }
+        if (locked(id)) return new Selected(previous.get(id).version, null, null);
+        return new Selected(ExtensionDeps.resolve(DepKey.parse(id), spec).version(), null, null);
     }
 
     /** gradle:api names one Gradle version; every request must name the same one. */
@@ -557,6 +570,13 @@ public final class Resolver {
         e = switch (kinds.get(id)) {
             case GIT -> expandGit(id, sel);
             case GRADLE -> new Expanded(List.of(), true, null); // the distribution's jars, nothing to resolve
+            case EXTENSION -> {
+                List<EdgeReq> edges = new ArrayList<>();
+                for (Map.Entry<String, String> d : ExtensionDeps.resolve(DepKey.parse(id), sel.version).dependencies().entrySet()) {
+                    edges.add(new EdgeReq(d.getKey(), Graph.Kind.MAVEN, d.getValue(), false, Set.of()));
+                }
+                yield new Expanded(edges, true, null);
+            }
             default -> expandMaven(id, sel.version);
         };
         expandMemo.put(memoKey, e);

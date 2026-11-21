@@ -383,7 +383,7 @@
     },
     "dependencyKey": {
       "type": "string",
-      "description": "group:artifact (Maven), group:artifact:classifier, github:user/repo[/module] (also gitlab: and codeberg:), workspace:<module>, or gradle:api (the Gradle API of a Gradle distribution; the version is the Gradle version, e.g. 9.8.0).",
+      "description": "group:artifact (Maven), group:artifact:classifier, github:user/repo[/module] (also gitlab: and codeberg:), workspace:<module>, ext:<extension>/<name> (provided by the extension jpm-<extension>, e.g. ext:paperweight/server), or gradle:api (the Gradle API of a Gradle distribution; the version is the Gradle version, e.g. 9.8.0).",
       "anyOf": [
         {
           "pattern": "^[^:/\\s]+:[^:/\\s]+(:[^:/\\s]+)?$"
@@ -396,6 +396,9 @@
         },
         {
           "const": "gradle:api"
+        },
+        {
+          "pattern": "^ext:[A-Za-z0-9][A-Za-z0-9_-]*/[A-Za-z0-9][A-Za-z0-9._-]*$"
         }
       ]
     },

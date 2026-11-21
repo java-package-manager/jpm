@@ -102,7 +102,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 
 Dependency arguments: `group:artifact@1.2.3`, `group:artifact:1.2.3`, `'group:artifact@[1.0,2.0)'`,
 `github:user/repo@^1.2`, `github:user/repo#main`, `github:user/repo/module@a1b2c3d`, `gradle:api@9.8.0`
-(see [Gradle plugins](#gradle-plugins)).
+(see [Gradle plugins](#gradle-plugins)), `ext:paperweight/server@26.3` (see [Dependencies from extensions](#dependencies-from-extensions)).
 
 ## Manifest
 
@@ -272,6 +272,9 @@ and cached in `~/.jpm/builds`, keyed by commit, patch, define values, classpath 
 without a `project.jsonc` is imported from its `pom.xml` or Gradle build (see
 [Importing](#importing-maven-and-gradle-projects)); one with neither fails with a clear error.
 
+Timestamped snapshot versions (`0.1-20240720.200737-2`) can be asked for by name, as in Gradle: they are read
+from the folder of their `-SNAPSHOT` version.
+
 **Lockfile.** `project.lock` is sorted JSONC with one line per package: exact version, tag and commit
 for Git, a SHA-256 for Maven jars (verified on every install), and its edges. It is reused as long as
 the declared dependencies are unchanged.
@@ -420,6 +423,33 @@ are ordinary resources. Plugins written in Kotlin with the `kotlin-dsl` conventi
 
 A shaded plugin jar is a flat bundle with `"relocate"` (see below). jpm-publish does not write Gradle plugin
 marker artifacts or publish to the Gradle Plugin Portal.
+
+## Dependencies from extensions
+
+An extension can provide dependencies that no repository has, because they are made on your machine: a Paper
+server jar patched from Mojang's, code generated from a schema. `ext:<extension>/<name>` names one:
+
+```jsonc
+"dev": { "ext:paperweight/server": "26.3.build.257-stable" }   // from jpm-paperweight
+```
+
+To resolve it, jpm runs `jpm-<extension> resolve <name> <version>` (the extension installed with `jpm add -g`, or
+`jpm-<extension>` on PATH). The extension prepares what it provides, logs to stderr, and prints one JSON object:
+
+```jsonc
+{
+  "version": "26.3.build.257-stable",                // the exact version; jpm asks for it again later
+  "jars": ["/home/me/.jpm/paperweight/26.3.build.257-stable/paper-server.jar"],
+  "sources": "/home/me/.jpm/paperweight/.../paper-server-sources.jar",   // optional, for IDEs
+  "dependencies": { "io.papermc.paper:paper-api": "26.3.build.257-stable", "g:a:classifier": "1.0" }
+}
+```
+
+The jars go on the classpaths of the scope the dependency is in. The dependencies are Maven packages, resolved
+with the rest of the graph from the project's repositories. `project.lock` keeps the version and the SHA-256
+of the jars, so an extension that makes different bytes for a locked version fails the install. jpm passes
+`JPM_HOME` (where the extension can cache), `JPM_EXE` and `JPM_OFFLINE`. Versions such as `latest` mean what the
+extension says; once locked, the locked version is used until `jpm update`.
 
 ## Bundles (jar-in-jar isolation)
 
