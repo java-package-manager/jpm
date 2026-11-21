@@ -110,10 +110,15 @@ class ExtensionDepsTest {
     void answersAreChecked(@TempDir Path tmp) throws IOException {
         DepKey key = DepKey.parse("ext:x/y");
         assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "not json"));
-        assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [\"" + tmp.resolve("nope.jar") + "\"]}"));
+        // paths as JSON strings: Windows paths have backslashes
+        assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [" + q(tmp.resolve("nope.jar")) + "]}"));
         Path jar = Files.writeString(tmp.resolve("a.jar"), "x");
-        assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [\"" + jar + "\"],"
+        assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [" + q(jar) + "],"
                 + " \"dependencies\": { \"github:a/b\": \"1\" }}"));
-        assertEquals(List.of(jar), ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [\"" + jar + "\"]}").jars());
+        assertEquals(List.of(jar), ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [" + q(jar) + "]}").jars());
+    }
+
+    private static String q(Path p) {
+        return dev.jpm.json.Jsonc.quote(p.toString());
     }
 }
