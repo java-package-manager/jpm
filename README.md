@@ -101,7 +101,8 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `<anything else>` | Runs extension `jpm-<name>` from `~/.jpm/bin` or `PATH`; install with `jpm add -g <dep>` |
 
 Dependency arguments: `group:artifact@1.2.3`, `group:artifact:1.2.3`, `'group:artifact@[1.0,2.0)'`,
-`github:user/repo@^1.2`, `github:user/repo#main`, `github:user/repo/module@a1b2c3d`.
+`github:user/repo@^1.2`, `github:user/repo#main`, `github:user/repo/module@a1b2c3d`, `gradle:api@9.8.0`
+(see [Gradle plugins](#gradle-plugins)), `ext:paperweight/server@26.3` (see [Dependencies from extensions](#dependencies-from-extensions)).
 
 ## Manifest
 
@@ -185,6 +186,10 @@ when they do not.
 Exclusions apply to everything the dependency brings in, as in Maven. `jpm add g:a:classifier@1.0` adds a
 classified jar.
 
+A `test` dependency on a workspace module can bring that module's compiled tests too, like Gradle's test
+fixtures: `"test": { "workspace:lib": { "version": "*", "tests": true } }` puts `lib`'s test classes (its base
+classes and helpers) on this module's test classpaths. `lib`'s tests are not run with this module's.
+
 **Repositories.** Maven Central is always searched. Other Maven repositories go in `"repositories"`
 (in a workspace, on the root manifest), and `jpm add -r <url> <dependency>` adds one for you:
 
@@ -203,6 +208,11 @@ Other fields:
 - `repositories` (extra Maven repositories); `defineClass` (name of the generated class)
 - `javacArgs`, `nativeArgs` (extra flags for javac and native-image); `-J` entries in `javacArgs`
   go to the JVM running javac, e.g. the `-J--add-exports=jdk.compiler/...=ALL-UNNAMED` ErrorProne needs
+- `testJvmArgs`: options for the JVM running the tests, e.g. `["-Xmx2g"]`
+- `kotlin`: the Kotlin version for Kotlin sources, see [Kotlin](#kotlin)
+- `exclude`: packages left out of everything the `runtime` and `dev` dependencies bring in, like an exclusion
+  on each of them (Gradle's `configurations.all { exclude(...) }`), e.g. `["org.slf4j"]` for what the platform
+  provides; `test` dependencies keep theirs. A workspace module adds its own to the root's
 - `filter`: resources copied with `${NAME}` replaced by define values (and the module's `NAME`, `VERSION`),
   e.g. `"filter": ["app.properties"]`
 - `description`, `license`, `url` (used by publishing)
@@ -262,14 +272,20 @@ and cached in `~/.jpm/builds`, keyed by commit, patch, define values, classpath 
 without a `project.jsonc` is imported from its `pom.xml` or Gradle build (see
 [Importing](#importing-maven-and-gradle-projects)); one with neither fails with a clear error.
 
+Timestamped snapshot versions (`0.1-20240720.200737-2`) can be asked for by name, as in Gradle: they are read
+from the folder of their `-SNAPSHOT` version.
+
 **Lockfile.** `project.lock` is sorted JSONC with one line per package: exact version, tag and commit
 for Git, a SHA-256 for Maven jars (verified on every install), and its edges. It is reused as long as
 the declared dependencies are unchanged.
 
+For libraries published with Gradle Module Metadata, the metadata also says where a Kotlin Multiplatform
+library's JVM classes are: `io.mockk:mockk` resolves to `io.mockk:mockk-jvm`, as in Gradle.
+
 **Workspaces.** A root `project.jsonc` with `"workspace": ["api", "impl"]`. Modules depend on each
 other with `"workspace:impl": "*"`, share one version (lockstep) and one lockfile. Modules inherit
-`java`, `target`, `group`, `license`, `url` and `layout` from the root unless they set them, and the
-root's `javacArgs` and `nativeArgs` come before their own; `repositories` are read from the root only. Outside projects can
+`java`, `target`, `group`, `license`, `url`, `layout` and `kotlin` from the root unless they set them, the
+root's `javacArgs`, `nativeArgs` and `testJvmArgs` come before their own, and the root's `exclude` adds to theirs; `repositories` are read from the root only. Outside projects can
 depend only on `public` modules; an `internal` module pulled in by a public one goes on the runtime
 classpath but never the compile classpath, and always comes from the same commit as the module that
 pulls it in. Prefixed tags (`api/v1.2.0`) version a module on its own. A module with `"isolated": true` is
@@ -334,6 +350,107 @@ and runs as a named module, with nothing to configure:
 - Tests compile and run on the class path, so they can reach internal packages. `java -jar` and
   bundles also use the class path, where the JDK ignores `module-info`.
 
+## Kotlin
+
+A module with Kotlin sources names the Kotlin version, and depends on the standard library like on any library:
+
+```jsonc
+{
+  "name": "my-app",
+  "kotlin": "2.2.20",
+  "runtime": { "org.jetbrains.kotlin:kotlin-stdlib": "2.2.20" },
+  "test": { "org.jetbrains.kotlin:kotlin-test-junit5": "2.2.20" }
+}
+```
+
+`.kt` files go beside the `.java` files in `src/` (and `test/`); in the Maven layout, `src/main/kotlin` and
+`src/test/kotlin` are source folders too. kotlinc (`org.jetbrains.kotlin:kotlin-compiler-embeddable` of that
+version, resolved on its own like any tool) compiles first, seeing the Java sources and the defines class, so
+the two languages can use each other; javac then compiles the Java against its output. Tests see the module's
+`internal` declarations. A module's Kotlin is compiled as a whole when a source, the classpath or a setting
+changes.
+
+Compiler plugins and flags:
+
+```jsonc
+"kotlin": {
+  "version": "2.2.20",
+  "plugins": ["allopen", "serialization", "com.example:my-plugin:1.0"],   // Kotlin's own by name
+  "args": ["-Xjsr305=strict", "-P", "plugin:org.jetbrains.kotlin.allopen:annotation=my.Open", "-J-Xmx2g"]
+}
+```
+
+`plugins` are Maven coordinates (`group:artifact`, with the Kotlin version, or `group:artifact:version`) or the
+names of Kotlin's own: `assignment`, `sam-with-receiver`, `allopen`, `noarg`, `serialization`, `lombok`,
+`power-assert`, `parcelize`, `atomicfu`, `js-plain-objects`, `compose`. `-J` entries in `args` go to the JVM
+running kotlinc. Workspace modules inherit `kotlin` from the root.
+
+## Gradle plugins
+
+`gradle:api` is the Gradle API, as Gradle's `gradleApi()` gives it to plugins. Gradle publishes no API jar
+for current versions, so jpm downloads the distribution of that Gradle version (`gradle-9.8.0-bin.zip` from
+services.gradle.org, or `JPM_GRADLE_DISTRIBUTIONS`) once into `~/.jpm/gradle/9.8.0` and puts its jars on the
+classpath: the API, the Kotlin DSL extensions, TestKit, `ProjectBuilder`, and what Gradle provides to plugins
+(Groovy, the Kotlin standard library, SLF4J). The archive's SHA-256 is locked in `project.lock`.
+
+```jsonc
+{
+  "name": "my-gradle-plugin",
+  "dev":  { "gradle:api": "9.8.0" },   // compiled against, provided by Gradle at run time
+  "test": { "gradle:api": "9.8.0" }    // ProjectBuilder and TestKit tests
+}
+```
+
+For a module with `gradle:api`, jpm also does what Gradle's `java-gradle-plugin` does for tests: the test
+classpath has `plugin-under-test-metadata.properties`, so TestKit's `GradleRunner.withPluginClasspath()` runs
+the plugin under test, and the test JVM gets the `--add-opens` options Gradle gives its own test workers. TestKit
+runs the builds on the downloaded distribution. Plugin descriptors (`META-INF/gradle-plugins/<id>.properties`)
+are ordinary resources. Plugins written in Kotlin with the `kotlin-dsl` conventions use the `assignment` and
+`sam-with-receiver` compiler plugins with Gradle's annotations:
+
+```jsonc
+"kotlin": {
+  "version": "2.4.10",   // the Kotlin that Gradle 9.8 embeds
+  "plugins": ["sam-with-receiver", "assignment"],
+  "args": [
+    "-jvm-default=no-compatibility", "-Xjsr305=strict", "-Xsam-conversions=class",
+    "-P", "plugin:org.jetbrains.kotlin.samWithReceiver:annotation=org.gradle.api.HasImplicitReceiver",
+    "-P", "plugin:org.jetbrains.kotlin.assignment:annotation=org.gradle.api.SupportsKotlinAssignmentOverloading"
+  ]
+},
+"exclude": ["org.jetbrains.kotlin", "org.slf4j"]   // Gradle provides them: keep them out of the plugin's bundle
+```
+
+A shaded plugin jar is a flat bundle with `"relocate"` (see below). jpm-publish does not write Gradle plugin
+marker artifacts or publish to the Gradle Plugin Portal.
+
+## Dependencies from extensions
+
+An extension can provide dependencies that no repository has, because they are made on your machine: a Paper
+server jar patched from Mojang's, code generated from a schema. `ext:<extension>/<name>` names one:
+
+```jsonc
+"dev": { "ext:paperweight/server": "26.3.build.257-stable" }   // from jpm-paperweight
+```
+
+To resolve it, jpm runs `jpm-<extension> resolve <name> <version>` (the extension installed with `jpm add -g`, or
+`jpm-<extension>` on PATH). The extension prepares what it provides, logs to stderr, and prints one JSON object:
+
+```jsonc
+{
+  "version": "26.3.build.257-stable",                // the exact version; jpm asks for it again later
+  "jars": ["/home/me/.jpm/paperweight/26.3.build.257-stable/paper-server.jar"],
+  "sources": "/home/me/.jpm/paperweight/.../paper-server-sources.jar",   // optional, for IDEs
+  "dependencies": { "io.papermc.paper:paper-api": "26.3.build.257-stable", "g:a:classifier": "1.0" }
+}
+```
+
+The jars go on the classpaths of the scope the dependency is in. The dependencies are Maven packages, resolved
+with the rest of the graph from the project's repositories. `project.lock` keeps the version and the SHA-256
+of the jars, so an extension that makes different bytes for a locked version fails the install. jpm passes
+`JPM_HOME` (where the extension can cache), `JPM_EXE` and `JPM_OFFLINE`. Versions such as `latest` mean what the
+extension says; once locked, the locked version is used until `jpm update`.
+
 ## Bundles (jar-in-jar isolation)
 
 For a module without a `main`, such as a plugin that a server loads, or with `jpm build --flat`, the bundle
@@ -389,7 +506,8 @@ workspace, and module-to-module dependencies become `workspace:` dependencies.
   is not installed. Versions managed by platforms (BOMs) are read from the BOM's POM.
 
 Exclusions, classifiers and runtime-only dependencies carry over. Anything without a jpm equivalent is
-listed as a warning: plugins that generate code, Kotlin sources, custom source directories.
+listed as a warning: plugins that generate code, custom source directories. Kotlin projects get `"kotlin"`
+with the version of the standard library the Kotlin plugin added.
 
 **Git dependencies without a `project.jsonc`** are imported the same way when they have a `pom.xml` or
 a Gradle build, then built from source like any Git dependency. jpm never runs a dependency's build
@@ -450,13 +568,16 @@ jar and is picked up by native-image automatically.
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Proxy for downloads (any case), unless the `https.proxyHost` / `http.proxyHost` system properties set one |
 | `SSL_CERT_FILE`, `SSL_CERT_DIR` | Extra trusted certificates (PEM), e.g. a proxy's CA; without them the system bundle (`/etc/ssl/certs/ca-certificates.crt` and the like) is added to the built-in ones |
 | `JPM_VERSION_OVERRIDE` | Every module's version, e.g. one CI computes for publishing |
+| `JPM_GRADLE_DISTRIBUTIONS`, `JPM_GRADLE_VERSIONS` | Mirrors for Gradle distributions (`gradle:api`) and for the current Gradle version (`jpm outdated`) |
 | `JPM_GIT_BASE_GITHUB` (`_GITLAB`, `_CODEBERG`) | Redirect a Git host, e.g. to a mirror or `file:///…` for tests |
 | `JPM_VERSION`, `JPM_NO_MODIFY_PATH`, `JPM_NO_SHIMS` | Install scripts: version, skip the PATH change, skip the shims |
 | `JPM_REPO`, `JPM_INSTALL_BASE` | Install scripts and `jpm upgrade`: another GitHub repository, or another download location |
 
 ## Not yet done
 
-- Maven and Gradle features with no manifest equivalent: code-generating plugins, Kotlin.
+- Maven and Gradle features with no manifest equivalent: code-generating plugins, Groovy and Scala sources.
+- Kotlin builds a module's Kotlin as a whole rather than incrementally per file; Kotlin Multiplatform builds
+  (other targets than the JVM) are not supported.
 - Separate version resolution for isolated modules (today one version per package across a bundle).
 - Running the tracing agent automatically during tests (an open question); for now `start --trace`
   records what one run of the app does.

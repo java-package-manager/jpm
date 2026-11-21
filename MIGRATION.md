@@ -157,11 +157,17 @@ resolved into the exact versions they stood for, so the build is reproducible wi
 | `platform(...)`, `enforcedPlatform(...)` | resolved into exact versions on import |
 | version catalog (`libs.…`) | resolved into exact versions on import |
 | `exclude(group = …, module = …)` | `"exclude": ["group:module"]` |
+| `configurations.all { exclude(…) }` | `"exclude"` on the module (or the workspace root) |
+| `testFixtures`, a test-classes jar of another project | `"test": { "workspace:lib": { "version": "*", "tests": true } }` |
+| `tasks.test { jvmArgs(…) }` | `"testJvmArgs"` |
 | `java { toolchain { languageVersion = … } }` | `"java"` (installed automatically) and `"target"` |
 | `application { mainClass = … }` | `"main"` |
 | `repositories { maven { url = … } }` | `"repositories"` |
 | tasks, `buildSrc`, convention plugins | not carried over; see [Custom build logic](#custom-build-logic) |
-| Kotlin sources | not built: jpm compiles Java only |
+| `kotlin("jvm")`, `kotlin { compilerOptions { … } }` | `"kotlin": "<version>"`, or `{ "version", "plugins", "args" }`; see [Kotlin](README.md#kotlin) |
+| `java-gradle-plugin`, `kotlin-dsl`, `gradleApi()`, `gradleTestKit()` | `"gradle:api": "<Gradle version>"` in `"dev"` and `"test"`; see [Gradle plugins](README.md#gradle-plugins) |
+| `gradlePlugin { plugins { … } }` | a `META-INF/gradle-plugins/<id>.properties` resource per plugin |
+| Shadow's `shadowJar` with `relocate(…)` | `jpm build --bundle` of a module without `main` (one flat jar) with `"relocate"` |
 
 ### Commands
 
@@ -173,7 +179,7 @@ resolved into the exact versions they stood for, so the build is reproducible wi
 | `./gradlew dependencies`, `dependencyInsight` | `jpm info`, `jpm why <dependency>` |
 | `./gradlew publishToMavenLocal` | `jpm publish --local` |
 | `./gradlew publish` | `jpm publish <repository>` |
-| `./gradlew shadowJar` | `jpm build --bundle` (nested jars, nothing relocated) |
+| `./gradlew shadowJar` | `jpm build --bundle` (a flat, relocated jar for a module without `main`; nested jars with one) |
 | `./gradlew nativeCompile` | `jpm build --native` |
 | `./gradlew clean` | `jpm clean` |
 
@@ -184,16 +190,22 @@ resolved into the exact versions they stood for, so the build is reproducible wi
 - **Code-generating plugins**: protobuf, OpenAPI, jOOQ, ANTLR and similar. Generate the sources with
   the tool directly from a script (see below), or commit the generated sources. Annotation processors
   (Lombok, MapStruct, Dagger, AutoValue) work as `dev` dependencies.
-- **Kotlin, Groovy and Scala sources.** jpm builds Java.
+- **Groovy and Scala sources.** jpm builds Java and Kotlin.
+- **Kotlin compiler plugins** that the Gradle plugins applied for you (`kotlin-dsl`, `kotlin("plugin.spring")`):
+  list them in `"kotlin": { "plugins": [...] }` with their options in `"args"`.
+- **Source templates** (blossom and similar): use defines, which generate a class of constants that Kotlin
+  and Java read.
+- **Gradle plugin publishing**: jpm-publish publishes Maven artifacts, but not plugin marker artifacts or to the
+  Gradle Plugin Portal.
 - **Custom source directories** (`sourceDirectory`, extra Gradle source sets). jpm uses one source,
   one resource and one test directory per module. Split extra source sets into their own workspace
   modules.
 - **Resource filtering.** Use build-time defines: `"define": { "API_URL": { "type": "string", "env": "API_URL" } }`
   generates `BuildConfig.API_URL`.
-- **Shading and relocation.** `jpm build --bundle` gives a runnable jar-in-jar without relocating
-  packages, and internal modules get their own class loaders.
-- **Test jars** (`type test-jar`, `testFixtures`). Move shared test code into its own module that the
-  others depend on in `"test"`.
+- **Shading for a module with a `main`.** There `jpm build --bundle` gives a runnable jar-in-jar without
+  relocating packages, and internal modules get their own class loaders; `--flat` makes one relocated jar.
+- **Maven test jars** (`type test-jar`) of other projects. Within a workspace, `"tests": true` on a `test`
+  dependency shares a module's test classes.
 - **WAR/EAR packaging.** jpm builds plain jars.
 
 ### Custom build logic

@@ -127,7 +127,7 @@ public final class Resolver {
     /** Effective dependencies of a module, including implicit ones (JUnit for tests). */
     public static List<Manifest.Dependency> effectiveDeps(Project.Module m) {
         List<Manifest.Dependency> deps = new ArrayList<>(m.manifest.dependencies);
-        boolean hasTests = Files.isDirectory(m.testDir());
+        boolean hasTests = m.testDirs().stream().anyMatch(Files::isDirectory);
         boolean hasFramework = deps.stream().anyMatch(d -> d.scope() == Manifest.Scope.TEST && d.key().isMaven()
                 && (d.key().group().startsWith("org.junit") || d.key().group().equals("junit")
                 || d.key().group().equals("org.testng") || d.key().group().startsWith("io.kotest")
@@ -172,6 +172,10 @@ public final class Resolver {
         return k.toString();
     }
 
+    static Graph.Kind kindOf(DepKey k) {
+        return k.isGit() ? Graph.Kind.GIT : k.isGradle() ? Graph.Kind.GRADLE : k.isExtension() ? Graph.Kind.EXTENSION : Graph.Kind.MAVEN;
+    }
+
     // ------------------------------------------------------------------ resolution
 
     public Graph resolve() {
@@ -187,7 +191,7 @@ public final class Resolver {
 
             for (Root r : roots) {
                 String id = idOf(r.key());
-                kinds.put(id, r.key().isGit() ? Graph.Kind.GIT : Graph.Kind.MAVEN);
+                kinds.put(id, kindOf(r.key()));
                 requests.computeIfAbsent(id, k -> new ArrayList<>()).add(new Request(r.spec(), true, true, r.from()));
                 queue.add(new Object[]{id, new LinkedHashSet<>(r.exclusions())});
             }
@@ -305,7 +309,39 @@ public final class Resolver {
 
     private Selected choose(String id, List<Request> reqs) {
         if (reqs == null || reqs.isEmpty()) throw new IllegalStateException("no requests for " + id);
-        return kinds.get(id) == Graph.Kind.GIT ? chooseGit(id, reqs) : chooseMaven(id, reqs);
+        return switch (kinds.get(id)) {
+            case GIT -> chooseGit(id, reqs);
+            case GRADLE -> chooseGradle(id, reqs);
+            case EXTENSION -> chooseExtension(id, reqs);
+            default -> chooseMaven(id, reqs);
+        };
+    }
+
+    /** ext:<extension>/<name>: the extension says which version a spec is; locked versions are kept while the spec is unchanged. */
+    private Selected chooseExtension(String id, List<Request> reqs) {
+        String spec = null;
+        for (Request r : reqs) {
+            String s = r.spec == null ? "" : r.spec.strip();
+            if (spec != null && !spec.equals(s)) throw conflict(id, reqs);
+            spec = s;
+        }
+        if (locked(id)) return new Selected(previous.get(id).version, null, null);
+        return new Selected(ExtensionDeps.resolve(DepKey.parse(id), spec).version(), null, null);
+    }
+
+    /** gradle:api names one Gradle version; every request must name the same one. */
+    private Selected chooseGradle(String id, List<Request> reqs) {
+        String version = null;
+        for (Request r : reqs) {
+            String v = r.spec == null ? "" : r.spec.strip();
+            if (!GradleDist.validVersion(v)) {
+                throw new JpmException(id + " (required by " + r.from + "): the version is an exact Gradle version such as 9.8.0, not \""
+                        + v + "\"");
+            }
+            if (version != null && !version.equals(v)) throw conflict(id, reqs);
+            version = v;
+        }
+        return new Selected(version, null, null);
     }
 
     /** The commit a branch requirement stands for: the locked one until updated, else the branch's newest. */
@@ -531,7 +567,18 @@ public final class Resolver {
         String memoKey = id + "@" + sel.version + "@" + sel.commit;
         Expanded e = expandMemo.get(memoKey);
         if (e != null) return e;
-        e = kinds.get(id) == Graph.Kind.GIT ? expandGit(id, sel) : expandMaven(id, sel.version);
+        e = switch (kinds.get(id)) {
+            case GIT -> expandGit(id, sel);
+            case GRADLE -> new Expanded(List.of(), true, null); // the distribution's jars, nothing to resolve
+            case EXTENSION -> {
+                List<EdgeReq> edges = new ArrayList<>();
+                for (Map.Entry<String, String> d : ExtensionDeps.resolve(DepKey.parse(id), sel.version).dependencies().entrySet()) {
+                    edges.add(new EdgeReq(d.getKey(), Graph.Kind.MAVEN, d.getValue(), false, Set.of()));
+                }
+                yield new Expanded(edges, true, null);
+            }
+            default -> expandMaven(id, sel.version);
+        };
         expandMemo.put(memoKey, e);
         return e;
     }
@@ -552,7 +599,19 @@ public final class Resolver {
         dev.jpm.maven.GradleMetadata meta = null;
         if (pom.gradleMetadata) {
             java.nio.file.Path module = repo.fetch(ga[0], ga[1], version, null, "module");
-            if (module != null) meta = dev.jpm.maven.GradleMetadata.read(module);
+            if (module != null) {
+                // a Kotlin Multiplatform library: its JVM classes are another module (mockk -> mockk-jvm), which the
+                // POM may not depend on; like a relocation
+                String at = ga.length == 2 ? dev.jpm.maven.GradleMetadata.jvmVariantAt(module) : null;
+                if (at != null) {
+                    String[] t = at.split(":");
+                    if (!(t[0] + ":" + t[1]).equals(id)) {
+                        edges.add(new EdgeReq(t[0] + ":" + t[1], Graph.Kind.MAVEN, t[2], false, Set.of()));
+                        return new Expanded(edges, false, null);
+                    }
+                }
+                meta = dev.jpm.maven.GradleMetadata.read(module);
+            }
         }
         for (Pom.Dep d : pom.dependencies) {
             String scope = d.scope() == null ? "compile" : d.scope();
@@ -594,14 +653,14 @@ public final class Resolver {
                 String target = idOf(key.withModule(sib));
                 edges.add(new EdgeReq(target, Graph.Kind.GIT, "@" + sel.commit, runtimeOnly, Set.of()));
             } else {
-                edges.add(new EdgeReq(idOf(d.key()), d.key().isGit() ? Graph.Kind.GIT : Graph.Kind.MAVEN, d.spec(),
+                edges.add(new EdgeReq(idOf(d.key()), kindOf(d.key()), d.spec(),
                         d.runtimeOnly(), d.exclusions()));
             }
         }
         // "api" dev dependencies: consumers compile against them; the platform provides them at run time
         for (Manifest.Dependency d : mod.manifest().deps(Manifest.Scope.DEV)) {
             if (!d.api() || d.key().isWorkspace()) continue;
-            edges.add(new EdgeReq(idOf(d.key()), d.key().isGit() ? Graph.Kind.GIT : Graph.Kind.MAVEN, d.spec(),
+            edges.add(new EdgeReq(idOf(d.key()), kindOf(d.key()), d.spec(),
                     false, d.exclusions(), true));
         }
         return new Expanded(edges, true, mod.isPublic());

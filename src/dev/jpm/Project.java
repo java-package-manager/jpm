@@ -56,6 +56,8 @@ public final class Project {
         public List<Path> srcDirs() { return manifest.sourceDirs(dir); }
         public List<Path> assetsDirs() { return manifest.resourceDirs(dir); }
         public Path testDir() { return manifest.layout.tests(dir); }
+        /** Test source folders: {@link #testDir()}, and {@code src/test/kotlin} for Kotlin in the Maven layout. */
+        public List<Path> testDirs() { return manifest.testSourceDirs(dir); }
         public Path testResourcesDir() { return manifest.layout.testResources(dir); }
 
         public boolean isPublic() {

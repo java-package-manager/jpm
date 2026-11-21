@@ -56,6 +56,60 @@ class GradleMetadataTest {
                 + "</version><scope>compile</scope></dependency>";
     }
 
+    /**
+     * A Kotlin Multiplatform library's JVM classes are in another module, which its module metadata names with
+     * available-at (Gradle follows it; the POM may not depend on it). A library with JVM classes of its own whose other
+     * variants are optional features (kotlin-test and its JUnit support) is used as it is.
+     */
+    @Test
+    void multiplatformLibrariesResolveToTheirJvmModule(@TempDir Path tmp) throws IOException {
+        System.setProperty("jpm.home", tmp.resolve("home").toString());
+        // no network: an empty folder stands in for Maven Central, which is asked first
+        System.setProperty("jpm.mavenCentral", tmp.resolve("central").toUri().toString());
+        try {
+            multiplatform(tmp);
+        } finally {
+            System.clearProperty("jpm.mavenCentral");
+        }
+    }
+
+    private static void multiplatform(Path tmp) throws IOException {
+        Path repo = tmp.resolve("repo");
+        String kmp = """
+                { "formatVersion": "1.1", "variants": [
+                    { "name": "metadataApiElements", "attributes": { "org.gradle.category": "library", "org.gradle.usage": "kotlin-metadata",
+                      "org.jetbrains.kotlin.platform.type": "common" } },
+                    { "name": "jsRuntimeElements-published", "attributes": { "org.gradle.category": "library", "org.gradle.usage": "kotlin-runtime",
+                      "org.jetbrains.kotlin.platform.type": "js" }, "available-at": { "group": "test.kmp", "module": "mockk-js", "version": "1.0" } },
+                    { "name": "jvmRuntimeElements-published", "attributes": { "org.gradle.category": "library", "org.gradle.usage": "java-runtime",
+                      "org.jetbrains.kotlin.platform.type": "jvm" }, "available-at": { "group": "test.kmp", "module": "mockk-jvm", "version": "1.0" } } ] }
+                """;
+        publish(repo, "test.kmp", "mockk", "1.0", dep("test.kmp", "mockk-dsl", "1.0"), kmp, "META-INF/mockk.kotlin_module");
+        publish(repo, "test.kmp", "mockk-jvm", "1.0", "", null, "io/mockk/MockK.class");
+        String withFeatures = """
+                { "formatVersion": "1.1", "variants": [
+                    { "name": "jvmRuntimeElements", "attributes": { "org.gradle.category": "library", "org.gradle.usage": "java-runtime",
+                      "org.jetbrains.kotlin.platform.type": "jvm" } },
+                    { "name": "jvmJUnit5RuntimeElements", "attributes": { "org.gradle.category": "library", "org.gradle.usage": "java-runtime",
+                      "org.jetbrains.kotlin.platform.type": "jvm" }, "capabilities": [ { "group": "test.kotlin", "name": "kotlin-test-framework-junit5" } ],
+                      "available-at": { "group": "test.kotlin", "module": "kotlin-test-junit5", "version": "1.0" } } ] }
+                """;
+        publish(repo, "test.kotlin", "kotlin-test", "1.0", "", withFeatures, "kotlin/test/Asserter.class");
+
+        Path project = tmp.resolve("p");
+        Fs.write(project.resolve("project.jsonc"), "{ \"name\": \"p\", \"version\": \"0.1.0\","
+                + " \"repositories\": [" + dev.jpm.json.Jsonc.quote(repo.toUri().toString()) + "],"
+                + " \"runtime\": { \"test.kmp:mockk\": \"1.0\", \"test.kotlin:kotlin-test\": \"1.0\" } }");
+        Project p = Project.load(project);
+        MavenRepo mr = new MavenRepo(p.root.repositories);
+        Graph g = Install.run(p, mr, new Install.Options(false, true, Set.of(), true));
+        assertFalse(g.get("test.kmp:mockk").hasJar, "the root module holds only metadata");
+        assertTrue(g.get("test.kmp:mockk").deps.containsKey("test.kmp:mockk-jvm"));
+        assertTrue(g.get("test.kmp:mockk-jvm").hasJar);
+        assertTrue(g.get("test.kotlin:kotlin-test").hasJar);
+        assertEquals(null, g.get("test.kotlin:kotlin-test-junit5"));
+    }
+
     /** The other way round: a dev dependency's tree goes on the compile classpath with its compile-only parts. */
     @Test
     void devDependenciesKeepTheirCompileOnlyApiDependencies(@TempDir Path tmp) throws IOException {

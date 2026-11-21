@@ -803,7 +803,20 @@ public final class GradleImport {
                 man.put("target", Integer.toString(p.release));
             }
             if (p.mainClass != null) man.put("main", p.mainClass);
-            if (p.kotlin) imp.warn(where, "Kotlin sources are not compiled by jpm; only Java sources are built");
+            if (p.kotlin) {
+                // the Kotlin plugin's version is that of the standard library it adds
+                String kv = p.resolved.get("org.jetbrains.kotlin:kotlin-stdlib");
+                for (List<GDep> l : p.deps.values()) {
+                    for (GDep d : l) {
+                        if (kv == null && "org.jetbrains.kotlin".equals(d.group) && "kotlin-stdlib".equals(d.name)) kv = d.version;
+                    }
+                }
+                if (kv != null && kv.matches("\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?")) {
+                    man.put("kotlin", kv);
+                } else {
+                    imp.warn(where, "Kotlin sources: set \"kotlin\" to the Kotlin version and add org.jetbrains.kotlin:kotlin-stdlib to \"runtime\"");
+                }
+            }
             String expectedMain = (p.dir.isEmpty() ? "" : p.dir + "/") + "src/main/java";
             for (String d : p.mainJava) {
                 if (!d.equals(expectedMain) && !d.endsWith("src/main/kotlin")) imp.warn(where, "source directory " + d + " is not built; jpm uses " + expectedMain);

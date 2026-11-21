@@ -113,7 +113,7 @@
     },
     "test": {
       "description": "Dependencies for the tests only.",
-      "$ref": "#/definitions/devDependencies"
+      "$ref": "#/definitions/testDependencies"
     },
     "define": {
       "type": "object",
@@ -273,6 +273,61 @@
         "type": "string"
       }
     },
+    "testJvmArgs": {
+      "type": "array",
+      "description": "Options for the JVM running the tests, e.g. [\"-Xmx2g\", \"--add-opens=java.base/java.lang=ALL-UNNAMED\"]. A workspace module's come after the root's.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "kotlin": {
+      "description": "The module has Kotlin sources: kotlinc of this version compiles them (before javac, seeing the Java sources). In the maven layout, src/main/kotlin and src/test/kotlin are source folders too. The standard library, org.jetbrains.kotlin:kotlin-stdlib, is an ordinary dependency. Workspace modules inherit it from the root.",
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?$",
+          "examples": [
+            "2.2.20"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "version": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?$"
+            },
+            "plugins": {
+              "type": "array",
+              "description": "Compiler plugins: group:artifact (the Kotlin version) or group:artifact:version, or the short name of one of Kotlin's own (assignment, sam-with-receiver, allopen, noarg, serialization, lombok, power-assert, parcelize, atomicfu, js-plain-objects, compose). Their options go in args as -P plugin:<id>:<option>=<value>.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "args": {
+              "type": "array",
+              "description": "Extra arguments for kotlinc, e.g. -Xjsr305=strict; -J entries go to the JVM running it, e.g. -J-Xmx2g.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "exclude": {
+      "type": "array",
+      "description": "Packages left out of everything the runtime and dev dependencies bring in, like an exclusion on each of them (Gradle's configurations.all { exclude(...) }), e.g. for what the platform provides: group:artifact, group:* or group. Test dependencies are not affected. A workspace module adds its own to the root's.",
+      "items": {
+        "type": "string",
+        "pattern": "^[^:\\s]+(:[^:\\s]+)?$"
+      },
+      "uniqueItems": true
+    },
     "filter": {
       "type": "array",
       "items": {
@@ -328,7 +383,7 @@
     },
     "dependencyKey": {
       "type": "string",
-      "description": "group:artifact (Maven), group:artifact:classifier, github:user/repo[/module] (also gitlab: and codeberg:), or workspace:<module>.",
+      "description": "group:artifact (Maven), group:artifact:classifier, github:user/repo[/module] (also gitlab: and codeberg:), workspace:<module>, ext:<extension>/<name> (provided by the extension jpm-<extension>, e.g. ext:paperweight/server), or gradle:api (the Gradle API of a Gradle distribution; the version is the Gradle version, e.g. 9.8.0).",
       "anyOf": [
         {
           "pattern": "^[^:/\\s]+:[^:/\\s]+(:[^:/\\s]+)?$"
@@ -338,6 +393,12 @@
         },
         {
           "pattern": "^workspace:[^:/\\s]+$"
+        },
+        {
+          "const": "gradle:api"
+        },
+        {
+          "pattern": "^ext:[A-Za-z0-9][A-Za-z0-9_-]*/[A-Za-z0-9][A-Za-z0-9._-]*$"
         }
       ]
     },
@@ -428,6 +489,32 @@
         }
       }
     },
+    "testDependencyOptions": {
+      "type": "object",
+      "required": [
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "$ref": "#/definitions/versionSpec"
+        },
+        "exclude": {
+          "type": "array",
+          "description": "Transitive dependencies to leave out: group:artifact, group:* or group.",
+          "items": {
+            "type": "string",
+            "pattern": "^[^:\\s]+(:[^:\\s]+)?$"
+          },
+          "uniqueItems": true
+        },
+        "tests": {
+          "type": "boolean",
+          "default": false,
+          "description": "For a workspace:<module> dependency: its compiled tests too (Gradle's test fixtures), so these tests can use its test base classes and helpers. Its tests are not run here."
+        }
+      }
+    },
     "dependencies": {
       "type": "object",
       "propertyNames": {
@@ -472,6 +559,22 @@
           },
           {
             "$ref": "#/definitions/dependencyOptions"
+          }
+        ]
+      }
+    },
+    "testDependencies": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/definitions/dependencyKey"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/versionSpec"
+          },
+          {
+            "$ref": "#/definitions/testDependencyOptions"
           }
         ]
       }

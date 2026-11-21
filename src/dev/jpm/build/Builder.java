@@ -6,6 +6,7 @@ import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.GitModule;
+import dev.jpm.resolve.GradleDist;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
 import dev.jpm.resolve.Lockfile;
@@ -205,6 +206,8 @@ public final class Builder {
             }
             case MAVEN -> p.hasJar ? List.of(mavenJar(p, consumer)) : List.of();
             case GIT -> List.of(buildGit(p));
+            case EXTENSION -> dev.jpm.resolve.ExtensionDeps.resolve(DepKey.parse(p.id), p.version).jars();
+            case GRADLE -> GradleDist.jars(p.artifact != null ? p.artifact : GradleDist.require(p.version, p.sha256).home());
         };
         artifacts.put(id, out);
         return out;
@@ -238,10 +241,23 @@ public final class Builder {
             roots.addAll(m.srcDirs());
             Path gen = generateSources(m);
             if (gen != null) roots.add(gen);
+            Path kotlinOut = m.cacheDir().resolve("kotlin-classes");
+            boolean kotlinRan = KotlinCompiler.compile(this, new KotlinCompiler.Request(m.name(), m.name(), m.manifest.kotlin, jdk, release,
+                    roots, m.assetsDirs(), cp, List.of(), kotlinOut, m.cacheDir().resolve("kotlin-classes.key")));
+            List<Path> javaCp = cp;
             String key = inputsKey(cp, proc);
-            boolean ran = Compiler.compile(new Compiler.Request(m.name(), jdk, release, roots, cp, proc,
+            if (Files.isDirectory(kotlinOut)) {
+                javaCp = new ArrayList<>(cp);
+                javaCp.add(0, kotlinOut);
+                key += treeKey(List.of(kotlinOut)); // Java that uses Kotlin recompiles when the Kotlin does
+            }
+            boolean ran = Compiler.compile(new Compiler.Request(m.name(), jdk, release, roots, javaCp, proc,
                     classesDir(m), m.cacheDir().resolve("classes.state.json"), m.manifest.javacArgs, key,
                     m.assetsDirs()));
+            ran |= kotlinRan;
+            // Kotlin's classes join javac's in the classes folder, so it is everything the jar and classpaths need
+            Resources.sync(Files.isDirectory(kotlinOut) ? List.of(kotlinOut) : List.of(), classesDir(m),
+                    m.cacheDir().resolve("kotlin-classes.list"));
             Resources.sync(m.assetsDirs(), classesDir(m), m.cacheDir().resolve("resources.list"),
                     m.manifest.filter, filterValues(m));
             if (ran) Log.step("Compiled", m.name() + " " + m.version() + Log.dim(" (" + jdk.id() + ", release " + release + ")"));
@@ -307,28 +323,104 @@ public final class Builder {
 
     /** Compiles test sources. Returns false if the module has no tests. */
     public boolean compileTests(Project.Module m) {
-        Path testDir = m.testDir();
-        if (Fs.files(testDir, ".java").stream().allMatch(f -> f.startsWith(m.testResourcesDir()))) return false;
+        List<Path> testDirs = m.testDirs();
+        List<Path> excludes = List.of(m.testResourcesDir());
+        boolean anyJava = false;
+        for (Path d : testDirs) anyJava |= Fs.files(d, ".java").stream().anyMatch(f -> !f.startsWith(m.testResourcesDir()));
+        if (!anyJava && KotlinCompiler.sources(testDirs, excludes).isEmpty()) return false;
         compileMain(m);
         List<Path> cp = new ArrayList<>();
         cp.add(classesDir(m));
+        cp.addAll(testFixtures(m));
         cp.addAll(classpath(m, Cp.TEST_COMPILE));
+        cp = Compiler.distinct(cp);
         List<Path> proc = m.manifest.deps(Manifest.Scope.DEV).isEmpty() ? List.of() : classpath(m, Cp.PROCESSOR);
         Jdk jdk = jdk(m.manifest);
-        boolean ran = Compiler.compile(new Compiler.Request(m.name() + " tests", jdk, release(m.manifest, jdk), List.of(testDir),
-                cp, proc, testClassesDir(m), m.cacheDir().resolve("test-classes.state.json"), m.manifest.javacArgs,
-                inputsKey(cp, proc) + treeKey(List.of(classesDir(m))), List.of(m.testResourcesDir())));
+        int release = release(m.manifest, jdk);
+        Path kotlinOut = m.cacheDir().resolve("test-kotlin-classes");
+        boolean kotlinRan = KotlinCompiler.compile(this, new KotlinCompiler.Request(m.name() + " tests", m.name() + "_test",
+                m.manifest.kotlin, jdk, release, testDirs, excludes, cp, List.of(classesDir(m)), kotlinOut,
+                m.cacheDir().resolve("test-kotlin-classes.key")));
+        List<Path> javaCp = cp;
+        String key = inputsKey(cp, proc) + treeKey(List.of(classesDir(m)));
+        if (Files.isDirectory(kotlinOut)) {
+            javaCp = new ArrayList<>(cp);
+            javaCp.add(0, kotlinOut);
+            key += treeKey(List.of(kotlinOut));
+        }
+        boolean ran = Compiler.compile(new Compiler.Request(m.name() + " tests", jdk, release, testDirs,
+                javaCp, proc, testClassesDir(m), m.cacheDir().resolve("test-classes.state.json"), m.manifest.javacArgs,
+                key, excludes));
+        ran |= kotlinRan;
+        Resources.sync(Files.isDirectory(kotlinOut) ? List.of(kotlinOut) : List.of(), testClassesDir(m),
+                m.cacheDir().resolve("test-kotlin-classes.list"));
         Resources.sync(List.of(m.testResourcesDir()), testClassesDir(m), m.cacheDir().resolve("test-resources.list"));
         if (ran) Log.step("Compiled", m.name() + " tests");
         return true;
+    }
+
+    /**
+     * Compiled tests of the workspace modules this one's tests depend on with {@code "tests": true}: their base
+     * classes and helpers, on this module's test classpaths (their tests are not run here).
+     */
+    public List<Path> testFixtures(Project.Module m) {
+        List<Path> out = new ArrayList<>();
+        for (Manifest.Dependency d : m.manifest.deps(Manifest.Scope.TEST)) {
+            if (!d.tests()) continue;
+            Project.Module other = project.module(d.key().artifact());
+            if (other == null) throw new JpmException(m.manifest.file + ":" + d.line() + ": no workspace module " + d.key().artifact());
+            if (other == m) throw new JpmException(m.manifest.file + ":" + d.line() + ": a module cannot depend on its own tests");
+            if (!building.add(other.id() + " tests")) throw new JpmException("Cycle between the tests of workspace modules at " + other.name());
+            try {
+                if (compileTests(other)) {
+                    out.add(testClassesDir(other));
+                    out.addAll(testFixtures(other));
+                }
+            } finally {
+                building.remove(other.id() + " tests");
+            }
+        }
+        return out;
     }
 
     public List<Path> testRuntimeClasspath(Project.Module m) {
         List<Path> cp = new ArrayList<>();
         cp.add(testClassesDir(m));
         cp.add(classesDir(m));
+        cp.addAll(testFixtures(m));
+        Path metadata = pluginUnderTestMetadata(m);
+        if (metadata != null) cp.add(metadata);
         cp.addAll(classpath(m, Cp.TEST_RUNTIME));
         return Compiler.distinct(cp);
+    }
+
+    /**
+     * For a Gradle plugin (a module with {@code gradle:api}): a folder with {@code plugin-under-test-metadata.properties},
+     * the plugin's classes and runtime classpath, which TestKit's {@code GradleRunner.withPluginClasspath()} reads, as
+     * Gradle's {@code java-gradle-plugin} writes it. Null for other modules.
+     */
+    public Path pluginUnderTestMetadata(Project.Module m) {
+        boolean plugin = m.manifest.dependencies.stream().anyMatch(d -> d.key().isGradle());
+        Path dir = m.cacheDir().resolve("plugin-under-test-metadata");
+        if (!plugin) {
+            Fs.deleteTree(dir);
+            return null;
+        }
+        List<Path> cp = new ArrayList<>();
+        cp.add(classesDir(m));
+        cp.addAll(classpath(m, Cp.RUNTIME));
+        java.util.Properties props = new java.util.Properties();
+        props.setProperty("implementation-classpath", Compiler.join(Compiler.distinct(cp)));
+        java.io.StringWriter w = new java.io.StringWriter();
+        try {
+            props.store(w, null);
+        } catch (IOException e) {
+            throw new JpmException(e.getMessage());
+        }
+        // no timestamp comment, so the file only changes when the classpath does
+        String text = w.toString().lines().filter(l -> !l.startsWith("#")).collect(java.util.stream.Collectors.joining("\n")) + "\n";
+        Fs.writeIfChanged(dir.resolve("plugin-under-test-metadata.properties"), text);
+        return dir;
     }
 
     public List<Path> runtimeClasspath(Project.Module m) {
@@ -776,9 +868,18 @@ public final class Builder {
                 roots.add(gen);
             }
             Path classes = buildDir.resolve("classes");
-            Compiler.compile(new Compiler.Request(p.id, jdk, release, roots, cp, proc, classes,
+            Path kotlinOut = buildDir.resolve("kotlin-classes");
+            KotlinCompiler.compile(this, new KotlinCompiler.Request(p.id, mod.manifest().name, mod.manifest().kotlin, jdk, release,
+                    roots, mod.manifest().resourceDirs(src), cp, List.of(), kotlinOut, buildDir.resolve("kotlin-classes.key")));
+            List<Path> javaCp = cp;
+            if (Files.isDirectory(kotlinOut)) {
+                javaCp = new ArrayList<>(cp);
+                javaCp.add(0, kotlinOut);
+            }
+            Compiler.compile(new Compiler.Request(p.id, jdk, release, roots, javaCp, proc, classes,
                     buildDir.resolve("state.json"), mod.manifest().javacArgs, key,
                     mod.manifest().resourceDirs(src)));
+            Resources.sync(Files.isDirectory(kotlinOut) ? List.of(kotlinOut) : List.of(), classes, buildDir.resolve("kotlin-classes.list"));
             Resources.sync(mod.manifest().resourceDirs(src), classes, buildDir.resolve("resources.list"));
             List<Path> dirs = new ArrayList<>();
             dirs.add(classes);

@@ -77,6 +77,14 @@ public final class MavenRepo {
         return cache.resolve(path(group, artifact, version, classifier, ext));
     }
 
+    private static final java.util.regex.Pattern TIMESTAMPED = java.util.regex.Pattern.compile("(.+)-\\d{8}\\.\\d{6}-\\d+");
+
+    /** 0.1-SNAPSHOT for the timestamped snapshot 0.1-20240720.200737-2; null for other versions. */
+    static String snapshotBase(String version) {
+        java.util.regex.Matcher m = TIMESTAMPED.matcher(version);
+        return m.matches() ? m.group(1) + "-SNAPSHOT" : null;
+    }
+
     /** Why the last {@link #fetch} of a file found nothing although a repository could not be asked, by cache path. */
     private final ConcurrentHashMap<Path, String> failures = new ConcurrentHashMap<>();
 
@@ -110,6 +118,16 @@ public final class MavenRepo {
                     if (t.found()) return local;
                     if (t.problem() != null) problems.add(t.problem());
                 }
+            }
+            // A timestamped snapshot asked for by name (0.1-20240720.200737-2, as Gradle allows): it lives in the
+            // folder of its -SNAPSHOT version
+            String base = snapshotBase(version);
+            if (base != null) {
+                String file = group.replace('.', '/') + "/" + artifact + "/" + base + "/" + artifact + "-" + version
+                        + (classifier == null || classifier.isEmpty() ? "" : "-" + classifier) + "." + ext;
+                Result t = download(repo + file, local);
+                if (t.found()) return local;
+                if (t.problem() != null) problems.add(t.problem());
             }
         }
         if (problems.isEmpty()) {

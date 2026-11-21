@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -27,7 +28,7 @@ public final class Manifest {
     /** Every top-level field jpm reads. schema/project.schema.json describes the same set (SchemaTest checks). */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
-            "javacArgs", "nativeArgs", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "$schema");
+            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "$schema");
 
     public enum Scope {
         RUNTIME("runtime"), DEV("dev"), TEST("test");
@@ -54,13 +55,44 @@ public final class Manifest {
      */
     public record PatchOptions(List<Dependency> dependencies, Integer release) {}
 
-    public record Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api) {
+    /**
+     * {@code tests}: a {@code test} dependency on a workspace module that brings that module's compiled tests too
+     * (Gradle's test fixtures), so tests can share base classes and helpers.
+     */
+    public record Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api,
+                             boolean tests) {
         public Dependency(DepKey key, String spec, Scope scope, int line) {
-            this(key, spec, scope, line, Set.of(), false, false);
+            this(key, spec, scope, line, Set.of(), false, false, false);
         }
 
         public Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly) {
-            this(key, spec, scope, line, exclusions, runtimeOnly, false);
+            this(key, spec, scope, line, exclusions, runtimeOnly, false, false);
+        }
+
+        public Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api) {
+            this(key, spec, scope, line, exclusions, runtimeOnly, api, false);
+        }
+    }
+
+    /**
+     * {@code "kotlin"}: the module has Kotlin sources, compiled with this Kotlin version. {@code plugins} are compiler
+     * plugins as {@code group:artifact} (version: the Kotlin version) or {@code group:artifact:version}, or the short
+     * name of one of Kotlin's own ({@code "assignment"} is {@code org.jetbrains.kotlin:kotlin-assignment-compiler-plugin-embeddable});
+     * {@code args} go to kotlinc, {@code -J} entries to the JVM running it.
+     */
+    public record Kotlin(String version, List<String> plugins, List<String> args) {
+        /** Kotlin's own compiler plugins, by the short names "plugins" accepts. */
+        public static final Set<String> BUILT_IN = Set.of("assignment", "sam-with-receiver", "allopen", "noarg", "serialization",
+                "lombok", "power-assert", "parcelize", "atomicfu", "js-plain-objects", "compose");
+
+        /** Maven coordinates (group:artifact:version) of each plugin. */
+        public List<String> pluginCoordinates() {
+            List<String> out = new ArrayList<>();
+            for (String p : plugins) {
+                if (!p.contains(":")) out.add("org.jetbrains.kotlin:kotlin-" + p + "-compiler-plugin-embeddable:" + version);
+                else out.add(p.split(":").length == 2 ? p + ":" + version : p);
+            }
+            return out;
         }
     }
 
@@ -93,6 +125,16 @@ public final class Manifest {
     public final String defineClass;
     public final List<String> javacArgs;
     public final List<String> nativeArgs;
+    /** Options for the JVM that runs the tests, e.g. {@code --add-opens} or {@code -Xmx2g}. */
+    public final List<String> testJvmArgs;
+    /**
+     * Packages left out of what this module's {@code runtime} and {@code dev} dependencies bring in, like an exclusion on
+     * each of them (Gradle's {@code configurations.all { exclude(...) }} for what the platform provides). {@code test}
+     * dependencies are not affected. A workspace module adds its own to the root's.
+     */
+    public final Set<String> exclude;
+    /** Kotlin settings, or null for a module without Kotlin. */
+    public final Kotlin kotlin;
     public final Layout layout;
     /** Resources (globs relative to the resource folder) copied with ${NAME} replaced by define values. */
     public final List<String> filter;
@@ -112,9 +154,9 @@ public final class Manifest {
 
     /**
      * Fields a workspace module takes from the workspace root when it does not set them itself.
-     * {@code javacArgs} and {@code nativeArgs} are the root's followed by the module's own.
+     * {@code javacArgs}, {@code nativeArgs} and {@code testJvmArgs} are the root's followed by the module's own.
      */
-    public static final List<String> INHERITED = List.of("java", "target", "group", "license", "url", "layout", "javacArgs", "nativeArgs");
+    public static final List<String> INHERITED = List.of("java", "target", "group", "license", "url", "layout", "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude");
 
     private Manifest(Path file, String source) {
         this(file, source, null);
@@ -165,6 +207,12 @@ public final class Manifest {
             } else throw err(mainNode, "main must be a class name or an object of names to classes");
         }
         this.mains = m;
+
+        Set<String> moduleExcludes = new java.util.TreeSet<>();
+        Jsonc.Node exNode = root.get("exclude");
+        if (exNode != null) moduleExcludes.addAll(exclusions(exNode));
+        if (parent != null) moduleExcludes.addAll(parent.exclude);
+        this.exclude = Collections.unmodifiableSet(moduleExcludes);
 
         List<Dependency> deps = new ArrayList<>();
         for (Scope s : Scope.values()) {
@@ -261,6 +309,9 @@ public final class Manifest {
         this.repositories = stringList("repositories");
         this.javacArgs = parent == null ? stringList("javacArgs") : concat(parent.javacArgs, stringList("javacArgs"));
         this.nativeArgs = parent == null ? stringList("nativeArgs") : concat(parent.nativeArgs, stringList("nativeArgs"));
+        this.testJvmArgs = parent == null ? stringList("testJvmArgs") : concat(parent.testJvmArgs, stringList("testJvmArgs"));
+        Kotlin ownKotlin = parseKotlin();
+        this.kotlin = ownKotlin != null || parent == null ? ownKotlin : parent.kotlin;
         this.packaging = str("package", false) == null ? "jar" : str("package", false);
         this.description = str("description", false);
         this.license = inherit(str("license", false), parent == null ? null : parent.license);
@@ -285,6 +336,43 @@ public final class Manifest {
         }
     }
 
+    private Kotlin parseKotlin() {
+        Jsonc.Node n = root.get("kotlin");
+        if (n == null) return null;
+        if (n.isString()) return new Kotlin(checkKotlinVersion(n, (String) n.value), List.of(), List.of());
+        if (!n.isObject()) throw err(n, "kotlin must be a Kotlin version or {\"version\": ..., \"plugins\": [...], \"args\": [...]}");
+        for (String k : n.members.keySet()) {
+            if (!Set.of("version", "plugins", "args").contains(k)) throw err(n.get(k), "unknown kotlin option \"" + k + "\"");
+        }
+        Jsonc.Node v = n.get("version");
+        if (v == null || !v.isString()) throw err(n, "kotlin needs a \"version\", such as \"2.2.20\"");
+        List<String> plugins = strings(n.get("plugins"), "kotlin.plugins");
+        for (String p : plugins) {
+            boolean coords = p.matches("[^:\\s]+:[^:\\s]+(:[^:\\s]+)?");
+            if (!coords && !Kotlin.BUILT_IN.contains(p)) {
+                throw err(n.get("plugins"), "kotlin.plugins: \"" + p + "\" is neither group:artifact[:version] nor one of Kotlin's own: "
+                        + String.join(", ", new java.util.TreeSet<>(Kotlin.BUILT_IN)));
+            }
+        }
+        return new Kotlin(checkKotlinVersion(v, (String) v.value), plugins, strings(n.get("args"), "kotlin.args"));
+    }
+
+    private String checkKotlinVersion(Jsonc.Node n, String v) {
+        if (!v.matches("\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?")) throw err(n, "kotlin version must be exact, such as \"2.2.20\"");
+        return v;
+    }
+
+    private List<String> strings(Jsonc.Node n, String what) {
+        List<String> out = new ArrayList<>();
+        if (n == null) return out;
+        if (!n.isArray()) throw err(n, what + " must be an array of strings");
+        for (Jsonc.Node i : n.items) {
+            if (!i.isString()) throw err(i, what + " must be an array of strings");
+            out.add((String) i.value);
+        }
+        return List.copyOf(out);
+    }
+
     private static String inherit(String own, String fromRoot) {
         return own != null ? own : fromRoot;
     }
@@ -300,26 +388,20 @@ public final class Manifest {
     private Dependency dependency(DepKey key, Jsonc.Member e, Scope s) {
         int ln = line(e.keyStart);
         Jsonc.Node v = e.value;
-        if (v.isString()) return new Dependency(key, (String) v.value, s, ln);
+        Set<String> moduleExcludes = exclude == null || s == Scope.TEST ? Set.of() : exclude;
+        if (v.isString()) return new Dependency(key, (String) v.value, s, ln, moduleExcludes, false);
         if (!v.isObject()) {
             throw err(v, "dependency " + e.key + " must be a version string or {\"version\": ..., \"exclude\": [...], \"runtimeOnly\": true}");
         }
         for (String k : v.members.keySet()) {
-            if (!Set.of("version", "exclude", "runtimeOnly", "api").contains(k)) throw err(v.get(k), "unknown dependency option \"" + k + "\"");
+            if (!Set.of("version", "exclude", "runtimeOnly", "api", "tests").contains(k)) throw err(v.get(k), "unknown dependency option \"" + k + "\"");
         }
         Jsonc.Node ver = v.get("version");
         if (ver == null || !ver.isString()) throw err(v, "dependency " + e.key + " needs a \"version\" string");
         Set<String> excl = new java.util.TreeSet<>();
+        excl.addAll(moduleExcludes);
         Jsonc.Node ex = v.get("exclude");
-        if (ex != null) {
-            if (!ex.isArray()) throw err(ex, "exclude must be an array of \"group:artifact\" (artifact may be *)");
-            for (Jsonc.Node i : ex.items) {
-                if (!i.isString() || !((String) i.value).matches("[^:\\s]+(:[^:\\s]+)?")) {
-                    throw err(i, "exclude entries look like \"group:artifact\", \"group:*\" or \"group\"");
-                }
-                excl.add((String) i.value);
-            }
-        }
+        if (ex != null) excl.addAll(exclusions(ex));
         Jsonc.Node ro = v.get("runtimeOnly");
         boolean runtimeOnly = ro != null && Boolean.TRUE.equals(ro.value);
         if (ro != null && !(ro.value instanceof Boolean)) throw err(ro, "runtimeOnly must be true or false");
@@ -331,7 +413,25 @@ public final class Manifest {
             throw err(apiNode, "api applies to \"dev\" dependencies only" + (s == Scope.RUNTIME
                     ? ": runtime dependencies are always passed on to consumers" : ""));
         }
-        return new Dependency(key, (String) ver.value, s, ln, excl, runtimeOnly, api);
+        Jsonc.Node testsNode = v.get("tests");
+        boolean tests = testsNode != null && Boolean.TRUE.equals(testsNode.value);
+        if (testsNode != null && !(testsNode.value instanceof Boolean)) throw err(testsNode, "tests must be true or false");
+        if (tests && (s != Scope.TEST || !key.isWorkspace())) {
+            throw err(testsNode, "tests applies to \"test\" dependencies on workspace modules (\"workspace:<module>\") only");
+        }
+        return new Dependency(key, (String) ver.value, s, ln, excl, runtimeOnly, api, tests);
+    }
+
+    private Set<String> exclusions(Jsonc.Node ex) {
+        Set<String> excl = new java.util.TreeSet<>();
+        if (!ex.isArray()) throw err(ex, "exclude must be an array of \"group:artifact\" (artifact may be *)");
+        for (Jsonc.Node i : ex.items) {
+            if (!i.isString() || !((String) i.value).matches("[^:\\s]+(:[^:\\s]+)?")) {
+                throw err(i, "exclude entries look like \"group:artifact\", \"group:*\" or \"group\"");
+            }
+            excl.add((String) i.value);
+        }
+        return excl;
     }
 
     private Define parseDefine(Jsonc.Member e) {
@@ -436,8 +536,16 @@ public final class Manifest {
 
     /** The module's source folders: {@code "sources"}, or the layout's one. */
     public List<Path> sourceDirs(Path moduleDir) {
-        if (sources.isEmpty()) return List.of(layout.sources(moduleDir));
-        return sources.stream().map(moduleDir::resolve).toList();
+        if (!sources.isEmpty()) return sources.stream().map(moduleDir::resolve).toList();
+        // Kotlin in the Maven layout: src/main/kotlin too, as the Kotlin Gradle and Maven plugins have it
+        if (kotlin != null && layout == Layout.MAVEN) return List.of(layout.sources(moduleDir), moduleDir.resolve("src/main/kotlin"));
+        return List.of(layout.sources(moduleDir));
+    }
+
+    /** The module's test source folders: the layout's, and {@code src/test/kotlin} for Kotlin in the Maven layout. */
+    public List<Path> testSourceDirs(Path moduleDir) {
+        if (kotlin != null && layout == Layout.MAVEN) return List.of(layout.tests(moduleDir), moduleDir.resolve("src/test/kotlin"));
+        return List.of(layout.tests(moduleDir));
     }
 
     /** The module's resource folders: {@code "resources"}, or the layout's one. */
@@ -511,7 +619,9 @@ public final class Manifest {
                 drop.add(dev);
                 dev = null;
             }
-            if (runtime != null && test != null) {
+            if (runtime != null && test != null && test.tests && sameVersion(runtime, test)) {
+                // the test entry brings the module's tests too, which the runtime entry does not
+            } else if (runtime != null && test != null) {
                 Log.warn(file + ":" + test.line + ": " + test.key + " is in \"runtime\" and \"test\"; tests have every runtime"
                         + " dependency already, so the \"test\" entry is ignored"
                         + (sameVersion(runtime, test) ? "" : " and " + runtime.spec + " is used, not " + test.spec) + ". Remove it");

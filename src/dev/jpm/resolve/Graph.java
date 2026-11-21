@@ -17,7 +17,7 @@ import java.util.TreeSet;
 /** A resolved dependency graph: one version per package, with typed edges. */
 public final class Graph {
 
-    public enum Kind { MAVEN, GIT, LOCAL }
+    public enum Kind { MAVEN, GIT, LOCAL, GRADLE, EXTENSION }
 
     /** An edge to another package. {@code runtimeOnly} edges are left off compile classpaths. */
     /**

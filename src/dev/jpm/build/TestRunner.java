@@ -35,11 +35,17 @@ public final class TestRunner {
         }
         List<Path> launcher = b.resolveTool(List.of(new Resolver.Root("jpm test runner",
                 DepKey.maven("org.junit.platform", "junit-platform-console"), platform)), null, dev.jpm.resolve.Graph.Walk.RUNTIME);
-        List<Path> full = new ArrayList<>(cp);
-        full.addAll(launcher);
+        // the console launcher and the platform launcher it was resolved with come first: a test dependency may
+        // bring an older junit-platform-launcher (kotlin-test-junit5 does), which the console cannot run on
+        List<Path> full = new ArrayList<>(launcher);
+        full.addAll(cp);
         Jdk jdk = b.jdk(m.manifest);
         List<String> cmd = new ArrayList<>();
         cmd.add(jdk.java());
+        // the Gradle runtime (ProjectBuilder, in-process builds) reflects into the JDK; Gradle's own test workers
+        // get these options, so tests of Gradle plugins do too
+        if (m.manifest.dependencies.stream().anyMatch(d -> d.key().isGradle())) cmd.addAll(GRADLE_JVM_ARGS);
+        cmd.addAll(m.manifest.testJvmArgs);
         cmd.add("-cp");
         cmd.add(Compiler.join(Compiler.distinct(full)));
         cmd.add("org.junit.platform.console.ConsoleLauncher");
@@ -60,6 +66,20 @@ public final class TestRunner {
         Log.step("Testing", m.name());
         return Exec.inherit(m.dir, cmd, Env.forChild(b.project.dir, Env.Mode.DEVELOPMENT));
     }
+
+    /** What Gradle opens in the JDK for its daemon and workers (JpmsConfiguration in Gradle's sources). */
+    static final List<String> GRADLE_JVM_ARGS = List.of(
+            "--add-opens=java.base/java.util=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+            "--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED",
+            "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+            "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+            "--add-opens=java.base/java.nio.charset=ALL-UNNAMED",
+            "--add-opens=java.base/java.net=ALL-UNNAMED",
+            "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+            "--add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED",
+            "--add-opens=java.base/java.time=ALL-UNNAMED");
 
     private static String platformVersion(Graph g, Project.Module m) {
         List<Graph.Edge> roots = new ArrayList<>(Resolver.rootEdges(m, dev.jpm.Manifest.Scope.TEST));
