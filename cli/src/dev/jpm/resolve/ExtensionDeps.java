@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ExtensionDeps {
     private ExtensionDeps() {}
 
+    /** What an extension provides for an {@code ext:} dependency: the version, jars, optional sources and dependencies. */
     public record Result(String version, List<Path> jars, Path sources, Map<String, String> dependencies) {
         /** One checksum for all the jars. */
         public String sha256() {

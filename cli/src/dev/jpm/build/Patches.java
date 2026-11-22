@@ -37,10 +37,12 @@ public final class Patches {
     private static final List<String> GIT_ID = List.of("-c", "user.name=jpm", "-c", "user.email=jpm@localhost",
             "-c", "commit.gpgsign=false", "-c", "core.autocrlf=false");
 
+    /** A package id as a file name. */
     public static String safeName(String id) {
         return id.replaceAll("[^A-Za-z0-9._-]+", "_");
     }
 
+    /** Where {@code jpm patch} unpacks a dependency's sources for editing. */
     public static Path workDir(Project p, String id) {
         return p.dir.resolve(".cache").resolve("patch").resolve(safeName(id));
     }
@@ -58,6 +60,7 @@ public final class Patches {
         return m != null ? m.manifest : p.root;
     }
 
+    /** {@code jpm patch <dep>}: unpacks the dependency's sources, with its existing patch applied, for editing. */
     public static void start(Project p, Graph g, MavenRepo repo, String dep) {
         String id = DepKey.parse(dep).toString();
         Graph.Pkg pkg = g.get(id);
@@ -99,6 +102,7 @@ public final class Patches {
         Log.info("Edit the files there, then run `jpm patch --commit " + id + "`.");
     }
 
+    /** {@code jpm patch --commit <dep>}: saves the edits as a patch file and records it in the manifest. */
     public static void commit(Project p, String dep) {
         String id = DepKey.parse(dep).toString();
         Path work = workDir(p, id);

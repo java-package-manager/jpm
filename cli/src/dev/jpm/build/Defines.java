@@ -16,7 +16,9 @@ import java.util.Map;
 public final class Defines {
     private Defines() {}
 
+    /** A resolved define: its name, type and value. */
     public record Value(String name, Manifest.DefineType type, Object value) {
+        /** The value as a Java literal, for the generated class. */
         public String javaLiteral() {
             return switch (type) {
                 case STRING -> Jsonc.quote((String) value);
@@ -163,6 +165,7 @@ public final class Defines {
         return s;
     }
 
+    /** The source of the generated defines class {@code fqcn}, with NAME, VERSION and the values as constants. */
     public static String source(String fqcn, List<Value> values, String projectName, String version) {
         int dot = fqcn.lastIndexOf('.');
         String pkg = dot > 0 ? fqcn.substring(0, dot) : null;

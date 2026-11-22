@@ -34,6 +34,7 @@ import java.util.Set;
 public final class Scripts {
     private Scripts() {}
 
+    /** Runs a script from {@code "scripts"} and returns its exit code. */
     public static int run(Builder b, Project.Module m, String name, List<String> args, Env.Mode mode) {
         String value = m.manifest.scripts.get(name);
         if (value == null) {

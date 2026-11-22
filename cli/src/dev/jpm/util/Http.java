@@ -44,6 +44,7 @@ public final class Http {
         return HttpRequest.newBuilder(URI.create(url)).timeout(timeout).header("User-Agent", "jpm").GET().build();
     }
 
+    /** The body of a GET request; fails on any status but 200. */
     public static String getString(String url) {
         if (Fs.offline()) throw new JpmException("Offline: cannot fetch " + url);
         Log.debug("GET " + url);

@@ -18,6 +18,7 @@ public final class Version implements Comparable<Version> {
         this.items = tokenize(raw);
     }
 
+    /** Parses a version; any text is a version (ADR 0006). */
     public static Version of(String s) {
         return new Version(s.trim());
     }
@@ -45,6 +46,7 @@ public final class Version implements Comparable<Version> {
         return false;
     }
 
+    /** True for {@code -SNAPSHOT} versions. */
     public boolean isSnapshot() {
         return raw.toUpperCase(Locale.ROOT).endsWith("SNAPSHOT");
     }

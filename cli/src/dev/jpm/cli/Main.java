@@ -21,6 +21,7 @@ public final class Main {
     private Main() {}
 
 
+    /** Runs jpm, or a shim when started as {@code java}, {@code javac} and so on, and exits with the command's code. */
     public static void main(String[] argv) {
         int code;
         try {

@@ -14,10 +14,12 @@ public final class Imported {
     public final List<String> warnings = new ArrayList<>();
     public final String tool;
 
+    /** The result of importing a build of {@code tool} (Maven or Gradle). */
     public Imported(String tool) {
         this.tool = tool;
     }
 
+    /** Records something the import could not carry over, shown to the user. */
     public void warn(String module, String message) {
         String w = (module == null || module.isEmpty() ? "" : module + ": ") + message;
         if (!warnings.contains(w)) warnings.add(w);

@@ -33,6 +33,7 @@ public final class MavenRepo {
     private final HttpClient http;
     private final ConcurrentHashMap<String, List<Version>> versionsMemo = new ConcurrentHashMap<>();
 
+    /** Maven Central (or {@code JPM_MAVEN_CENTRAL}), then the extra repositories. */
     public MavenRepo(List<String> extra) {
         this(withCentral(extra), true);
     }
@@ -59,19 +60,23 @@ public final class MavenRepo {
         return s.endsWith("/") ? s : s + "/";
     }
 
+    /** Whether to fetch {@code maven-metadata.xml} again even when the cached copy is fresh. */
     public void setRefreshMetadata(boolean b) {
         this.refreshMetadata = b;
     }
 
+    /** The download cache, {@code ~/.jpm/repository}. */
     public Path cacheDir() {
         return cache;
     }
 
+    /** The path of a file in Maven's repository layout. */
     public static String path(String group, String artifact, String version, String classifier, String ext) {
         return group.replace('.', '/') + "/" + artifact + "/" + version + "/" + artifact + "-" + version
                 + (classifier == null || classifier.isEmpty() ? "" : "-" + classifier) + "." + ext;
     }
 
+    /** Where a file is in the cache, whether it is there or not. */
     public Path local(String group, String artifact, String version, String classifier, String ext) {
         return cache.resolve(path(group, artifact, version, classifier, ext));
     }
@@ -173,6 +178,7 @@ public final class MavenRepo {
         return m.find() ? m.group(1) : null;
     }
 
+    /** A file in the cache, downloaded first if needed; fails when no repository has it (ADR 0005). */
     public Path require(String group, String artifact, String version, String classifier, String ext) {
         Path p = fetch(group, artifact, version, classifier, ext);
         if (p == null) {

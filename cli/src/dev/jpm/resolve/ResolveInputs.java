@@ -73,6 +73,7 @@ public final class ResolveInputs {
         return out;
     }
 
+    /** The package id of a key in the dependency graph. */
     public static String idOf(DepKey k) {
         return k.toString();
     }

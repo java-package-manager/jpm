@@ -14,7 +14,9 @@ import java.util.Map;
 public final class Exec {
     private Exec() {}
 
+    /** The exit code and output of a process. */
     public record Result(int exit, String out, String err) {
+        /** True for exit code 0. */
         public boolean ok() { return exit == 0; }
     }
 
@@ -23,6 +25,7 @@ public final class Exec {
         return capture(dir, cmd, Map.of());
     }
 
+    /** Runs a command with extra environment variables and returns its exit code and output. */
     public static Result capture(Path dir, List<String> cmd, Map<String, String> env) {
         Log.debug("$ " + String.join(" ", cmd) + (dir != null ? "  (in " + dir + ")" : ""));
         ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -80,6 +83,7 @@ public final class Exec {
         }
     }
 
+    /** Runs a command and fails, with its error output, unless it exits with 0. */
     public static Result checked(Path dir, List<String> cmd) {
         Result r = capture(dir, cmd);
         if (!r.ok()) {
@@ -88,6 +92,7 @@ public final class Exec {
         return r;
     }
 
+    /** A mutable command line. */
     public static List<String> cmd(String... parts) {
         return new ArrayList<>(List.of(parts));
     }

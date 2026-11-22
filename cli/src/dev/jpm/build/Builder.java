@@ -56,6 +56,7 @@ public final class Builder {
     private final Env.Mode mode;
     private final Map<String, Builder> isolatedBuilders = new HashMap<>();
 
+    /** A builder for a resolved project, with the environment of {@code mode} for defines and hooks. */
     public Builder(Project project, Graph graph, MavenRepo repo, Env.Mode mode) {
         this.project = project;
         this.graph = graph;
@@ -75,6 +76,7 @@ public final class Builder {
         return isolatedBuilders.computeIfAbsent(m.name(), n -> new Builder(project.isolatedView(m), iso, repo, mode));
     }
 
+    /** The environment variables for this build: the project's env files for the mode, where the process environment wins. */
     public Map<String, String> env() {
         return env;
     }
@@ -141,6 +143,7 @@ public final class Builder {
         return built;
     }
 
+    /** One of a module's classpaths: the jars and class folders of its packages, in classpath order. */
     public List<Path> classpath(Project.Module m, Cp kind) {
         List<Path> out = new ArrayList<>();
         for (String id : classpathIds(m, kind)) out.addAll(paths(id, m));
@@ -216,14 +219,17 @@ public final class Builder {
         return out;
     }
 
+    /** Where a module's compiled classes go. */
     public static Path classesDir(Project.Module m) {
         return m.cacheDir().resolve("classes");
     }
 
+    /** Where a module's compiled tests go. */
     public static Path testClassesDir(Project.Module m) {
         return m.cacheDir().resolve("test-classes");
     }
 
+    /** The module's jar in {@code dist/}: {@code <name>-<version>.jar}. */
     public Path jarPath(Project.Module m) {
         return m.dir.resolve("dist").resolve(m.name() + "-" + m.version() + ".jar");
     }
@@ -394,6 +400,7 @@ public final class Builder {
         return out;
     }
 
+    /** The classpath the tests run with: test classes, the module's classes, test fixtures of other modules and the test runtime dependencies. */
     public List<Path> testRuntimeClasspath(Project.Module m) {
         List<Path> cp = new ArrayList<>();
         cp.add(testClassesDir(m));
@@ -433,6 +440,7 @@ public final class Builder {
         return dir;
     }
 
+    /** The classpath the module runs with: its classes and its runtime dependencies. */
     public List<Path> runtimeClasspath(Project.Module m) {
         List<Path> cp = new ArrayList<>();
         cp.add(classesDir(m));

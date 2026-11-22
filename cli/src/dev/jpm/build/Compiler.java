@@ -38,9 +38,11 @@ import java.util.TreeSet;
 public final class Compiler {
     private Compiler() {}
 
+    /** One javac run. */
     public record Request(String label, Jdk jdk, int release, List<Path> sourceRoots, List<Path> classpath,
                           List<Path> processorPath, Path outDir, Path stateFile, List<String> extraArgs,
                           String inputsKey, List<Path> excludes) {
+        /** A request without folders to leave out of the sources. */
         public Request(String label, Jdk jdk, int release, List<Path> sourceRoots, List<Path> classpath,
                        List<Path> processorPath, Path outDir, Path stateFile, List<String> extraArgs, String inputsKey) {
             this(label, jdk, release, sourceRoots, classpath, processorPath, outDir, stateFile, extraArgs, inputsKey, List.of());
@@ -341,6 +343,7 @@ public final class Compiler {
         return s;
     }
 
+    /** Paths joined with the platform's path separator, for {@code -cp}. */
     public static String join(List<Path> paths) {
         return String.join(File.pathSeparator, paths.stream().map(Path::toString).toList());
     }

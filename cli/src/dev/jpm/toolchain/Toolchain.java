@@ -70,6 +70,7 @@ public final class Toolchain {
         return String.join(", ", all.stream().map(Jdk::id).toList());
     }
 
+    /** Downloads and installs the newest JDK that fits the spec into {@code ~/.jpm/jdks}. */
     public static Jdk install(JavaSpec spec) {
         Foojay.Package pkg = Foojay.find(spec);
         Path root = Jdk.managedRoot();

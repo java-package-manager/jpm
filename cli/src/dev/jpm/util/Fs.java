@@ -34,6 +34,7 @@ public final class Fs {
         return System.getenv("JPM_OFFLINE") != null || Boolean.getBoolean("jpm.offline");
     }
 
+    /** A file's text, as UTF-8. */
     public static String read(Path p) {
         try {
             return Files.readString(p, StandardCharsets.UTF_8);
@@ -42,6 +43,7 @@ public final class Fs {
         }
     }
 
+    /** Writes text as UTF-8, creating folders, through a temporary file so readers never see half a file. */
     public static void write(Path p, String content) {
         try {
             if (p.getParent() != null) Files.createDirectories(p.getParent());
@@ -60,6 +62,7 @@ public final class Fs {
         return true;
     }
 
+    /** Creates a folder and its parents. */
     public static void mkdirs(Path p) {
         try {
             Files.createDirectories(p);
@@ -68,6 +71,7 @@ public final class Fs {
         }
     }
 
+    /** Deletes a file or a folder with everything in it; nothing when it does not exist. */
     public static void deleteTree(Path root) {
         if (!Files.exists(root)) return;
         try {
@@ -89,6 +93,7 @@ public final class Fs {
         }
     }
 
+    /** Copies a folder with everything in it. */
     public static void copyTree(Path from, Path to) {
         try (Stream<Path> s = Files.walk(from)) {
             for (Path p : (Iterable<Path>) s::iterator) {

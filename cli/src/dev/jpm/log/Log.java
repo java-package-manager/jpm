@@ -96,6 +96,7 @@ public final class Log {
         color = Color.decide(colorFlag, System::getenv, TERMINAL);
     }
 
+    /** The level messages are shown at. */
     public static Level level() {
         return level;
     }
@@ -127,10 +128,12 @@ public final class Log {
         return env;
     }
 
+    /** An error: always shown, in red. */
     public static void error(String msg) {
         err().println(c("1;31", "error") + ": " + msg);
     }
 
+    /** A warning: shown unless only errors are, in orange (yellow on 16-color terminals). */
     public static void warn(String msg) {
         if (enabled(Level.WARN)) err().println(c(colors256 ? "1;38;5;208" : "1;33", "warning") + ": " + msg);
     }
@@ -145,10 +148,12 @@ public final class Log {
         if (enabled(Level.INFO)) err().println(c("1;32", String.format("%12s", verb)) + " " + msg);
     }
 
+    /** A debug message, in yellow, with {@code --verbose}. */
     public static void debug(String msg) {
         if (enabled(Level.DEBUG)) err().println(c("33", "  " + msg));
     }
 
+    /** A trace message, dim, with {@code -vv}. */
     public static void trace(String msg) {
         if (enabled(Level.TRACE)) err().println(c("2", "  " + msg));
     }
@@ -217,10 +222,12 @@ public final class Log {
         }
     }
 
+    /** {@code s} in bold, when output is colored. */
     public static String bold(String s) {
         return c("1", s);
     }
 
+    /** {@code s} dimmed, when output is colored. */
     public static String dim(String s) {
         return c("2", s);
     }

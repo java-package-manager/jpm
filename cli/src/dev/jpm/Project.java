@@ -29,6 +29,7 @@ public final class Project {
             this.manifest = manifest;
         }
 
+        /** The module's name, from its manifest. */
         public String name() {
             return manifest.name;
         }
@@ -45,6 +46,7 @@ public final class Project {
             return "0.0.0";
         }
 
+        /** The module's package id in the dependency graph: {@code workspace:<name>}. */
         public String id() {
             return "workspace:" + name();
         }
@@ -53,13 +55,18 @@ public final class Project {
         public Path srcDir() { return srcDirs().get(0); }
         /** The first resource folder (the only one unless the manifest lists {@code "resources"}). */
         public Path assetsDir() { return assetsDirs().get(0); }
+        /** The module's source folders: {@code "sources"}, or the layout's one (and {@code src/main/kotlin} for Kotlin in the Maven layout). */
         public List<Path> srcDirs() { return manifest.sourceDirs(dir); }
+        /** The module's resource folders: {@code "resources"}, or the layout's one. */
         public List<Path> assetsDirs() { return manifest.resourceDirs(dir); }
+        /** The layout's test source folder. */
         public Path testDir() { return manifest.layout.tests(dir); }
         /** Test source folders: {@link #testDir()}, and {@code src/test/kotlin} for Kotlin in the Maven layout. */
         public List<Path> testDirs() { return manifest.testSourceDirs(dir); }
+        /** The layout's test resource folder. */
         public Path testResourcesDir() { return manifest.layout.testResources(dir); }
 
+        /** True unless the module is {@code "visibility": "internal"}. */
         public boolean isPublic() {
             return "public".equals(manifest.visibility);
         }
@@ -69,6 +76,7 @@ public final class Project {
             return project.dir.relativize(dir).toString().replace('\\', '/');
         }
 
+        /** Where the module's build output and state go: {@code .cache/build/<name>} in the project. */
         public Path cacheDir() {
             return project.dir.resolve(".cache").resolve("build").resolve(name());
         }
@@ -206,6 +214,7 @@ public final class Project {
         return load(found);
     }
 
+    /** The module with this name, or else in this folder (relative to the root); null when there is none. */
     public Module module(String nameOrDir) {
         for (Module m : modules) if (m.name().equals(nameOrDir)) return m;
         for (Module m : modules) if (m.relDir().equals(nameOrDir) || m.dir.getFileName().toString().equals(nameOrDir)) return m;
@@ -229,6 +238,7 @@ public final class Project {
         return new Module(this, dir, root);
     }
 
+    /** The project's {@code project.lock}, next to the root manifest. */
     public Path lockFile() {
         return dir.resolve(Manifest.LOCK);
     }

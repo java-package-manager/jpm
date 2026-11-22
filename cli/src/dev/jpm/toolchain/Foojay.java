@@ -36,6 +36,7 @@ public final class Foojay {
         return b.endsWith("/") ? b.substring(0, b.length() - 1) : b;
     }
 
+    /** This machine's operating system, as Foojay names it. */
     public static String os() {
         String n = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         if (n.contains("win")) return "windows";
@@ -44,6 +45,7 @@ public final class Foojay {
         return n.replaceAll("[^a-z]", "");
     }
 
+    /** This machine's architecture, as Foojay names it. */
     public static String arch() {
         String a = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
         return switch (a) {
@@ -127,6 +129,7 @@ public final class Foojay {
         return out;
     }
 
+    /** The download URL and checksum of a package. */
     @SuppressWarnings("unchecked")
     public static Download download(Package p) {
         Map<String, Object> root = (Map<String, Object>) Jsonc.parse(Http.getString(p.infoUri));

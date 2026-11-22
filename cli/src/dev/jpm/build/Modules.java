@@ -44,6 +44,7 @@ public final class Modules {
         return null;
     }
 
+    /** Reads a {@code module-info.java}: the module's name and what it requires. */
     public static Declaration parse(Path moduleInfo) {
         String src = Fs.read(moduleInfo)
                 .replaceAll("(?s)/\\*.*?\\*/", " ")

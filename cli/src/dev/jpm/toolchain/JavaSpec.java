@@ -43,10 +43,12 @@ public record JavaSpec(String distribution, String version) {
     private static final java.util.Set<String> GRAAL = java.util.Set.of("graalvm_community", "graalvm", "mandrel",
             "liberica_native", "gluon_graalvm");
 
+    /** Any JDK. */
     public static JavaSpec any() {
         return new JavaSpec(null, null);
     }
 
+    /** Parses a spec such as {@code 21}, {@code 21.0.5}, {@code temurin-17} or {@code graalvm}; null or blank is any JDK. */
     public static JavaSpec parse(String s) {
         if (s == null || s.isBlank()) return any();
         String t = s.trim().toLowerCase(Locale.ROOT);
@@ -73,19 +75,23 @@ public record JavaSpec(String distribution, String version) {
         return new JavaSpec(dist, version);
     }
 
+    /** The major version, or null for any. */
     public Integer major() {
         if (version == null) return null;
         return Integer.parseInt(version.split("[.+_-]")[0]);
     }
 
+    /** True for an exact version such as {@code 21.0.5}. */
     public boolean exact() {
         return version != null && version.contains(".");
     }
 
+    /** True for a distribution whose JDKs include native-image. */
     public boolean graal() {
         return distribution != null && GRAAL.contains(distribution);
     }
 
+    /** True for a distribution whose JDKs include native-image. */
     public static boolean isGraal(String distribution) {
         return GRAAL.contains(distribution);
     }
@@ -95,11 +101,13 @@ public record JavaSpec(String distribution, String version) {
         return graal() ? this : new JavaSpec(DEFAULT_GRAALVM, version);
     }
 
+    /** The distribution to install: the named one, Temurin when none is named. */
     public String installDistribution() {
         if (distribution == null) return DEFAULT_DISTRIBUTION;
         return distribution.equals("openjdk") ? "oracle_open_jdk" : distribution;
     }
 
+    /** Whether a JDK fits: the same major (or exact) version, and the distribution when one is named. */
     public boolean matches(Jdk j) {
         if (version != null) {
             if (exact()) {

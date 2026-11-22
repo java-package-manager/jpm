@@ -37,8 +37,10 @@ import java.util.TreeMap;
  */
 public final class Resolver {
 
+    /** One request for a package: its spec, whether it is a requirement (not a preference), whether the project asks for it directly, and who asks. */
     public record Request(String spec, boolean hard, boolean direct, String from) {}
 
+    /** The version chosen for a package, with its commit and tag for Git packages. */
     public record Selected(String version, String commit, String tag) {}
 
     private record EdgeReq(String target, Graph.Kind kind, String spec, boolean runtimeOnly, Set<String> exclusions, boolean compileOnly) {
@@ -67,6 +69,7 @@ public final class Resolver {
     private final Map<String, Expanded> expandMemo = new HashMap<>();
     private final GitVersions gitVersions;
 
+    /** A resolver for a project. Packages of {@code previous} keep their versions unless they are in {@code unlocked} or {@code unlockAll} is true. */
     public Resolver(Project project, MavenRepo repo, Graph previous, Set<String> unlocked, boolean unlockAll) {
         this.project = project;
         this.roots = new ArrayList<>();
@@ -105,6 +108,7 @@ public final class Resolver {
         this.unlockAll = false;
     }
 
+    /** Resolves the whole graph. */
     public Graph resolve() {
         Map<String, Selected> selected = new HashMap<>();
         Map<String, List<Request>> requests = null;
@@ -283,6 +287,7 @@ public final class Resolver {
         return true;
     }
 
+    /** The error for requirements that no version satisfies, naming who asked for what. */
     public static JpmException conflict(String id, List<Request> reqs) {
         StringBuilder sb = new StringBuilder("No version of " + id + " satisfies every requirement:");
         for (Request r : reqs) sb.append("\n  ").append(r.spec).append("  required by ").append(r.from);
@@ -290,8 +295,11 @@ public final class Resolver {
     }
 
     private record AllOf(List<VersionSpec> specs) implements VersionSpec {
+        @Override
         public boolean matches(Version v) { return satisfies(v, specs); }
+        @Override
         public String text() { return String.join(" ", specs.stream().map(VersionSpec::text).toList()); }
+        @Override
         public boolean isExact() { return false; }
     }
     private Expanded expand(String id, Selected sel) {

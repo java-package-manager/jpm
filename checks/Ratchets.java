@@ -81,6 +81,9 @@ public final class Ratchets {
         Matcher m = PUBLIC_DECL.matcher(s.code());
         while (m.find()) {
             int line = line(s.code(), m.start());
+            if (m.group(1) != null && m.group(1).contains("@Override")) continue;
+            String before = s.code().substring(Math.max(0, s.code().lastIndexOf('\n', Math.max(0, s.code().lastIndexOf('\n', m.start()) - 1))), m.start());
+            if (before.contains("@Override")) continue;
             boolean documented = s.comments().stream().anyMatch(c -> c.javadoc() && c.line() + c.lines() >= line - annotationLines(m.group(1)) - 1
                     && c.line() + c.lines() <= line);
             if (!documented) out.add(s.path() + ":" + line);

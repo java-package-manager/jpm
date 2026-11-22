@@ -22,12 +22,14 @@ public record GitModule(DepKey key, String commit, Manifest root, Manifest manif
         throw new JpmException(key + " at " + commit.substring(0, 7) + ": " + Manifest.FILE + " has no \"version\"");
     }
 
+    /** True unless the module is {@code "visibility": "internal"}. */
     public boolean isPublic() {
         return "public".equals(manifest.visibility);
     }
 
     private static final Map<String, GitModule> MEMO = new java.util.concurrent.ConcurrentHashMap<>();
 
+    /** The module a Git dependency names, at a commit: its manifest, workspace root and sibling modules. */
     public static GitModule locate(DepKey key, String commit) {
         String memoKey = key + "@" + commit;
         GitModule cached = MEMO.get(memoKey);

@@ -227,6 +227,7 @@ public final class Jars {
         }
     }
 
+    /** Unpacks a jar into a folder, skipping entries that would land outside it. */
     public static void extract(Path jar, Path dir) {
         dir = dir.toAbsolutePath().normalize();
         Fs.mkdirs(dir);

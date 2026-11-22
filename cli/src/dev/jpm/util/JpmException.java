@@ -12,14 +12,17 @@ public class JpmException extends RuntimeException {
     private final String location;
     private final String hint;
 
+    /** A failure with exit code 1. */
     public JpmException(String message) {
         this(message, 1);
     }
 
+    /** A failure with an exit code (2 for wrong usage). */
     public JpmException(String message, int exitCode) {
         this(message, null, exitCode, null, null);
     }
 
+    /** A failure caused by another exception, whose stack trace {@code --verbose} shows. */
     public JpmException(String message, Throwable cause) {
         this(message, cause, 1, null, null);
     }
@@ -41,6 +44,7 @@ public class JpmException extends RuntimeException {
         return new JpmException(getMessage(), getCause(), exitCode, location, hint);
     }
 
+    /** The exit code jpm ends with. */
     public int exitCode() {
         return exitCode;
     }

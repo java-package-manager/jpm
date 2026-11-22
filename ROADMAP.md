@@ -126,9 +126,7 @@ The goal is code that a new contributor can read top to bottom.
 **Needs:** layering rules from Phase 0.
 
 - [x] Move code into the three layers.
-- [~] Javadoc on every public and internal API type and member; none on implementations. None on
-      implementations is done; 178 internal API members still have none (the `missing-internal-javadoc`
-      ratchet counts them down).
+- [x] Javadoc on every public and internal API type and member; none on implementations.
 - [x] Build fails on missing Javadoc in `dev.jpm.api` and on exported packages outside it.
 
 ### Tests

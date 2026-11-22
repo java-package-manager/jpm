@@ -28,12 +28,14 @@ public final class Manifest {
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
             "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "$schema");
 
+    /** The dependency sections of a manifest; {@link #key} is the section's name in {@code project.jsonc}. */
     public enum Scope {
         RUNTIME("runtime"), DEV("dev"), TEST("test");
         public final String key;
         Scope(String key) { this.key = key; }
     }
 
+    /** The type of a define, which is the type of its constant in the generated class. */
     public enum DefineType { STRING, INT, BOOLEAN }
 
     /** A {@code define} entry. {@code value}/{@code env}/{@code defaultValue} may be null. */
@@ -59,14 +61,17 @@ public final class Manifest {
      */
     public record Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api,
                              boolean tests) {
+        /** A dependency with no options. */
         public Dependency(DepKey key, String spec, Scope scope, int line) {
             this(key, spec, scope, line, Set.of(), false, false, false);
         }
 
+        /** A dependency with exclusions, and runtime-only or not. */
         public Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly) {
             this(key, spec, scope, line, exclusions, runtimeOnly, false, false);
         }
 
+        /** A dependency with exclusions, runtime-only or not, and {@code "api"} or not. */
         public Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api) {
             this(key, spec, scope, line, exclusions, runtimeOnly, api, false);
         }
@@ -351,6 +356,7 @@ public final class Manifest {
         return List.copyOf(out);
     }
 
+    /** Loads {@code project.jsonc} from a folder; fails when there is none. */
     public static Manifest load(Path dir) {
         Path f = dir.resolve(FILE);
         if (!Files.exists(f)) {
@@ -360,6 +366,7 @@ public final class Manifest {
         return new Manifest(f, Fs.read(f));
     }
 
+    /** Parses manifest text; {@code file} is only used in messages. */
     public static Manifest parse(Path file, String source) {
         return new Manifest(file, source);
     }
@@ -375,18 +382,22 @@ public final class Manifest {
         return root == null ? plain : new Manifest(plain.file, plain.source, root);
     }
 
+    /** The folder the manifest is in. */
     public Path dir() {
         return file.getParent();
     }
 
+    /** True when the manifest lists {@code "workspace"} modules. */
     public boolean isWorkspaceRoot() {
         return !workspace.isEmpty();
     }
 
+    /** The 1-based line of an offset in the manifest's text. */
     public int line(int offset) {
         return reader.line(offset);
     }
 
+    /** An error at the line of a value in the manifest. */
     public JpmException err(Jsonc.Node n, String msg) {
         return reader.err(n, msg);
     }
@@ -433,6 +444,7 @@ public final class Manifest {
         return javaMajor();
     }
 
+    /** The dependencies of one section. */
     public List<Dependency> deps(Scope s) {
         return dependencies.stream().filter(d -> d.scope == s).toList();
     }

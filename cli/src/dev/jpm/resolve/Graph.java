@@ -17,6 +17,7 @@ import java.util.TreeSet;
 /** A resolved dependency graph: one version per package, with typed edges. */
 public final class Graph {
 
+    /** Where a package comes from; LOCAL is a module of this project. */
     public enum Kind { MAVEN, GIT, LOCAL, GRADLE, EXTENSION }
 
     /** An edge to another package. {@code runtimeOnly} edges are left off compile classpaths. */
@@ -25,16 +26,19 @@ public final class Graph {
      * classpath only, provided at run time by the platform (a library's compileOnlyApi dependencies).
      */
     public record Edge(String target, boolean runtimeOnly, Set<String> exclusions, boolean compileOnly) {
+        /** An edge that is not compile-only. */
         public Edge(String target, boolean runtimeOnly, Set<String> exclusions) {
             this(target, runtimeOnly, exclusions, false);
         }
 
+        /** The edge as {@code project.lock} writes it: its scope, then {@code !exclusion}s. */
         public String encode() {
             StringBuilder sb = new StringBuilder(compileOnly ? "provided" : runtimeOnly ? "runtime" : "compile");
             for (String e : new TreeSet<>(exclusions)) sb.append(" !").append(e);
             return sb.toString();
         }
 
+        /** Reads an edge as {@link #encode()} writes it. */
         public static Edge decode(String target, String s) {
             String[] parts = s.trim().split("\\s+");
             Set<String> ex = new LinkedHashSet<>();
@@ -43,6 +47,7 @@ public final class Graph {
         }
     }
 
+    /** A package in the graph: its id, kind, chosen version, edges and where its files are. */
     public static final class Pkg {
         public final String id;
         public final Kind kind;
@@ -60,6 +65,7 @@ public final class Graph {
         /** Path of the jar or classes directory once fetched or built (transient). */
         public Path artifact;
 
+        /** A package with nothing chosen yet. */
         public Pkg(String id, Kind kind) {
             this.id = id;
             this.kind = kind;
@@ -92,14 +98,17 @@ public final class Graph {
     /** The graphs of isolated workspace modules, by module name; each is resolved on its own. */
     public final Map<String, Graph> isolated = new TreeMap<>();
 
+    /** The package with this id, or null. */
     public Pkg get(String id) {
         return pkgs.get(id);
     }
 
+    /** Adds or replaces a package. */
     public void put(Pkg p) {
         pkgs.put(p.id, p);
     }
 
+    /** Whether a package is left out by exclusions ({@code group:artifact}, {@code group:*} or {@code group}); classified jars are covered by their {@code group:artifact}. */
     public static boolean excluded(String id, Set<String> exclusions) {
         if (exclusions.isEmpty()) return false;
         String[] parts = id.split(":");

@@ -29,15 +29,18 @@ public final class GitRepo {
         this.mirror = Fs.home().resolve("git").resolve(repoKey.host()).resolve(repoKey.group()).resolve(repoKey.artifact() + ".git");
     }
 
+    /** The repository of a Git dependency, one per repository for the whole run. */
     public static synchronized GitRepo of(DepKey key) {
         DepKey rk = key.repoKey();
         return OPEN.computeIfAbsent(rk.toString(), k -> new GitRepo(rk));
     }
 
+    /** The repository's key, without a module. */
     public DepKey key() {
         return key;
     }
 
+    /** Fails with a clear message when {@code git} is not on PATH. */
     public static void requireGit() {
         if (Exec.which("git") == null) {
             throw new JpmException("Git dependencies need the `git` command, which was not found on PATH");
@@ -96,6 +99,7 @@ public final class GitRepo {
         return out;
     }
 
+    /** The newest commit of a branch, after fetching. */
     public String branchHead(String branch) {
         fetch();
         Exec.Result r = Exec.capture(mirror, Exec.cmd("git", "rev-parse", "--verify", "refs/heads/" + branch + "^{commit}"));

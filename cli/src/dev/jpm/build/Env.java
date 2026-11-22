@@ -50,6 +50,7 @@ public final class Env {
         parse(Fs.read(file), out);
     }
 
+    /** Reads {@code .env} text ({@code KEY=value} lines, {@code export}, quotes, multi-line quoted values) into {@code out}. */
     public static void parse(String text, Map<String, String> out) {
         String[] lines = text.split("\r?\n");
         for (int i = 0; i < lines.length; i++) {

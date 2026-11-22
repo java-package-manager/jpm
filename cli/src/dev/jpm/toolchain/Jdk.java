@@ -29,6 +29,7 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         return System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
     }
 
+    /** A tool in the JDK's {@code bin} folder ({@code .exe} on Windows). */
     public Path bin(String tool) {
         Path base = home.resolve("bin");
         if (!windows()) return base.resolve(tool);
@@ -39,14 +40,17 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         return base.resolve(tool + ".exe");
     }
 
+    /** The JDK's {@code java}. */
     public String java() { return bin("java").toString(); }
 
     /** {@code path} with {@code .exe} appended on Windows. */
     public static Path windowsExe(Path p) {
         return windows() ? p.resolveSibling(p.getFileName() + ".exe") : p;
     }
+    /** The JDK's {@code javac}. */
     public String javac() { return bin("javac").toString(); }
 
+    /** True when the JDK has native-image (a GraalVM). */
     public boolean hasNativeImage() {
         return Files.exists(bin("native-image"));
     }
@@ -63,10 +67,12 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         cached = null;
     }
 
+    /** Where jpm installs JDKs: {@code ~/.jpm/jdks}. */
     public static Path managedRoot() {
         return Fs.home().resolve("jdks");
     }
 
+    /** The JDKs on this machine: JAVA_HOME first, then the ones jpm installed and the usual system locations. */
     public static synchronized List<Jdk> discover() {
         if (cached != null) return cached;
         List<Path> homes = new ArrayList<>();

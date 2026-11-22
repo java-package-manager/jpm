@@ -20,10 +20,13 @@ import java.util.concurrent.Future;
 public final class Install {
     private Install() {}
 
+    /** How to install: frozen (fail when the lockfile is out of date), update everything, update some packages, quiet. */
     public record Options(boolean frozen, boolean updateAll, Set<String> update, boolean quiet) {
+        /** Use the lockfile when it is up to date, and say nothing when nothing changes. */
         public static Options normal() { return new Options(false, false, Set.of(), true); }
     }
 
+    /** Brings {@code project.lock} up to date (resolving when it is not) and downloads every package; returns the graph. */
     public static Graph run(Project project, MavenRepo repo, Options o) {
         Path lockPath = project.lockFile();
         Lockfile lock = Lockfile.read(lockPath);

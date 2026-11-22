@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 public final class Pom {
     public record Dep(String group, String artifact, String version, String scope, boolean optional,
                       String type, String classifier, Set<String> exclusions) {
+        /** {@code group:artifact}. */
         public String key() { return group + ":" + artifact; }
     }
 
@@ -52,10 +53,12 @@ public final class Pom {
         private final MavenRepo repo;
         private final Map<String, Pom> memo = new HashMap<>();
 
+        /** A loader that reads POMs from these repositories. */
         public Loader(MavenRepo repo) {
             this.repo = repo;
         }
 
+        /** The effective POM of a version: parents, properties and imported BOMs applied, cached per run. */
         public Pom load(String group, String artifact, String version) {
             String key = group + ":" + artifact + ":" + version;
             Pom cached = memo.get(key);
