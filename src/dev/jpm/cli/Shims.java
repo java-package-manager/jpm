@@ -86,11 +86,25 @@ final class Shims {
         if (def != null) {
             return new Choice(Toolchain.require(JavaSpec.parse(def)), "default set with `jvm use " + def + "`", null);
         }
-        Path system = Exec.which(tool, bin());
+        Path system = Exec.which(tool, bin(), Shims::isSelf);
         if (system != null) return new Choice(null, "the next " + tool + " on PATH (no project or default)", system);
         Jdk any = Toolchain.find(JavaSpec.any());
         if (any != null) return new Choice(any, "the only JDK found (no project or default)", null);
         throw new JpmException("No JDK found for `" + tool + "`. Install one with `jvm install 21`, then `jvm use 21`.");
+    }
+
+    /**
+     * True when {@code p} is the running jpm binary under another name: a shim of another jpm home, or one
+     * in a folder other than {@code ~/.jpm/bin}. Running it would start this shim again, and again.
+     */
+    static boolean isSelf(Path p) {
+        Path self = self();
+        if (self == null) return false;
+        try {
+            return Files.isSameFile(p, self);
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     /** The manifest that decides the JDK here: the module at cwd, else the project root. */
@@ -107,9 +121,17 @@ final class Shims {
         }
     }
 
+    /** How many shims may start each other before jpm assumes a loop (a shim that finds itself on PATH). */
+    static final int MAX_DEPTH = 8;
+
     /** Runs a shimmed tool and returns its exit code. */
     static int run(String invokedAs, List<String> args) {
         String tool = toolName(invokedAs);
+        int depth = depth(System.getenv("JPM_SHIM_DEPTH"));
+        if (depth >= MAX_DEPTH) {
+            throw new JpmException("The " + tool + " shim started itself " + depth + " times. Is a jpm shim on PATH twice? "
+                    + "Run `jvm current` to see which " + tool + " is used.");
+        }
         Path cwd = Path.of("").toAbsolutePath();
         Choice c = choose(cwd, tool);
         Path exe;
@@ -128,7 +150,17 @@ final class Shims {
         List<String> cmd = new ArrayList<>();
         cmd.add(exe.toString());
         cmd.addAll(args);
-        return execTransparently(cmd, env);
+        Map<String, String> childEnv = new java.util.HashMap<>(env);
+        childEnv.put("JPM_SHIM_DEPTH", Integer.toString(depth + 1));
+        return execTransparently(cmd, childEnv);
+    }
+
+    static int depth(String value) {
+        try {
+            return value == null ? 0 : Math.max(0, Integer.parseInt(value.strip()));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     /** Runs a child with our stdio, leaving Ctrl+C to the child, and returns its exit code. */

@@ -105,6 +105,11 @@ public final class Exec {
 
     /** Like {@link #which(String)}, skipping one directory (jpm's own bin folder, which holds the shims). */
     public static Path which(String name, Path skip) {
+        return which(name, skip, p -> false);
+    }
+
+    /** Like {@link #which(String, Path)}, also skipping every candidate for which {@code skipFile} is true. */
+    public static Path which(String name, Path skip, java.util.function.Predicate<Path> skipFile) {
         String path = System.getenv("PATH");
         if (path == null) return null;
         boolean win = System.getProperty("os.name").toLowerCase().contains("win");
@@ -114,7 +119,7 @@ public final class Exec {
             if (skipNorm != null && Path.of(dir).toAbsolutePath().normalize().equals(skipNorm)) continue;
             for (String ext : win ? new String[]{".exe", ".cmd", ".bat", ""} : new String[]{""}) {
                 Path p = Path.of(dir, name + ext);
-                if (java.nio.file.Files.isExecutable(p) && !java.nio.file.Files.isDirectory(p)) return p;
+                if (java.nio.file.Files.isExecutable(p) && !java.nio.file.Files.isDirectory(p) && !skipFile.test(p)) return p;
             }
         }
         return null;

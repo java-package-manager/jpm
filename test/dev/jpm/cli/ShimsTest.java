@@ -42,4 +42,11 @@ class ShimsTest {
         assertEquals("17", Shims.projectManifest(dir).java, "from the workspace root, a module's java applies");
         assertNull(Shims.projectManifest(dir.getParent().resolve("elsewhere-" + System.nanoTime())));
     }
+
+    @Test
+    void depthOfNestedShims() {
+        assertEquals(0, Shims.depth(null));
+        assertEquals(0, Shims.depth("x"));
+        assertEquals(3, Shims.depth(" 3 "));
+    }
 }
