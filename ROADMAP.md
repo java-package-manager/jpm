@@ -205,10 +205,10 @@ can build, and the IDE toolbar only knows the extensions written into the plugin
 - [x] Settings for an extension that is not declared in the root `project.jsonc` give a warning that
       names the extension and the command that fixes it (`jpm add <extension>`).
 - [x] A declared extension takes precedence over a global one of the same name inside the project.
-- [ ] Every extension exposes a small public API that lists its commands with a description (and
+- [x] Every extension exposes a small public API that lists its commands with a description (and
       their options), so IDEs can show them without knowing the extension in advance, and the checks it
       adds to `jpm check`.
-- [ ] **jpm-intellij:** the jpm toolbar lists the commands of every installed and declared extension
+- [x] **jpm-intellij:** the jpm toolbar lists the commands of every installed and declared extension
       from that API instead of a built-in list.
 
 ### jpm check
@@ -574,6 +574,9 @@ Builds the test and tooling base that the restructure depends on.
      it.
    - The jpm-intellij toolbar is built from it.
    - Add an extension template repository (**extension registry** suggestion).
+   - Done: the descriptor is `"extension"` in an extension's manifest (docs/protocol.md), served by
+     `extensions/list`; jpm-publish describes itself (jpm-format with 0.12.0); the plugin builds its
+     extension groups from it; the template is java-package-manager/jpm-extension-template.
 8. **`jpm check`.**
    - Runs jpm's checks, then the declared extensions' checks, then the tests.
    - Every check runs even when one fails.

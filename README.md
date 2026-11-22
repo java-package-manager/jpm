@@ -477,7 +477,8 @@ Settings for an extension that the root does not declare give a warning naming t
 An extension describes itself under `"extension"` in its own manifest: a `description`, its `commands` (by
 what follows `jpm`) with their `options`, and the `checks` it adds to `jpm check`
 ([docs/protocol.md](docs/protocol.md#extensiondescriptor) has the format). IDEs get these through the
-protocol (`extensions/list`), so they show an extension's commands without running it.
+protocol (`extensions/list`), so they show an extension's commands without running it. To write one, start
+from [jpm-extension-template](https://github.com/java-package-manager/jpm-extension-template).
 
 jpm runs an extension in the folder it was called from, with `JPM_EXE` (the jpm to call back),
 `JPM_PROJECT_DIR`, `JPM_MODULE_DIR`, `JPM_MANIFEST`, `JPM_NAME`, `JPM_VERSION` and `JPM_CONFIG` (the module's
