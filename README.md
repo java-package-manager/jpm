@@ -111,7 +111,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `version` | Show jpm's version (also `--version`), and whether a newer one is out |
 | `help` | Show this list of commands (also -h, --help) |
 | `completions <shell>` | Print shell completions: `jpm completions bash > ~/.local/share/bash-completion/completions/jpm`, and the same for `zsh`, `fish` and `powershell` |
-| `api` | Serve the jpm protocol (JSON-RPC on stdin and stdout, see [docs/protocol.md](docs/protocol.md)) for IDEs, extensions and tools; the client jar `dev.jpm:jpm-api` starts it |
+| `api` | Serve the jpm protocol (JSON-RPC on stdin and stdout, see [docs/protocol.md](docs/protocol.md)) for IDEs, extensions and tools; the client in `github:java-package-manager/jpm/api` starts it |
 | `<anything else>` | Runs the extension `jpm-<name>` from `~/.jpm/bin` or `PATH`; install one with `jpm add -g <dep>` |
 
 <!-- /commands -->

@@ -19,7 +19,7 @@ final class ApiCommand extends Command {
     List<Usage> usages() {
         return List.of(new Usage(Group.MAINTENANCE, "api", "Serve the jpm protocol on stdin and stdout, for IDEs and tools",
                 "Serve the jpm protocol (JSON-RPC on stdin and stdout, see [docs/protocol.md](docs/protocol.md)) for IDEs, extensions"
-                        + " and tools; the client jar `dev.jpm:jpm-api` starts it"));
+                        + " and tools; the client in `github:java-package-manager/jpm/api` starts it"));
     }
 
     @Override

@@ -5,7 +5,7 @@
   // generated with NAME and VERSION from this manifest; Main reads the version from it
   "defineClass": "dev.jpm.BuildConfig",
   "runtime": {
-    "workspace:jpm-api": "*"
+    "workspace:api": "*"
   },
   "test": {
     "org.junit.jupiter:junit-jupiter": "[6.0.0,)"

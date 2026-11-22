@@ -6,6 +6,6 @@
   "group": "dev.jpm",
   "license": "MIT",
   "java": "21",
-  // api: the public API, published as dev.jpm:jpm-api; cli: jpm itself
+  // api: the public API, used as the dependency github:java-package-manager/jpm/api; cli: jpm itself
   "workspace": ["api", "cli"]
 }

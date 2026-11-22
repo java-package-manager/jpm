@@ -5,7 +5,8 @@ Status: **accepted** (roadmap Milestone 4, item 1); `jpm api` serves protocol 1.
 
 The protocol is how other programs (jpm-intellij, jpm-publish, extensions, editors) ask jpm about a project.
 It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which are removed in the release that
-ships it. There is exactly one jpm on a machine, the global one; the client jar `dev.jpm:jpm-api` starts it
+ships it. There is exactly one jpm on a machine, the global one; the client in jpm's `api` module, a dependency
+`github:java-package-manager/jpm/api`, starts it
 and talks to it. No program bundles its own jpm.
 
 ## 1. Transport
@@ -231,10 +232,18 @@ Errors are JSON-RPC errors. `data` is a `Problem` whenever jpm can say where and
 An unexpected failure inside jpm is `-32603` (internal error) with the exception's text, and the stack
 trace as a `log` at level `debug`.
 
-## 7. The client jar
+## 7. The client
 
-`dev.jpm:jpm-api` (the `api` module, `dev.jpm.api`) holds the types above as records, the JSON reader and
+The `api` module of jpm's repository, `dev.jpm.api`, holds the types above as records, the JSON reader and
 writer (`dev.jpm.api.json.Jsonc`) and a client:
+
+Programs built with jpm depend on it straight from jpm's repository, pinned to a jpm release:
+
+```jsonc
+"runtime": { "github:java-package-manager/jpm/api": "^0.12.0" }
+```
+
+It is not published to Maven repositories: it is meant for programs that jpm builds.
 
 ```java
 try (JpmClient jpm = JpmClient.start()) {            // finds the global jpm, starts `jpm api`, initializes
@@ -247,7 +256,8 @@ try (JpmClient jpm = JpmClient.start()) {            // finds the global jpm, st
   then `jpm` on PATH. When there is none it throws `JpmNotInstalled`, which jpm-intellij answers by
   offering to install jpm (roadmap decision: never bundled).
 - Each method is a blocking call; `log` and `progress` go to listeners the caller can register.
-- The jar has no dependencies and targets the Java of the oldest IDE jpm-intellij supports (Java 21 today).
+- The module has no dependencies and targets the Java of the oldest IDE jpm-intellij supports (Java 21
+  today).
 
 ## 8. Decisions
 

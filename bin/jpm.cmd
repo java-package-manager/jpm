@@ -6,7 +6,7 @@ set "HERE=%~dp0.."
 set "CLI="
 set "API="
 for /f "delims=" %%f in ('dir /b /o-d "%HERE%\cli\dist\jpm-?.*.jar" 2^>nul') do if not defined CLI set "CLI=%HERE%\cli\dist\%%f"
-for /f "delims=" %%f in ('dir /b /o-d "%HERE%\api\dist\jpm-api-*.jar" 2^>nul') do if not defined API set "API=%HERE%\api\dist\%%f"
+for /f "delims=" %%f in ('dir /b /o-d "%HERE%\api\dist\api-*.jar" 2^>nul') do if not defined API set "API=%HERE%\api\dist\%%f"
 set "CP=%HERE%\.cache\bootstrap\jpm.jar"
 if defined CLI if defined API set "CP=%CLI%;%API%"
 if not defined CLI if not exist "%CP%" (
