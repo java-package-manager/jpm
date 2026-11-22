@@ -1,0 +1,12 @@
+$ jpm install
+   Resolving dependencies
+     Cloning <tmp>/old/me/lib
+  + github:me/lib 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+
+$ jpm update
+   Resolving dependencies
+    Fetching <tmp>/new/me/lib
+  ~ github:me/lib 1.0.0 -> 1.1.0
+      Locked 1 package (0 added, 1 changed, 0 removed)
+

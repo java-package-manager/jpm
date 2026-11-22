@@ -341,6 +341,30 @@ class EndToEndTest {
     }
 
     @Test
+    void gitMirrorsFollowTheirUrl(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        for (String base : List.of("old", "new")) {
+            Path lib = tmp.resolve(base + "/me/lib");
+            Fs.write(lib.resolve("src/lib/Lib.java"), "package lib; public class Lib {}");
+            Fs.write(lib.resolve("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"1.0.0\" }");
+            git(lib, "init", "-q", "-b", "main");
+            git(lib, "add", "-A");
+            git(lib, "commit", "-qm", "1.0.0");
+            git(lib, "tag", "1.0.0");
+        }
+        Path moved = tmp.resolve("new/me/lib");
+        Fs.write(moved.resolve("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"1.1.0\" }");
+        git(moved, "commit", "-qam", "1.1.0");
+        git(moved, "tag", "1.1.0");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"runtime\": { \"github:me/lib\": \"^1.0.0\" } }");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("old").toUri().toString());
+        s.jpm("install");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("new").toUri().toString());
+        s.jpm("update");
+        s.verify("git-mirror-moved");
+    }
+
+    @Test
     void gitDependencyWithItsOwnRepository(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path other = tmp.resolve("other-repo");

@@ -47,7 +47,10 @@ public final class GitRepo {
         }
     }
 
-    /** Clones or updates the mirror. Called at most once per process. */
+    /**
+     * Clones or updates the mirror. Called at most once per process. The mirror always fetches from the URL the key
+     * names now, so a repository that moved (or another {@code JPM_GIT_BASE_<HOST>}) is followed.
+     */
     public synchronized void fetch() {
         if (fetched) return;
         requireGit();
@@ -67,6 +70,8 @@ public final class GitRepo {
             }
         } else {
             Log.step("Fetching", url);
+            Exec.Result set = Exec.capture(mirror, Exec.cmd("git", "remote", "set-url", "origin", url));
+            if (!set.ok()) throw new JpmException("Could not point " + mirror + " at " + url + ":\n" + set.err().strip());
             Exec.Result r = Exec.capture(mirror, Exec.cmd("git", "fetch", "--quiet", "--prune", "--prune-tags", "origin"),
                     Map.of("GIT_TERMINAL_PROMPT", "0"));
             if (!r.ok()) throw new JpmException("Could not fetch " + url + ":\n" + r.err().strip());
