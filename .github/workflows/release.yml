@@ -25,3 +25,6 @@ jobs:
           fetch-depth: 0
       - uses: java-package-manager/setup-jpm@v1
       - uses: java-package-manager/changeset-action@v1
+        with:
+          # a token of its own, so CI runs on the pull request (one opened with github.token starts no workflows)
+          github-token: ${{ secrets.CHANGESET_TOKEN || github.token }}

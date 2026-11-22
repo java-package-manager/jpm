@@ -423,6 +423,13 @@ jobs:
           if [ '${{ needs.version.outputs.kind }}' = canary ]; then
             sed -i '0,/"version": "[^"]*"/s//"version": "${{ needs.version.outputs.version }}-SNAPSHOT"/' project.jsonc
           fi
+          v=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' project.jsonc | head -n 1)
+          # two pushes can both see a version untagged (the second before the first one's release is done)
+          if [ '${{ needs.version.outputs.kind }}' = release ] &&
+             curl -sfo /dev/null "https://repo.thenextlvl.net/releases/dev/jpm/jpm-api/$v/jpm-api-$v.pom"; then
+            echo "dev.jpm:jpm-api $v is published already"
+            exit 0
+          fi
           ./jpm publish thenextlvl --module jpm-api
 
   release:
