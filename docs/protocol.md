@@ -1,0 +1,263 @@
+# jpm protocol
+
+Status: **draft for review** (roadmap Milestone 4, item 1). Nothing here is implemented yet.
+
+The protocol is how other programs (jpm-intellij, jpm-publish, extensions, editors) ask jpm about a project.
+It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which are removed in the release that
+ships it. There is exactly one jpm on a machine, the global one; the client jar `dev.jpm:jpm-api` starts it
+and talks to it. No program bundles its own jpm.
+
+## 1. Transport
+
+- `jpm api` serves the protocol on stdin and stdout until its client says `exit` or closes stdin.
+- Messages are [JSON-RPC 2.0](https://www.jsonrpc.org/specification), framed as in LSP: a header
+  `Content-Length: <bytes>\r\n\r\n`, then that many bytes of UTF-8 JSON. No other header is used.
+- stdout carries protocol messages only. jpm's own messages go to the client as `log` notifications
+  (section 4), and anything else jpm prints goes to stderr, which a client may show or ignore.
+- One `jpm api` process serves one client and may answer for several projects: every request names the
+  project's folder. Requests are answered in the order they arrive, except that `$/cancelRequest` and
+  `exit` are handled at once.
+- Paths are absolute and in the platform's own form (`C:\…` on Windows). Strings are UTF-8; JSON numbers
+  that are counts or lines are integers.
+
+## 2. Lifecycle and versions
+
+```
+client                                  jpm api
+  ── initialize {protocolVersion: 1, client: {name, version}, logLevel?} ──▶
+  ◀── {protocolVersion: 1, jpmVersion, methods: [...]} ─────────
+  ── project/load {dir} ──▶ … any requests …
+  ── shutdown ──▶   ◀── null
+  ── exit (notification) ──▶   (process ends, exit code 0)
+```
+
+- `initialize` must come first. Any other request before it fails with `NotInitialized`.
+- **Versions must match exactly.** Until jpm 1.0 there is no compatibility between protocol versions
+  (roadmap decision "Stability: none while jpm is in development"). The protocol version is an integer that
+  goes up with every change, however small; each jpm and each client jar supports exactly one.
+- On a mismatch, `initialize` fails with `ProtocolMismatch`, and the error names both sides, for example:
+  `jpm 0.12.0 speaks protocol 1, this client (jpm-intellij 0.8.0) speaks protocol 2: upgrade jpm with
+  `jpm upgrade``. The client jar turns this into an exception with the same text.
+- `methods` lists the methods this jpm serves, so a client can tell, for example, whether checks are
+  available without calling them.
+
+## 3. Methods
+
+The first release has the methods below and nothing more (roadmap risk "Protocol scope creep"). Each
+result type is defined in section 5.
+
+| Method | Params | Result | Replaces |
+|---|---|---|---|
+| `initialize` | `protocolVersion`, `client`, `logLevel?` | `protocolVersion`, `jpmVersion`, `methods` | |
+| `shutdown` | none | `null` | |
+| `exit` (notification) | none | | |
+| `project/load` | `dir`, `frozen?`, `sources?` | `Project` | `jpm info --json --ide` |
+| `project/classpaths` | `dir`, `modules?` | `{modules: {name: Classpaths}}` | `jpm info --json --classpath` |
+| `schema/manifest` | none | `{schema, version}` | `jpm schema`, `jpm schema --path` |
+| `extensions/list` | `dir?` | `{extensions: [ExtensionDescriptor]}` | the plugin's built-in command list |
+| `check/run` | `dir`, `checks?`, `tests?` | `{problems: [Problem], ran: [String]}` | |
+| `$/cancelRequest` (notification) | `id` | | |
+
+### `project/load`
+
+Loads the project whose root or module folder is `dir` (or contains it), resolves its dependencies and
+returns its model.
+
+- Like `jpm install`, it writes `project.lock` when the lock is out of date, unless `frozen` is true, in
+  which case an out-of-date lock is a `ProjectError`. The result's `lockfileChanged` says whether it wrote
+  the lock, so a client that watches files can tell its own reload from a user's edit.
+- `sources: true` downloads the sources jars of Maven dependencies and fills `Package.sources`; without it
+  `sources` is set only where the jar is already cached. jpm-intellij asks for sources; jpm-publish does not.
+- It does not build anything. Folders that a build fills (generated sources, classes) are reported even
+  when they do not exist yet.
+
+### `project/classpaths`
+
+Every classpath of the named modules (all modules when `modules` is absent): `compile`, `processor`,
+`runtime`, `testCompile` and `testRuntime`, as packages in classpath order with their jars and edges, and
+the module path / class path split of a named module. Nothing is downloaded beyond what `project/load`
+needs.
+
+### `schema/manifest`
+
+The JSON Schema of `project.jsonc` this jpm reads, as a JSON object, with `version` the jpm version. Editors
+that want a file write it themselves; the protocol does not write `~/.jpm/schemas`.
+
+### `extensions/list`
+
+The commands and checks of every extension: the ones installed globally and, when `dir` is given, the ones
+the project declares (Milestone 4, item 6). jpm reads each extension's descriptor from its manifest; it never
+runs an extension to list it.
+
+### `check/run`
+
+Runs `jpm check` (Milestone 4, item 8) and returns its problems instead of printing them. `checks` limits
+it to some checks by id; `tests: false` leaves out the tests. Every check runs even when one fails, so
+`problems` holds all of them and `ran` lists the checks that ran. While it runs, jpm sends `progress`
+notifications.
+
+## 4. Notifications from jpm
+
+| Method | Params | When |
+|---|---|---|
+| `log` | `level` (`error`, `warn`, `info`, `debug`, `trace`), `message` | Every message jpm's logger would print, at the level `initialize` set (`logLevel`, default `info`). Colors are never used. |
+| `progress` | `request` (the request id), `title`, `done?`, `total?` | Long steps: resolving, downloads, checks. `done`/`total` are bytes or counts when known. |
+
+## 5. Types
+
+Field names follow `jpm info --json` where it has one, so that moving to the protocol is mostly a change of
+transport. A field marked `?` may be absent; a list is never absent, only empty.
+
+### Project
+
+| Field | Type | From `jpm info` |
+|---|---|---|
+| `dir` | path | `projectDir` |
+| `name` | string | `name` |
+| `version` | string? | `version` |
+| `workspace` | boolean | `workspace` |
+| `repositories` | [string] | `repositories` |
+| `extensions` | object | `extensions` (the root's settings, by extension name, untouched) |
+| `scripts` | [Script] | `scripts` (the root's) |
+| `modules` | [Module] | `modules` |
+| `lockfileChanged` | boolean | new |
+
+### Module
+
+| Field | Type | From `jpm info` |
+|---|---|---|
+| `name`, `group?`, `version` | string | same |
+| `description?`, `license?`, `url?` | string | same (jpm-publish reads them) |
+| `dir`, `relativeDir` | path, string | same |
+| `visibility` | `public` or `internal` | same |
+| `package` | `jar` or `bundle` | same |
+| `layout` | `jpm`, `maven` | same |
+| `main` | {name: class} | `main` |
+| `folders` | Folders | `sourceDir(s)`, `resourceDir(s)`, `testDir(s)`, `testResourceDir`, `generatedSourceDir`, `excludeDirs` |
+| `jar` | path | `jar` (where the build puts it) |
+| `jdk` | Jdk | `java`, `javaHome`, `javaError`, `release` |
+| `dependencies` | [Dependency] | `dependencies` (as declared) |
+| `packages` | [Package] | `ideDependencies` (resolved, with the narrowest scope each is needed in) |
+| `defines` | [Define] | `defines` |
+| `scripts` | [Script] | `scripts` |
+| `extensions` | object | `extensions` (the module's settings, merged over the root's by jpm-publish, not by jpm) |
+| `modulePath?` | ModuleSplit | `compileModule` (a named module's split of the compile classpath and its javac options) |
+
+### Folders
+
+`sources`, `resources`, `tests`, `testResources`, `generatedSources`, `exclude`: each a list of paths.
+`generatedSources` holds the folder of the defines class (Java or Kotlin, see ADR 0013 and the README).
+
+### Jdk
+
+`spec?` (the manifest's `"java"`), `home?` (the JDK jpm builds this module with), `release` (the bytecode
+target), `error?` (why no JDK was found, for example offline with nothing installed). When `error` is set,
+`home` is absent and the rest of the module is still reported.
+
+### Dependency (as declared)
+
+`key`, `kind` (`maven`, `git`, `workspace`, `gradle`, `extension`), `scope` (`runtime`, `dev`, `test`),
+`spec`, `resolved?` (the locked version), `commit?`, `exclude` ([string]), `runtimeOnly`, `api`, `tests`
+(booleans), and the parts of the key: `group?`, `artifact?`, `classifier?`, `module?` (a workspace module),
+`host?` (a Git host).
+
+### Package (resolved)
+
+`id`, `kind`, `version?`, `commit?`, `scope` (`compile`, `provided`, `runtime`, `test`: the narrowest one
+the package is needed in), `module?` (a workspace module's name), `jars` ([path]), `classes?` (a
+workspace module's classes folder), `sources?` (path), `dependencies` ([id]).
+
+### Classpaths
+
+`compile`, `processor`, `runtime`, `testCompile`, `testRuntime`: each a list of `Package`, in classpath
+order. `modulePath?`: the same as in Module.
+
+### ModuleSplit
+
+`name` (the module's name, from javac's reading of `module-info.java`), `modulePath` ([path]),
+`classPath` ([path]), `options` ([string]: the javac options jpm compiles the module with, as jpm-publish
+needs them for javadoc).
+
+### Define
+
+`name`, `type` (`string`, `int`, `boolean`), `value` (as that type), `class` (the generated class's
+name, the same for every define of a module).
+
+### Script
+
+`name`, `run` (the command or file), `kind` (`java`, `sh`, `command`), `dependencies` ({key: spec}).
+
+### ExtensionDescriptor
+
+`name` (`publish` for `jpm publish`), `version`, `source` (`global` or `project`), `description?`,
+`commands`: [{`name`, `description`, `options`: [{`name`, `argument?`, `description`}]}], `checks`:
+[{`id`, `description`}]. The format of the descriptor in an extension's manifest is part of item 7 and is
+specified there.
+
+### Problem
+
+The one shape for everything that is wrong: check results, and the `data` of every error.
+
+| Field | Type | |
+|---|---|---|
+| `severity` | `error` or `warning` | |
+| `message` | string | what is wrong |
+| `location?` | {`file`: path, `line?`: integer (1-based), `column?`: integer (1-based)} | where |
+| `hint?` | string | what to do next |
+| `check?` | string | the check that found it, such as `jpm/unused-dependency` or `format/JavaFormat` |
+
+This is the `JpmException` of today (message, location, hint) plus a severity and a check id. SARIF and
+JUnit XML output of `jpm check` are made from the same records.
+
+## 6. Errors
+
+Errors are JSON-RPC errors. `data` is a `Problem` whenever jpm can say where and what to do.
+
+| Code | Name | When |
+|---|---|---|
+| -32700, -32600, -32601, -32602 | JSON-RPC's own | unreadable JSON, not a request, unknown method, wrong params |
+| -32001 | `ProtocolMismatch` | `initialize` with another protocol version; `message` names both versions |
+| -32002 | `NotInitialized` | a request before `initialize` |
+| -32003 | `ProjectError` | what jpm reports as an error on the command line: a bad manifest, an out-of-date lock with `frozen`, a dependency that cannot be resolved; `data` is the Problem |
+| -32800 | `Cancelled` | the client sent `$/cancelRequest` for it |
+
+An unexpected failure inside jpm is `-32603` (internal error) with the exception's text, and the stack
+trace as a `log` at level `debug`.
+
+## 7. The client jar
+
+`dev.jpm:jpm-api` (the `api` module, `dev.jpm.api`) holds the types above as records, the JSON reader and
+writer (`dev.jpm.api.json.Jsonc`) and a client:
+
+```java
+try (JpmClient jpm = JpmClient.start()) {            // finds the global jpm, starts `jpm api`, initializes
+    Project p = jpm.load(Path.of("."), LoadOptions.sources());
+    for (Module m : p.modules()) { ... }
+}
+```
+
+- `JpmClient.start()` finds the global jpm: `JPM_EXE` when set, then `$JPM_HOME/bin/jpm`, `~/.jpm/bin/jpm`,
+  then `jpm` on PATH. When there is none it throws `JpmNotInstalled`, which jpm-intellij answers by
+  offering to install jpm (roadmap decision: never bundled).
+- Each method is a blocking call; `log` and `progress` go to listeners the caller can register.
+- The jar has no dependencies and targets the Java of the oldest IDE jpm-intellij supports (Java 21 today).
+
+## 8. Questions for review
+
+These are decisions I would like you to make before any code is written.
+
+1. **One `jpm api` per client, or a long-lived daemon?** The draft has one process per client (jpm-intellij
+   keeps one per IDE window, jpm-publish starts one per run). A daemon shared by all clients would save
+   start-up time, but brings locking and lifetime questions. Recommendation: one per client.
+2. **Push notifications on change.** The draft has none: clients watch files and call `project/load` again,
+   as jpm-intellij does today. jpm could instead watch `project.jsonc` and `project.lock` and notify.
+   Recommendation: none in the first release (scope).
+3. **Exact protocol version match.** The draft requires an exact match until 1.0, as the stability
+   decision says. This means every jpm release that changes the protocol needs a jpm-intellij release at
+   the same time. Recommendation: keep it, and release jpm, jpm-publish and jpm-intellij together (as
+   item 9 already plans).
+4. **`schema/manifest` without a file.** jpm-intellij today asks for a path (`jpm schema --path`). With the
+   protocol it would get the schema itself and write it where IntelliJ wants it. Recommendation: yes.
+5. **Names.** `packages` replaces `ideDependencies`, `folders` groups the folder fields and `jdk` the JDK
+   fields; everything else keeps its `jpm info` name. Recommendation: accept, since consumers change their
+   code for the transport anyway.

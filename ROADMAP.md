@@ -539,7 +539,7 @@ Builds the test and tooling base that the restructure depends on.
 
 **Needs:** Milestone 2.
 
-1. **Protocol spec** in `docs/protocol.md`.
+1. **Protocol spec** in `docs/protocol.md` (drafted; waiting for review).
    - Handshake with version negotiation.
    - Methods: project model, modules, folders, scripts, dependencies with scopes and sources, every
      classpath, defines, manifest schema, extension commands, and check results.
