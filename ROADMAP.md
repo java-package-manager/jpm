@@ -68,7 +68,7 @@ Small, independent items that make the rest of the work easier.
 
 ### Comments (all jpm projects)
 
-- [ ] Remove comments across the codebases, following the task below. Comments are `//` and `/* */`;
+- [x] Remove comments across the codebases, following the task below. Comments are `//` and `/* */`;
       Javadoc (`/** */`) is not in scope here. Javadoc on implementations, which is most of it today,
       is removed by the layering work in Phase 2.
 
