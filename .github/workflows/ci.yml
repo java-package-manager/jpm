@@ -322,7 +322,7 @@ jobs:
       JPM_NO_UPDATE_CHECK: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           java-version: "21"
           distribution: temurin
@@ -342,12 +342,12 @@ jobs:
       JPM_NO_UPDATE_CHECK: "1"
     steps:
       - uses: actions/checkout@v4
-      - { uses: actions/setup-java@v4, id: j8, with: { distribution: temurin, java-version: "8" } }
-      - { uses: actions/setup-java@v4, id: j11, with: { distribution: temurin, java-version: "11" } }
-      - { uses: actions/setup-java@v4, id: j17, with: { distribution: temurin, java-version: "17" } }
-      - { uses: actions/setup-java@v4, id: j25, with: { distribution: temurin, java-version: "25" } }
-      - { uses: actions/setup-java@v4, id: j27, with: { distribution: temurin, java-version: "27" } }
-      - { uses: actions/setup-java@v4, id: j21, with: { distribution: temurin, java-version: "21" } }
+      - { uses: actions/setup-java@v6, id: j8, with: { distribution: temurin, java-version: "8" } }
+      - { uses: actions/setup-java@v6, id: j11, with: { distribution: temurin, java-version: "11" } }
+      - { uses: actions/setup-java@v6, id: j17, with: { distribution: temurin, java-version: "17" } }
+      - { uses: actions/setup-java@v6, id: j25, with: { distribution: temurin, java-version: "25" } }
+      - { uses: actions/setup-java@v6, id: j27, with: { distribution: temurin, java-version: "27" } }
+      - { uses: actions/setup-java@v6, id: j21, with: { distribution: temurin, java-version: "21" } }
       - name: Bootstrap
         run: ./bootstrap.sh
       - name: Every target with every JDK
@@ -366,7 +366,7 @@ jobs:
       JPM_NO_UPDATE_CHECK: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           java-version: "21"
           distribution: temurin
