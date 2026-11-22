@@ -111,7 +111,7 @@ The goal is code that a new contributor can read top to bottom.
 
 ### Remove duplication and unnecessary abstractions
 
-- [ ] Audit every class and interface with a single implementation or a single caller and inline it
+- [x] Audit every class and interface with a single implementation or a single caller and inline it
       where it adds nothing.
 - [~] One JSON/JSONC reader and writer, shared by jpm, jpm-publish and jpm-intellij (jpm-publish has
       its own `Json.java` today). Done in jpm: `dev.jpm.api.json.Jsonc` in the api module. jpm-publish

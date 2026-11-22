@@ -1,0 +1,12 @@
+$ jpm install
+   Resolving dependencies
+     Cloning <tmp>/git/me/maven-lib
+   Importing github:me/maven-lib from its pom.xml (<commit>)
+  + github:me/maven-lib 2.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+
+$ jpm start
+    Building github:me/maven-lib 2.0.0 (<commit>)
+    Compiled app 1.0.0 (<jdk>, release 21)
+from maven
+

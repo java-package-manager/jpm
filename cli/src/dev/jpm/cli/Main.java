@@ -124,7 +124,7 @@ public final class Main {
         if (nativeImage && Shims.isTool(invoked)) return Shims.run(invoked, args);
         if (invokedAsJvm()) {
             if (args.isEmpty() || args.get(0).equals("-h") || args.get(0).equals("--help")) {
-                Log.print(JavaCommands.JVM_HELP);
+                Log.print(JavaCommand.JVM_HELP);
                 return 0;
             }
             if (args.get(0).equals("--version")) {

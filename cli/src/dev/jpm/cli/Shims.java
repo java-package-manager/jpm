@@ -142,7 +142,7 @@ final class Shims {
                 throw new JpmException(tool + " is not part of " + c.jdk().id() + " (" + c.jdk().home() + "), chosen by " + c.reason()
                         + (tool.equals("native-image") ? ". Use a GraalVM, e.g. `jvm use graalvm-" + c.jdk().major() + "`." : ""));
             }
-            env = JavaCommands.envFor(c.jdk());
+            env = JavaCommand.envFor(c.jdk());
         } else {
             exe = c.systemTool();
             env = Map.of();

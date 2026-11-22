@@ -14,14 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ShimsTest {
     @Test
     void tellsJdksFromCommands() {
-        assertTrue(JavaCommands.looksLikeSpec("21"));
-        assertTrue(JavaCommands.looksLikeSpec("temurin-17"));
-        assertTrue(JavaCommands.looksLikeSpec("graalvm"));
-        assertFalse(JavaCommands.looksLikeSpec("java"));
-        assertFalse(JavaCommands.looksLikeSpec("javac"));
-        assertFalse(JavaCommands.looksLikeSpec("-jar"));
-        assertFalse(JavaCommands.looksLikeSpec("dist/app.jar"));
-        assertFalse(JavaCommands.looksLikeSpec("mvn"));
+        assertTrue(JavaCommand.looksLikeSpec("21"));
+        assertTrue(JavaCommand.looksLikeSpec("temurin-17"));
+        assertTrue(JavaCommand.looksLikeSpec("graalvm"));
+        assertFalse(JavaCommand.looksLikeSpec("java"));
+        assertFalse(JavaCommand.looksLikeSpec("javac"));
+        assertFalse(JavaCommand.looksLikeSpec("-jar"));
+        assertFalse(JavaCommand.looksLikeSpec("dist/app.jar"));
+        assertFalse(JavaCommand.looksLikeSpec("mvn"));
     }
 
     @Test

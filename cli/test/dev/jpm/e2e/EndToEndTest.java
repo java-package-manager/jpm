@@ -212,4 +212,32 @@ class EndToEndTest {
         s.jpm("build");
         s.verify("output");
     }
+
+    @Test
+    void gitDependencyWithAMavenBuild(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Path lib = tmp.resolve("git/me/maven-lib");
+        Fs.write(lib.resolve("pom.xml"), """
+                <project xmlns="http://maven.apache.org/POM/4.0.0">
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>me</groupId>
+                  <artifactId>maven-lib</artifactId>
+                  <version>2.0.0</version>
+                  <properties><maven.compiler.release>21</maven.compiler.release></properties>
+                </project>
+                """);
+        Fs.write(lib.resolve("src/main/java/lib/Lib.java"), "package lib; public class Lib { public static String v() { return \"from maven\"; } }");
+        git(lib, "init", "-q", "-b", "main");
+        git(lib, "add", "-A");
+        git(lib, "commit", "-qm", "2.0.0");
+        git(lib, "tag", "2.0.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("src/app/Main.java"),
+                "package app; public class Main { public static void main(String[] a) { System.out.println(lib.Lib.v()); } }");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \"21\","
+                + " \"main\": \"app.Main\", \"runtime\": { \"github:me/maven-lib\": \"2.0.0\" } }");
+        s.jpm("install");
+        s.jpm("start");
+        s.verify("git-maven");
+    }
 }
