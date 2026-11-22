@@ -20,12 +20,12 @@ class RepositoriesTest {
     void addsRepositoriesOnce() {
         String src = "{\n  // keep me\n  \"name\": \"x\",\n  \"repositories\": [\"https://repo.a.dev/releases\"]\n}\n";
         Manifest m = Manifest.parse(Path.of("project.jsonc"), src);
-        String out = Commands.withRepositories(src, m, List.of("https://repo.a.dev/releases/", "https://repo.b.dev"));
+        String out = AddCommand.withRepositories(src, m, List.of("https://repo.a.dev/releases/", "https://repo.b.dev"));
         Manifest after = Manifest.parse(Path.of("project.jsonc"), out);
         assertEquals(List.of("https://repo.a.dev/releases", "https://repo.b.dev"), after.repositories);
         assertTrue(out.contains("// keep me"));
-        assertEquals(out, Commands.withRepositories(out, after, List.of("https://repo.b.dev/")));
-        assertThrows(JpmException.class, () -> Commands.withRepositories(src, m, List.of("repo.c.dev")));
+        assertEquals(out, AddCommand.withRepositories(out, after, List.of("https://repo.b.dev/")));
+        assertThrows(JpmException.class, () -> AddCommand.withRepositories(src, m, List.of("repo.c.dev")));
     }
 
     @Test

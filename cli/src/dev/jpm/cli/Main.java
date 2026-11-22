@@ -3,6 +3,7 @@ package dev.jpm.cli;
 import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,57 +15,6 @@ public final class Main {
 
     private Main() {}
 
-    static final String HELP = """
-            jpm %s - one command for Java: dependencies, builds, running, tests and patches.
-
-            Usage: jpm <command> [options]
-
-            Project
-              init [name]                 Create a project in the current directory
-              add <dep>[@version]         Add dependencies (--dev, --test; -r <url> adds a Maven repository;
-                                          -g installs an extension)
-              remove <dep>                Remove dependencies (-g removes an extension)
-              install                     Resolve dependencies and write project.lock (--frozen in CI)
-              update [dep...]             Re-resolve within ranges (--latest goes past them;
-                                          -g updates the global extensions)
-              outdated                    Show dependencies with newer versions
-              why <dep>                   Show why a dependency is in the graph
-              info [--json]               Describe the project (modules, dependencies); --json for extensions
-              import [dir]                Create project.jsonc from a Maven or Gradle build (--dry-run, --force)
-              schema [--path]             Print the JSON Schema of project.jsonc (--path writes it to ~/.jpm
-                                          and prints where, for editors)
-
-            Build and run
-              build                       Compile and package into dist/ (--release, --profile <name>)
-              start [entry] [-- args]     Build, then run main with production env variables
-              dev [entry] [-- args]       Run main with development env variables, restarting on changes
-              test [filter...]            Run tests on the JUnit Platform (--tag, --exclude-tag select by JUnit tag)
-              run <script> [args]         Run a script from the manifest; <module>:<script> for another module's
-              clean                       Delete build output
-
-            Dependencies
-              patch <dep>                 Unpack a dependency's source for editing
-              patch --commit <dep>        Save your edits to patches/ and record them in the manifest
-
-            Toolchain
-              java list [--available]     List installed JDKs, or what can be installed
-              java install <java>         Install a JDK or GraalVM (21, temurin-17, graalvm-21, ...)
-              java remove <java>          Remove a JDK jpm installed
-              java use <java>             Set "java" in the manifest (and install it)
-              jvm use <java>              Choose the JDK that `java` runs outside projects (shims in ~/.jpm/bin)
-              jvm current                 Show which JDK `java` runs here, and why
-              jvm exec [java] <cmd>       Run one command with a JDK
-              build --bundle              Also build a runnable jar-in-jar bundle with isolated modules
-              build --native              Also build a native executable with GraalVM
-              start --trace               Run under the native-image tracing agent to record its config
-
-            Maintenance
-              upgrade [version]           Upgrade jpm to the latest release (--check only reports,
-                                          --canary installs the newest build of the main branch)
-
-            Any other command runs an extension: `jpm format` runs `jpm-format`.
-            Global options: -v/--verbose (-vv for more), -q/--quiet, --color=auto|always|never, --offline
-            """;
 
     public static void main(String[] argv) {
         int code;
@@ -182,46 +132,21 @@ public final class Main {
                 return 0;
             }
             logOptions(args, false);
-            return new Commands().java(args, true);
+            return new JavaCommand(Path.of("").toAbsolutePath(), true).run(args);
         }
         while (!args.isEmpty() && args.get(0).startsWith("-")) {
             String a = args.get(0);
             if (a.equals("--offline")) { System.setProperty("jpm.offline", "true"); args.remove(0); }
-            else if (a.equals("-h") || a.equals("--help")) { Log.print(HELP.formatted(VERSION)); return 0; }
+            else if (a.equals("-h") || a.equals("--help")) { Log.print(Commands.help()); return 0; }
             else if (a.equals("--version")) return Upgrade.version();
             else if (!logOption(args, 0, true)) break;
         }
         logOptions(args, false);
         if (args.isEmpty()) {
-            Log.print(HELP.formatted(VERSION));
+            Log.print(Commands.help());
             return 0;
         }
         String cmd = args.remove(0);
-        Commands c = new Commands();
-        return switch (cmd) {
-            case "help" -> { Log.print(HELP.formatted(VERSION)); yield 0; }
-            case "version" -> Upgrade.version();
-            case "upgrade", "self-update" -> Upgrade.run(args);
-            case "init" -> c.init(args);
-            case "add" -> c.add(args);
-            case "remove", "rm" -> c.remove(args);
-            case "install", "i" -> c.install(args);
-            case "update" -> c.update(args);
-            case "outdated" -> c.outdated(args);
-            case "why" -> c.why(args);
-            case "build" -> c.build(args);
-            case "start" -> c.start(args, false);
-            case "dev" -> c.start(args, true);
-            case "test" -> c.test(args);
-            case "run" -> c.runScript(args);
-            case "clean" -> c.clean(args);
-            case "patch" -> c.patch(args);
-            case "import" -> c.importBuild(args);
-            case "info" -> c.info(args);
-            case "schema" -> Schema.run(args);
-            case "java" -> c.java(args, false);
-            case "jvm" -> c.java(args, true);
-            default -> c.extension(cmd, args);
-        };
+        return Commands.find(Path.of("").toAbsolutePath(), cmd).run(args);
     }
 }

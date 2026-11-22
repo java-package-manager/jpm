@@ -104,7 +104,7 @@ The goal is code that a new contributor can read top to bottom.
 
 ### Split the large classes
 
-- [ ] `cli/Commands.java` (≈1,300 lines): one class per command, plus a command registry that is the
+- [x] `cli/Commands.java` (≈1,300 lines): one class per command, plus a command registry that is the
       single source for `jpm help`, the README command table and shell completions.
 - [ ] `importer/GradleImport.java` (≈900 lines), `resolve/Resolver.java` (≈670 lines) and
       `Manifest.java` (≈650 lines): split by responsibility (parsing, validation, inheritance, model).
@@ -117,7 +117,7 @@ The goal is code that a new contributor can read top to bottom.
       its own `Json.java` today).
 - [ ] One HTTP stack (`util/Http.java` and `util/Net.java` overlap).
 - [ ] One place for version parsing and comparison (Maven, Gradle, npm syntaxes) with one entry point.
-- [ ] The help text in `cli/Main.java` and the README table are generated from the command registry
+- [x] The help text in `cli/Main.java` and the README table are generated from the command registry
       instead of being written twice.
 
 ### Public API, internal API, implementations
@@ -353,7 +353,7 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 Items that are not in the original list but would pay off.
 
-- [ ] **Shell completions** for bash, zsh, fish and PowerShell, generated from the command registry
+- [x] **Shell completions** for bash, zsh, fish and PowerShell, generated from the command registry
       (`jpm completions <shell>`).
 - [ ] **`jpm doctor`:** check the machine, not the project: PATH order, shims, installed JDKs, cache
       health and network access to configured repositories, and print what to fix. Project checks

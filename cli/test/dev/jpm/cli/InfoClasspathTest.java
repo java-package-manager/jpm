@@ -51,7 +51,7 @@ class InfoClasspathTest {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         System.setOut(new PrintStream(buf, true));
         try {
-            assertEquals(0, new Commands(ws).info(new ArrayList<>(List.of("--json", "--classpath"))));
+            assertEquals(0, new InfoCommand(ws).run(new ArrayList<>(List.of("--json", "--classpath"))));
         } finally {
             System.setOut(old);
         }
@@ -107,7 +107,7 @@ class InfoClasspathTest {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         System.setOut(new PrintStream(buf, true));
         try {
-            assertEquals(0, new Commands(ws).info(new ArrayList<>(List.of("--json", "--classpath"))));
+            assertEquals(0, new InfoCommand(ws).run(new ArrayList<>(List.of("--json", "--classpath"))));
         } finally {
             System.setOut(old);
         }

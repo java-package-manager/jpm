@@ -23,7 +23,7 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
 ## Where things live
 
 - `api/`: the public API module (`dev.jpm.api`, `module-info.java` exports only it). `cli/`: jpm itself.
-- `cli/src/dev/jpm/cli`: commands (`Commands`, `Main` dispatches), shims, upgrade.
+- `cli/src/dev/jpm/cli`: one class per command (`*Command`), the registry `Commands` (the source of `jpm help`, the README table and completions), `Main`, shims, upgrade.
 - `cli/src/dev/jpm/resolve`: dependency resolution and `project.lock`. `cli/src/dev/jpm/maven`: repositories, POMs.
 - `cli/src/dev/jpm/build`: compiling, jars, bundles, patches, scripts, the test runner.
 - `cli/src/dev/jpm/toolchain`: finding and installing JDKs. `cli/src/dev/jpm/importer`: Maven and Gradle import.

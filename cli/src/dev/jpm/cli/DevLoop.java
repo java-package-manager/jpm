@@ -27,11 +27,11 @@ import java.util.concurrent.TimeUnit;
  * question in the spec; restarting is the dependable baseline.)
  */
 final class DevLoop {
-    private final Commands commands;
+    private final StartCommand commands;
     private final String entry;
     private final List<String> appArgs;
 
-    DevLoop(Commands commands, String entry, List<String> appArgs) {
+    DevLoop(StartCommand commands, String entry, List<String> appArgs) {
         this.commands = commands;
         this.entry = entry;
         this.appArgs = appArgs;

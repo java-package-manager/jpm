@@ -75,31 +75,45 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 
 ## Commands
 
+<!-- commands: generated from the command registry, `JPM_UPDATE_EXPECTED=1 bin/jpm test dev.jpm.cli.CommandsTest` rewrites it -->
+
 | Command | |
 |---|---|
 | `init [name]` | Create a project |
-| `add <dep>[@version]` | Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). Without a version: latest release (Maven) or `^latest-tag` (Git) |
-| `remove <dep>` | Remove dependencies |
-| `install [--frozen]` | Resolve and write `project.lock`; `--frozen` fails if the lock is stale (CI) |
-| `update [dep…] [--latest]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |
-| `outdated`, `why <dep>` | Inspect the graph |
+| `add <dep>[@version]` | Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository; `-g` installs an extension). Without a version: latest release (Maven) or `^latest-tag` (Git) |
+| `remove <dep>` | Remove dependencies (`-g` removes an extension) |
+| `install` | Resolve and write `project.lock`; `--frozen` fails if the lock is stale (CI) |
+| `update [dep...]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |
+| `outdated` | Show dependencies with newer versions |
+| `why <dep>` | Show why a dependency is in the graph |
 | `info [--json]` | Describe the project: modules, versions, folders, dependencies; `--json` is a stable format for extensions, `--ide` adds test folders, scripts and scoped dependencies with sources (used by the IntelliJ plugin), `--classpath` adds every classpath (compile, processor, runtime, testCompile, testRuntime) as packages with coordinates, kind, jars and edges, and the resolved defines, without downloading sources |
-| `schema [--path]` | Print the JSON Schema of `project.jsonc` built into this jpm; `--path` writes it to `~/.jpm/schemas/<version>/project.schema.json` and prints the path instead (used by the IntelliJ plugin), see [Editor support](#editor-support) |
 | `import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
-| `build`, `start`, `test`, `clean` | Build into `dist/`, run main with production env, run tests, delete output |
-| `dev [entry]` | Run main with development env, restarting when sources, assets, manifest or env files change |
-| `run [<module>:]<script> [args]` | Run a script from `scripts` (no shorthand); `<module>:<script>` runs a workspace module's script from anywhere in the workspace |
-| `patch <dep>`, `patch --commit <dep>` | Patch a dependency |
-| `upgrade [version]` | Upgrade jpm itself to the latest release (`--check` only reports, `--canary` installs the newest build of the main branch) |
-| `help`, `--version` | Show the commands, or jpm's version |
-| `java list [--available [vendor]]` | Installed JDKs (`*` marks what `java` runs here), or what can be installed |
-| `java install <java>`, `java remove <java>` | Install into / remove from `~/.jpm/jdks` |
-| `java use <java>` | Set `"java"` in the manifest, installing it if needed |
-| `java current` | Which JDK `java` runs here, and why. `jpm java …` and `jvm …` are the same commands |
+| `schema [--path]` | Print the JSON Schema of `project.jsonc` built into this jpm; `--path` writes it to `~/.jpm/schemas/<version>/project.schema.json` and prints the path instead (used by the IntelliJ plugin), see [Editor support](#editor-support) |
+| `build` | Build into `dist/` (`--release`, `--profile <name>`) |
 | `build --bundle` | Also build `dist/<name>-<version>-bundle.jar` with the runtime dependencies: a runnable jar-in-jar with isolated modules for a module with a `main`, one flat jar (like a shadow jar) for one without, such as a Paper or Velocity plugin; `--flat` makes it flat either way. `"package": "bundle"` makes it the default |
 | `build --native` | Also build a native executable of `main` with GraalVM into `dist/` |
+| `start [entry] [-- args]` | Build, then run `main` with the production env |
 | `start --trace` | Run under the native-image tracing agent, recording configuration for native builds |
-| `<anything else>` | Runs extension `jpm-<name>` from `~/.jpm/bin` or `PATH`; install with `jpm add -g <dep>` |
+| `dev [entry] [-- args]` | Run `main` with the development env, restarting when sources, assets, manifest or env files change |
+| `test [filter...]` | Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag |
+| `run <script> [args]` | Run a script from `scripts` (no shorthand); `<module>:<script>` runs a workspace module's script from anywhere in the workspace |
+| `clean` | Delete build output |
+| `patch <dep>` | Unpack a dependency's source for editing |
+| `patch --commit <dep>` | Save your edits to `patches/` and record them in the manifest |
+| `java list [--available]` | Installed JDKs (`*` marks what `java` runs here), or what can be installed (`--available [vendor]`) |
+| `java install <java>` | Install a JDK or GraalVM into `~/.jpm/jdks` (`21`, `temurin-17`, `graalvm-21`, ...) |
+| `java remove <java>` | Remove a JDK jpm installed |
+| `java use <java>` | Set `"java"` in the manifest, installing it if needed |
+| `jvm use <java>` | Choose the JDK that `java` runs outside projects (shims in ~/.jpm/bin) |
+| `jvm current` | Which JDK `java` runs here, and why. `jpm java …` and `jvm …` are the same commands |
+| `jvm exec [java] <cmd>` | Run one command with a JDK |
+| `upgrade [version]` | Upgrade jpm itself to the latest release (`--check` only reports, `--canary` installs the newest build of the main branch) |
+| `version` | Show jpm's version (also `--version`), and whether a newer one is out |
+| `help` | Show this list of commands (also -h, --help) |
+| `completions <shell>` | Print shell completions: `jpm completions bash > ~/.local/share/bash-completion/completions/jpm`, and the same for `zsh`, `fish` and `powershell` |
+| `<anything else>` | Runs the extension `jpm-<name>` from `~/.jpm/bin` or `PATH`; install one with `jpm add -g <dep>` |
+
+<!-- /commands -->
 
 Dependency arguments: `group:artifact@1.2.3`, `group:artifact:1.2.3`, `'group:artifact@[1.0,2.0)'`,
 `github:user/repo@^1.2`, `github:user/repo#main`, `github:user/repo/module@a1b2c3d`, `gradle:api@9.8.0`
