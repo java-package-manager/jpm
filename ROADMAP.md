@@ -239,13 +239,13 @@ the tests.
 An extension that works like [changesets](https://github.com/changesets/changesets) for npm.
 `.changeset/` is already reserved by jpm.
 
-- [ ] `jpm changeset` (or `jpm changeset add`): ask which workspace modules changed, the bump
+- [x] `jpm changeset` (or `jpm changeset add`): ask which workspace modules changed, the bump
       (major/minor/patch) and a summary; write a Markdown file to `.changeset/`.
-- [ ] `jpm changeset version`: apply pending changesets: bump `version` in each `project.jsonc`, bump
+- [x] `jpm changeset version`: apply pending changesets: bump `version` in each `project.jsonc`, bump
       dependents inside the workspace, write `CHANGELOG.md` per module, delete the applied files.
-- [ ] `jpm changeset status`: list pending changesets. It is also a check in `jpm check`, which fails
+- [x] `jpm changeset status`: list pending changesets. It is also a check in `jpm check`, which fails
       when a changed module has no changeset.
-- [ ] `jpm changeset publish`: publish bumped modules through jpm-publish and tag them.
+- [x] `jpm changeset publish`: publish bumped modules through jpm-publish and tag them.
 - [ ] Prerelease mode (`pre enter/exit`), and linked/fixed version groups.
 - [ ] A GitHub Action that opens and updates a "Version packages" pull request.
 
