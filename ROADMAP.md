@@ -12,7 +12,7 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done.
 
 These shape everything below, so they are settled before the restructure starts.
 
-- [ ] **Shape of the public API.** jpm ships as a native binary, which other JVM programs cannot load.
+- [x] **Shape of the public API.** Decided: a versioned protocol with a client jar; see the plan below. jpm ships as a native binary, which other JVM programs cannot load.
       Choose one:
   - a library jar (`dev.jpm:jpm-api` on Maven Central) that reads `project.jsonc` and `project.lock` and
     runs resolution in-process, used by jpm itself, jpm-intellij and extensions; or
@@ -21,16 +21,16 @@ These shape everything below, so they are settled before the restructure starts.
 
   The library is simpler for consumers; the protocol keeps one implementation and works from any
   language. Whichever is chosen, `jpm info --json/--ide/--classpath` and `jpm schema` go away (Phase 4).
-- [ ] **API stability policy.** What semver means for the public API, how long deprecated parts stay,
+- [x] **API stability policy.** Decided: see the plan below. What semver means for the public API, how long deprecated parts stay,
       and which Java version the API jar targets (it must load in IntelliJ's runtime and in extensions).
-- [ ] **Layering rules.** Proposed:
+- [x] **Layering rules.** Accepted as proposed:
   - `dev.jpm.api…`: public API, exported, full Javadoc, stable.
   - `dev.jpm.<area>` (for example `resolve`, `build`, `toolchain`): internal API, the interfaces and
     records that areas use to talk to each other, with Javadoc, not exported.
   - `dev.jpm.<area>.impl`: implementations, no Javadoc, never referenced across areas.
 
   A `module-info.java` that exports only `dev.jpm.api` enforces this at compile time.
-- [ ] **Java support matrix.** "Still officially supported" means every Java version that has public
+- [x] **Java support matrix.** Decided: projects jpm builds; see the plan below. "Still officially supported" means every Java version that has public
       updates from at least one major vendor (today 8, 11, 17, 21, 25 and the current feature release).
       Decide whether this is a target for *projects jpm builds*, for *the API jar*, or both.
 - [x] **Comment policy.** Comments (`//`, `/* */`) are removed and banned by a lint rule; see Phase 1.
@@ -185,9 +185,8 @@ compiled classes or from the manifest.
 - [ ] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output.
 - [ ] **jpm-publish:** use the public API instead of `jpm info --json`.
 - [ ] Extensions get a documented way to use the API (for example a template project).
-- [ ] Deprecate `jpm info --json/--ide/--classpath` and `jpm schema` for one minor release (with a
-      warning that points to the API), then remove them. Plain `jpm info` stays as a human-readable
-      summary.
+- [ ] Remove `jpm info --json/--ide/--classpath` and `jpm schema` in the release that ships the API,
+      with no deprecation period. Plain `jpm info` stays as a human-readable summary.
 
 ### Project-level extensions
 
@@ -387,3 +386,248 @@ Items that are not in the original list but would pay off.
 - [ ] **Document the versioned schema URL:** every release already ships `project.schema.json`, so
       `releases/download/<version>/project.schema.json` is a stable URL per version. The README only
       mentions `releases/latest/…`; document the pinned form as the replacement for `jpm schema`.
+
+---
+
+## Plan
+
+How the roadmap above gets done: decisions first, then milestones in order. Each milestone ends in a
+release. Inside a milestone, items with no **Needs:** can be done in parallel.
+
+### Decisions (Phase 0, settled)
+
+- **API shape: a protocol, with a client jar.** There is exactly one jpm on a machine, the globally
+  installed one. Nothing ships its own copy: not jpm-intellij, not extensions, not the client jar.
+  - The `jpm` binary serves a versioned protocol: JSON-RPC over stdin/stdout from `jpm api`, framed
+    like LSP.
+  - `dev.jpm:jpm-api` on Maven Central holds the model records, the shared JSON/JSONC reader and
+    writer, and a client that starts the global `jpm api`. It holds no resolution logic.
+  - When no jpm is installed, jpm-intellij offers to install one globally, using the same steps as
+    `install.sh`/`install.ps1`. It never bundles one.
+- **Java targets.**
+  - The client jar targets the Java version of the JetBrains Runtime in the oldest IDE build that
+    jpm-intellij supports (`sinceBuild`, 261 today). That is Java 21 today, matching jpm-intellij's
+    `jvmToolchain(21)`.
+  - The client jar moves up only when jpm-intellij's `sinceBuild` moves to an IDE build on a newer
+    runtime.
+  - jpm itself stays on `"java": "21"`.
+- **Java support matrix.** It applies to the projects jpm builds: targets 8, 11, 17, 21, 25 and the
+  current feature release, built and tested with those JDKs. It does not apply to the client jar.
+- **Stability: none while jpm is in development.**
+  - Breaking changes are allowed in any release, with no deprecation period and no backwards
+    compatibility.
+  - This covers the CLI, `project.jsonc`, `project.lock`, the protocol and the client jar.
+  - Old forms are removed in the same change that replaces them. There are no warnings and no
+    converters.
+  - The protocol handshake still carries a version number. A client that does not match the
+    installed jpm gets a clear error that names both versions, not undefined behavior.
+  - A stability policy is decided before jpm 1.0. That release has no date and is not part of this
+    plan.
+- **Layering.** As proposed in Phase 0. `module-info.java` in the `api` module exports only
+  `dev.jpm.api…`. The jpm module exports nothing.
+- **`//DEPS`.** Removed. Script dependencies live in `scripts` entries in `project.jsonc`.
+
+### Ground rules for every change
+
+- **Workflow: local branches, one push.** No pull requests, and no push per step.
+  - Each roadmap item, or each part of one, gets its own local branch.
+  - Before a branch is merged, the tests pass on the machine: `bin/jpm build`, `bin/jpm test`, the
+    end-to-end tests, and the local checks (schema check, ratchets).
+  - A branch whose tests pass is merged into the local `main` and deleted.
+  - `main` is pushed once, after every branch worked on has been merged.
+  - Some checks only run in CI: other operating systems, native builds, the JDK matrix. If one of them
+    fails after a push, it is fixed on `main` before any new work starts.
+- One script, `bin/check`, runs every check CI runs that can run locally. It is replaced by
+  `jpm check` once that exists (Milestone 4).
+- Restructuring changes behavior only where the roadmap says so. The end-to-end tests from Milestone 1
+  are the safety net, so they come before any move.
+- Ratchets instead of big bangs: comment count, missing Javadoc, `System.out` uses and network tests
+  each get a check, run locally and in CI, with a stored baseline. The baseline may only go down.
+- A roadmap item is ticked in the commit that finishes it.
+
+### Milestone 1: safety net and foundations (release 0.9)
+
+Builds the test and tooling base that the restructure depends on.
+
+1. **End-to-end tests first.** One test set runs the `jpm` binary on `fixtures/` (build, test, bundle,
+   info, import). Add fixtures for every command that has none, and record today's output as the
+   expected result.
+2. **Hermetic tests.**
+   - A local Maven repository server and Git fixtures under `test/`, shared through a helper.
+   - Move the network-dependent classes onto them: `NetTest`, `TransientFailureTest`,
+     `RepositoriesTest`, `UpgradeTest`, `ImportTest`, `KotlinTest`, `SmallGapsTest`,
+     `WorkspaceInheritanceTest` and the rest.
+   - Live tests against Maven Central get a tag, and a separate CI job runs them.
+3. **`bin/check`:** runs locally what CI runs: build, unit and end-to-end tests, the schema check and
+   the ratchets. CI calls the same script, so the two cannot drift apart.
+4. **Coverage report in CI**, published as an artifact. It finds dead code before the restructure.
+5. **Logger** (Phase 1).
+   - `dev.jpm.log`, with no dependencies: levels, the color rules, `--color`, `NO_COLOR` /
+     `FORCE_COLOR` / `JPM_COLOR`, `--quiet` and `--verbose`, and progress output only on a terminal.
+   - Replace `Log` and the `System.out`/`System.err` calls in the 9 files that have them.
+   - A ratchet check bans new ones.
+   - Fold in **actionable errors** from the suggestions: one error type with message, location and
+     hint, and stack traces only with `--verbose`.
+6. **Comments** (Phase 1).
+   - Run the categorise-and-act task in jpm, jpm-publish, jpm-format and jpm-intellij.
+   - Decision records go to `docs/adr/NNNN-title.md`. Excuses become GitHub issues.
+   - The lint rule starts as a CI script with a baseline file, and becomes a jpm-format rule once
+     Milestone 5 makes that possible.
+   - Add the `/delete-comment` skill in `.claude/skills/`.
+   - `project.jsonc` comments are out of scope: they are documentation of the manifest, not code.
+7. **Contributor docs** (Phase 1). Write `CONTRIBUTING.md` and `AGENTS.md` in each repository, with
+   the decisions and ground rules above. Update them at the end of every milestone.
+
+### Milestone 2: restructure (release 0.10)
+
+**Needs:** Milestone 1 items 1 to 4.
+
+1. **Workspace layout.**
+   - The jpm repository becomes a workspace with an `api` module (`dev.jpm.api`, published) and the
+     root module (the CLI and everything else).
+   - Add `module-info.java` to both modules.
+2. **Command registry.**
+   - Split `cli/Commands.java` into one class per command, registered in one place.
+   - Generate `jpm help`, the README command table and **shell completions** (`jpm completions
+     <shell>`, from the suggestions) from the registry. A CI check fails when the README table is out
+     of date.
+3. **Split large classes.** Split `GradleImport`, `Resolver` and `Manifest` by responsibility, one
+   one branch each.
+4. **One of each.**
+   - JSON/JSONC goes into `api`, because the protocol needs it there anyway.
+   - One HTTP stack: merge `util/Http` and `util/Net`.
+   - One version module with a single entry point.
+5. **Inline single-implementation abstractions.** Use the coverage report and the class graph to find
+   them.
+6. **Layers.**
+   - Move code into `dev.jpm.<area>` (internal API) and `dev.jpm.<area>.impl`.
+   - Javadoc on public and internal API, none on `impl`.
+   - The build fails on missing Javadoc in `dev.jpm.api`, and on any `impl` class referenced from
+     another area. The second is a check over the compiled classes.
+7. **Tests follow the layout.** Unit tests per area. Merge or delete grab-bag and implementation-detail
+   tests. Shared helpers go in one test package.
+
+### Milestone 3: compiler agnostic, every Java version (release 0.11)
+
+**Needs:** Milestone 2 item 6, so the changes land in the new layout.
+
+1. **No source parsing.**
+   - Read `module-info.class` instead of using regexes on `module-info.java`, or pass
+     `--module-source-path` and let javac resolve.
+   - Decide `--release` against `-source/-target` from the arguments, not from javac's error text.
+   - Write generated `Defines` and bundle launchers as class files, so a Kotlin-only module needs
+     no Java source generation.
+   - Add the CI check against code that opens `.java` files.
+2. **`//DEPS` to manifest.**
+   - Add `scripts` entries with their own `dependencies`, in the schema and the resolver.
+   - Remove `//DEPS` support in the same change.
+3. **Java matrix.**
+   - Fixtures for each target (8 through current), including a module project and a plain one.
+   - A CI matrix over JDK × target.
+   - Clear errors for combinations that cannot work, such as modules on 8.
+   - A table in `docs/` of the supported versions and their vendor end-of-life dates, reviewed every
+     release.
+4. **Reproducible builds** and the **performance budget** (from the suggestions). Both are cheap to
+   add now that the build code is in one place.
+
+### Milestone 4: protocol, extensions, jpm check (release 0.12)
+
+**Needs:** Milestone 2.
+
+1. **Protocol spec** in `docs/protocol.md`.
+   - Handshake with version negotiation.
+   - Methods: project model, modules, folders, scripts, dependencies with scopes and sources, every
+     classpath, defines, manifest schema, extension commands, and check results.
+   - Errors in the same shape as `jpm check` problems.
+   - Review the spec before any code.
+2. **`jpm api` server** in jpm, with protocol tests in the end-to-end set.
+3. **Client jar** `dev.jpm:jpm-api`.
+   - Finds the global jpm, starts it and checks the version.
+   - Published to Maven Central with Javadoc and sources. Release automation lives in CI next to the
+     binary release.
+4. **jpm-publish** moves to the client jar and drops its own `Json.java`.
+5. **jpm-intellij** moves to the client jar.
+   - Replace `Jpm.run(... "info", "--json", "--ide")` in `JpmSync` and in the tests.
+   - When no global jpm is installed, offer to install one.
+6. **Project-level extensions.**
+   - Extensions are declared in the root `project.jsonc` and pinned in `project.lock`.
+   - `jpm add`/`jpm remove` without `-g`, with the extension marker for detection.
+   - `jpm install` installs declared extensions.
+   - Warn about settings for undeclared extensions.
+   - A declared extension takes precedence over a global one.
+7. **Extension descriptor.**
+   - Each extension describes its commands, options and checks in its own manifest.
+   - jpm serves the descriptors through the protocol, so IDEs never run an extension just to list
+     it.
+   - The jpm-intellij toolbar is built from it.
+   - Add an extension template repository (**extension registry** suggestion).
+8. **`jpm check`.**
+   - Runs jpm's checks, then the declared extensions' checks, then the tests.
+   - Every check runs even when one fails.
+   - Problems carry a severity and a location.
+   - `--no-test`, `--fail-on-warning`, SARIF and JUnit XML output, and output grouped by check.
+   - Add **unused dependencies** and **duplicate classes**, read from compiled classes.
+   - **Missing paths** is one shared check for every field that names a file (Phase 5, *Editing
+     project.jsonc*).
+9. **Remove the old commands.**
+   - `jpm info --json/--ide/--classpath` and `jpm schema` are removed in this release.
+   - Release jpm, jpm-publish and jpm-intellij together, so nothing calls the removed commands.
+   - Document the versioned schema URL in the same change.
+   - Plain `jpm info` stays.
+
+### Milestone 5: ecosystem (later 0.x releases)
+
+**Needs:** Milestone 4 for anything that adds a check or uses the protocol.
+
+The tracks below are independent. Each one is released from its own repository.
+
+- **jpm-changeset.** The repository is empty. Build in this order: `add`, `status` (with its check),
+  `version`, `publish` through jpm-publish, then prerelease mode and groups. The GitHub Action comes
+  last. Once it works, use it for jpm's own changelog.
+- **jpm-format.**
+  - Formatter parity is measured against IntelliJ on a corpus of real projects, with a stored diff
+    count as a ratchet. Then lint parity, then the LSP.
+  - Add `format --check` to `jpm check`.
+  - Replace the comment-lint script from Milestone 1 with a jpm-format rule.
+- **jpm-intellij.**
+  - The migration UI (editable manifest, warnings first, layout switch, cleanup of old build files,
+    scan for leftover Gradle/Maven use).
+  - Then `project.jsonc` editing: navigation, renames, completion and inlay hints, update inspection,
+    hover docs, and diagnostics from `jpm check` over the protocol.
+  - Then run configurations and the dependency graph.
+  - The `.gitignore` fix is done in `jpm init`/`jpm import`, so it ships with any jpm release.
+- **Licenses.** Generate the SPDX list into the schema at build time from `licenses.json`. Add the
+  check, the import support and license file creation. Do this in jpm, not in an extension.
+- **Renovate.** A regex-manager preset first, used on the jpm repositories, then a native manager
+  upstream. Document Renovate as the supported option, instead of Dependabot.
+- **Remaining suggestions:**
+  - lockfile conflict resolution;
+  - private repository credentials;
+  - `jpm cache size|clean`;
+  - workspace-wide commands with `--filter`;
+  - `jpm test --watch`;
+  - checksums in `project.lock`, then `jpm audit`, then SBOM;
+  - `jpm doctor`;
+  - the full test suite on Windows in CI.
+
+  Order them by user demand. Supply-chain checksums come first, because they change the lockfile
+  format, which is cheaper to do early.
+
+### Milestone 6: user documentation (alongside Milestone 5)
+
+**Needs:** the command registry (Milestone 2) and the protocol (Milestone 4), so that the reference
+can be generated.
+
+1. Rewrite the README for users.
+2. Move the reference material into `docs/`, generated from the schema and the command registry.
+3. Move release and CI details into `CONTRIBUTING.md`.
+4. Keep `MIGRATION.md` and link it from the README.
+5. A docs site, once `docs/` has been stable for a release.
+
+### Risks
+
+- **Protocol scope creep.** The first protocol release covers only what `jpm info --json/--ide/--classpath` and `jpm schema`
+  give today, plus extension descriptors and check results. Everything else comes in later
+  releases.
+- **Restructure without behavior change.** If an end-to-end test changes its expected output during
+  Milestone 2, that is a bug, unless the commit message says otherwise and why.
