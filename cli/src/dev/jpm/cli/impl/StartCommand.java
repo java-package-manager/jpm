@@ -111,8 +111,9 @@ final class StartCommand extends Command {
             args.add(main);
             return args;
         }
-        dev.jpm.build.Modules.Declaration decl = dev.jpm.build.Modules.compiled(classes);
-        if (decl == null) decl = new dev.jpm.build.Modules.Declaration(module, Set.of());
+        Path moduleInfo = dev.jpm.build.Modules.moduleInfo(m.srcDirs());
+        dev.jpm.build.Modules.Declaration decl = moduleInfo != null ? dev.jpm.build.Modules.declaration(b.jdk(m.manifest), moduleInfo)
+                : new dev.jpm.build.Modules.Declaration(module, Set.of());
         List<List<Path>> split = dev.jpm.build.Modules.split(decl, b.classpath(m, Builder.Cp.RUNTIME));
         List<Path> modulePath = new ArrayList<>();
         modulePath.add(classes);

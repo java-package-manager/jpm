@@ -1,0 +1,2 @@
+// Plain Java 8 code, built for every supported target by JavaVersionsTest.
+{ "name": "plain", "version": "1.0.0", "main": "plain.Main" }

@@ -327,6 +327,30 @@ jobs:
       - name: Live tests
         run: bin/jpm test --frozen --tag live
 
+  # Every supported target (8, 11, 17, 21, 25, 27) built and run with every supported JDK; see
+  # docs/java-versions.md.
+  java-versions:
+    name: java versions
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      JPM_HOME: ${{ github.workspace }}/../jpm-home
+      JPM_NO_UPDATE_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - { uses: actions/setup-java@v4, id: j8, with: { distribution: temurin, java-version: "8" } }
+      - { uses: actions/setup-java@v4, id: j11, with: { distribution: temurin, java-version: "11" } }
+      - { uses: actions/setup-java@v4, id: j17, with: { distribution: temurin, java-version: "17" } }
+      - { uses: actions/setup-java@v4, id: j25, with: { distribution: temurin, java-version: "25" } }
+      - { uses: actions/setup-java@v4, id: j27, with: { distribution: temurin, java-version: "27" } }
+      - { uses: actions/setup-java@v4, id: j21, with: { distribution: temurin, java-version: "21" } }
+      - name: Bootstrap
+        run: ./bootstrap.sh
+      - name: Every target with every JDK
+        env:
+          JPM_TEST_JDKS: ${{ steps.j8.outputs.path }}:${{ steps.j11.outputs.path }}:${{ steps.j17.outputs.path }}:${{ steps.j21.outputs.path }}:${{ steps.j25.outputs.path }}:${{ steps.j27.outputs.path }}
+        run: bin/jpm test --frozen --module jpm dev.jpm.e2e.JavaVersionsTest
+
   # Line coverage of the unit and end-to-end tests, to find dead code: the report is an artifact, the
   # summary is shown on the run's page.
   coverage:

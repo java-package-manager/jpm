@@ -168,12 +168,12 @@ compiled classes or from the manifest.
 
 **Needs:** Java support matrix from Phase 0.
 
-- [ ] Build projects targeting each supported version (`"target": "8"` through the newest), including
+- [x] Build projects targeting each supported version (`"target": "8"` through the newest), including
       the differences around `--release`, modules (none on 8), and `-source/-target` on Java 8.
-- [ ] Test matrix in CI: build and test the fixtures with each supported JDK as `"java"` and each
+- [x] Test matrix in CI: build and test the fixtures with each supported JDK as `"java"` and each
       supported `"target"`.
-- [ ] Clear error when a combination cannot work (for example a module project targeting 8).
-- [ ] Follow vendor end-of-life dates: dropping a version is an announced, deliberate change.
+- [x] Clear error when a combination cannot work (for example a module project targeting 8).
+- [x] Follow vendor end-of-life dates: dropping a version is an announced, deliberate change.
 
 ---
 

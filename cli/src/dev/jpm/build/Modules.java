@@ -73,22 +73,6 @@ public final class Modules {
         return new Declaration(name, requires);
     }
 
-    /** The name and requires of a compiled module, from its {@code module-info.class}; null when there is none. */
-    public static Declaration compiled(Path classes) {
-        Path f = classes.resolve("module-info.class");
-        if (!Files.isRegularFile(f)) return null;
-        try (var in = Files.newInputStream(f)) {
-            java.lang.module.ModuleDescriptor d = java.lang.module.ModuleDescriptor.read(in);
-            Set<String> requires = new LinkedHashSet<>();
-            for (java.lang.module.ModuleDescriptor.Requires r : d.requires()) {
-                if (!r.name().equals("java.base")) requires.add(r.name());
-            }
-            return new Declaration(d.name(), requires);
-        } catch (java.io.IOException e) {
-            throw new JpmException("Could not read " + f + ": " + e.getMessage());
-        }
-    }
-
     static final String READER = """
             import com.sun.source.tree.ModuleTree;
             import com.sun.source.tree.RequiresTree;

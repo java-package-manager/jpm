@@ -45,17 +45,6 @@ class ModulesTest {
     }
 
     @Test
-    void readsACompiledModule(@TempDir Path dir) {
-        Fs.write(dir.resolve("src/module-info.java"), "module m.x { requires java.sql; }");
-        assertEquals(0, javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, "-d", dir.resolve("out").toString(),
-                dir.resolve("src/module-info.java").toString()));
-        Modules.Declaration d = Modules.compiled(dir.resolve("out"));
-        assertEquals("m.x", d.name());
-        assertEquals(Set.of("java.sql"), d.requires());
-        assertEquals(null, Modules.compiled(dir.resolve("src")));
-    }
-
-    @Test
     void derivesAutomaticNames() {
         assertEquals("commons.lang3", Modules.automaticName(Path.of("commons-lang3-3.14.0.jar")));
         assertEquals("javax.inject", Modules.automaticName(Path.of("javax.inject-1.jar")));

@@ -1,0 +1,2 @@
+// A named module, built for every supported target from 9 on by JavaVersionsTest.
+{ "name": "module-app", "version": "1.0.0", "main": "demo.mod.Main" }

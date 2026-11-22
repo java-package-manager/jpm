@@ -214,6 +214,12 @@ public final class Compiler {
         Path tmp = r.outDir.resolveSibling(r.outDir.getFileName() + ".tmp");
         Fs.deleteTree(tmp);
         Fs.mkdirs(tmp);
+        Path declared = Modules.moduleInfo(r.sourceRoots);
+        if (declared != null && r.release < 9) {
+            throw JpmException.at(declared, 0, r.label + " is a Java module (module-info.java), and modules need target 9 or newer;"
+                    + " the target is " + r.release).withHint("set \"target\" to 9 or newer, or remove module-info.java to build for "
+                    + r.release);
+        }
         List<String> args = new ArrayList<>();
         if (r.jdk.major() >= 9) {
             String refused = r.release < r.jdk.major() ? refusedWithRelease(r.extraArgs) : null;

@@ -18,6 +18,7 @@ Status: accepted
   that is not a class file jpm understands is left alone (`Relocator`).
 - Unpacking skips entries that would land outside the target folder (zip slip) (`Jars`).
 
-- A module's name and `requires` come from javac: before compiling, a small program on the project's JDK
-  parses `module-info.java` with `com.sun.source` (cached by content); after compiling, jpm reads
-  `module-info.class` (`Modules.declaration`, `Modules.compiled`). jpm reads no Java source itself.
+- A module's name and `requires` come from javac: a small program on the project's JDK parses
+  `module-info.java` with `com.sun.source` (cached by content, `Modules.declaration`). It runs on the
+  project's JDK, not jpm's, because jpm's own runtime cannot read class files of newer Java versions.
+  jpm reads no Java source itself.
