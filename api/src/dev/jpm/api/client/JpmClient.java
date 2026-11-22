@@ -2,6 +2,7 @@ package dev.jpm.api.client;
 
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.api.model.Classpaths;
+import dev.jpm.api.model.Extension;
 import dev.jpm.api.model.Project;
 import dev.jpm.api.protocol.Frames;
 import dev.jpm.api.protocol.Protocol;
@@ -187,6 +188,25 @@ public final class JpmClient implements AutoCloseable {
         Map<String, Object> r = call("project/classpaths", Map.of("dir", dir.toAbsolutePath().toString(), "modules", modules));
         Map<String, Classpaths> out = new LinkedHashMap<>();
         if (r.get("modules") instanceof Map<?, ?> m) m.forEach((k, v) -> out.put(k.toString(), Results.classpaths((Map<String, Object>) v)));
+        return out;
+    }
+
+    /**
+     * {@code extensions/list}: the global extensions and, with a {@code dir}, the ones that project declares, which
+     * take the place of global ones of the same name. jpm reads their manifests; it runs none of them.
+     *
+     * @param dir the project's folder, or null for the global extensions only
+     * @return the extensions, the project's first
+     * @throws JpmError when jpm cannot load the project
+     */
+    @SuppressWarnings("unchecked")
+    public List<Extension> extensions(Path dir) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        if (dir != null) params.put("dir", dir.toAbsolutePath().toString());
+        List<Extension> out = new ArrayList<>();
+        if (call("extensions/list", params).get("extensions") instanceof List<?> l) {
+            for (Object o : l) if (o instanceof Map<?, ?> m) out.add(Results.extension((Map<String, Object>) m));
+        }
         return out;
     }
 

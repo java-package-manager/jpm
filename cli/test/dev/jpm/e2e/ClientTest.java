@@ -4,6 +4,7 @@ import dev.jpm.api.client.JpmClient;
 import dev.jpm.api.client.JpmError;
 import dev.jpm.api.client.LoadOptions;
 import dev.jpm.api.model.Classpaths;
+import dev.jpm.api.model.Extension;
 import dev.jpm.api.model.Module;
 import dev.jpm.api.model.Project;
 import dev.jpm.api.protocol.Protocol;
@@ -63,6 +64,54 @@ class ClientTest {
             Map<String, Classpaths> cps = jpm.classpaths(s.project, List.of("app"));
             assertEquals(List.of("workspace:core", "org.example:money"), cps.get("app").runtime().stream().map(x -> x.id()).toList());
             assertEquals("jpm project.jsonc", jpm.manifestSchema().get("title"));
+        }
+    }
+
+    private static void git(Path dir, String... args) {
+        List<String> cmd = new ArrayList<>(List.of("git", "-c", "user.name=e2e", "-c", "user.email=e2e@example.com",
+                "-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false"));
+        cmd.addAll(List.of(args));
+        dev.jpm.util.Exec.Result r = dev.jpm.util.Exec.capture(dir, cmd);
+        if (r.exit() != 0) throw new AssertionError(String.join(" ", cmd) + ": " + r.out() + r.err());
+    }
+
+    private static void extension(Path dir, String name, String version, String descriptor) {
+        Fs.write(dir.resolve("src/x/Main.java"), "package x; public class Main { public static void main(String[] a) {} }");
+        Fs.write(dir.resolve("project.jsonc"), "{ \"name\": \"" + name + "\", \"version\": \"" + version + "\", \"main\": \"x.Main\","
+                + " \"extension\": " + descriptor + " }");
+        if (!java.nio.file.Files.isDirectory(dir.resolve(".git"))) git(dir, "init", "-q", "-b", "main");
+        git(dir, "add", "-A");
+        git(dir, "commit", "-qm", version);
+        git(dir, "tag", version);
+    }
+
+    @Test
+    void listsExtensionsWithoutRunningThem(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Path lint = tmp.resolve("git/me/jpm-lint");
+        extension(lint, "jpm-lint", "1.0.0", "{}");
+        extension(lint, "jpm-lint", "2.0.0", "{ \"description\": \"Lints the sources\", \"commands\": { \"lint\": { \"description\": \"Lint\","
+                + " \"options\": { \"--fix\": { \"description\": \"Fix it\" }, \"--module\": { \"argument\": \"name\" } } },"
+                + " \"lint report\": {} }, \"checks\": { \"style\": { \"description\": \"The style\" } } }");
+        extension(tmp.resolve("git/me/jpm-hello"), "jpm-hello", "1.0.0", "{}");
+        s.jpm("add", "-g", "github:me/jpm-lint@1.0.0");
+        s.jpm("add", "-g", "github:me/jpm-hello@1.0.0");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"extensions\": { \"github:me/jpm-lint\": \"^2.0\" } }");
+        try (JpmClient jpm = connect(s)) {
+            assertTrue(jpm.supports("extensions/list"));
+            List<Extension> all = jpm.extensions(s.project);
+            assertEquals(List.of("lint project 2.0.0", "hello global 1.0.0"), all.stream().map(e -> e.name() + " " + e.source() + " " + e.version()).toList(),
+                    "the declared lint takes the place of the global one");
+            Extension l = all.get(0);
+            assertEquals("github:me/jpm-lint", l.key());
+            assertEquals("Lints the sources", l.description());
+            assertEquals(List.of("lint", "lint report"), l.commands().stream().map(Extension.Command::name).toList());
+            assertEquals(List.of(new Extension.Option("--fix", null, "Fix it"), new Extension.Option("--module", "name", null)), l.commands().get(0).options());
+            assertEquals(List.of(new Extension.Check("style", "The style")), l.checks());
+            Extension hello = all.get(1);
+            assertEquals(List.of(new Extension.Command("hello", null, List.of())), hello.commands(), "no commands listed: one named after it");
+            assertEquals(List.of("hello", "lint"), jpm.extensions(null).stream().map(Extension::name).sorted().toList());
         }
     }
 

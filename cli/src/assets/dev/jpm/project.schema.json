@@ -419,7 +419,45 @@
     },
     "extension": {
       "type": "object",
-      "description": "Marks this project as a jpm extension, so `jpm add` declares it in \"extensions\" instead of adding it as a dependency."
+      "description": "Marks this project as a jpm extension, so `jpm add` declares it in \"extensions\" instead of adding it as a dependency, and describes what it adds; jpm serves the description to IDEs (extensions/list) without running the extension.",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "description": "What the extension does." },
+        "commands": {
+          "type": "object",
+          "description": "Its commands, by what follows `jpm` (\"publish\", or \"format check\" for a subcommand); each starts with the extension's name without the jpm- prefix.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "description": { "type": "string" },
+              "options": {
+                "type": "object",
+                "description": "Options by name (\"--dry-run\").",
+                "propertyNames": { "pattern": "^-" },
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "argument": { "type": "string", "description": "The name of the option's value; leave it out for a flag." },
+                    "description": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "checks": {
+          "type": "object",
+          "description": "Checks it adds to `jpm check`, by id.",
+          "propertyNames": { "pattern": "^[a-z][a-z0-9-]*$" },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "description": { "type": "string" } }
+          }
+        }
+      }
     }
   },
   "definitions": {

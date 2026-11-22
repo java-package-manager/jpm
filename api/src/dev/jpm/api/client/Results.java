@@ -3,6 +3,7 @@ package dev.jpm.api.client;
 import dev.jpm.api.model.Classpaths;
 import dev.jpm.api.model.Define;
 import dev.jpm.api.model.Dependency;
+import dev.jpm.api.model.Extension;
 import dev.jpm.api.model.Folders;
 import dev.jpm.api.model.Jdk;
 import dev.jpm.api.model.Module;
@@ -65,6 +66,19 @@ public final class Results {
         Object v = m.get("value");
         if (v instanceof java.math.BigDecimal bd) v = bd.intValueExact();
         return new Define(str(m, "name"), str(m, "type"), v, str(m, "class"));
+    }
+
+    /**
+     * One entry of an {@code extensions/list} result.
+     *
+     * @param m the extension object
+     * @return the extension
+     */
+    public static Extension extension(Map<String, Object> m) {
+        List<Extension.Command> commands = list(m, "commands", c -> new Extension.Command(str(c, "name"), str(c, "description"),
+                list(c, "options", o -> new Extension.Option(str(o, "name"), str(o, "argument"), str(o, "description")))));
+        List<Extension.Check> checks = list(m, "checks", c -> new Extension.Check(str(c, "id"), str(c, "description")));
+        return new Extension(str(m, "name"), str(m, "key"), str(m, "version"), str(m, "source"), str(m, "description"), commands, checks);
     }
 
     static Script script(Map<String, Object> m) {

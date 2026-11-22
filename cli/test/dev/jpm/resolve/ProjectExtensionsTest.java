@@ -110,4 +110,25 @@ class ProjectExtensionsTest {
         Fs.write(dir.resolve("f/project.jsonc"), "{ \"name\": \"jpm-x\", \"version\": \"1.0.0\", \"extension\": true }");
         assertThrows(JpmException.class, () -> Manifest.load(dir.resolve("f")));
     }
+
+    private static JpmException descriptorError(Path dir, String descriptor) {
+        Fs.write(dir.resolve("d/project.jsonc"), "{ \"name\": \"jpm-lint\", \"version\": \"1.0.0\", \"extension\": " + descriptor + " }");
+        return assertThrows(JpmException.class, () -> Manifest.load(dir.resolve("d")));
+    }
+
+    @Test
+    void readsTheDescriptor(@TempDir Path dir) {
+        Fs.write(dir.resolve("e/project.jsonc"), "{ \"name\": \"jpm-lint\", \"version\": \"1.0.0\", \"extension\": {"
+                + " \"description\": \"Lints\", \"commands\": { \"lint\": { \"options\": { \"--module\": { \"argument\": \"name\" } } } },"
+                + " \"checks\": { \"style\": {} } } }");
+        Manifest.ExtensionDescriptor d = Manifest.load(dir.resolve("e")).extension;
+        assertEquals("Lints", d.description());
+        assertEquals(new Manifest.ExtensionOption("--module", "name", null), d.commands().get(0).options().get(0));
+        assertEquals("style", d.checks().get(0).id());
+        assertTrue(descriptorError(dir, "{ \"commands\": { \"format\": {} } }").getMessage().contains("must start with \"lint\""));
+        assertTrue(descriptorError(dir, "{ \"commands\": { \"lint\": { \"options\": { \"fix\": {} } } } }").getMessage().contains("must start with -"));
+        assertTrue(descriptorError(dir, "{ \"checks\": { \"Style\": {} } }").getMessage().contains("a check id is lowercase"));
+        assertTrue(descriptorError(dir, "{ \"command\": {} }").getMessage().contains("unknown field \"command\" in extension"));
+        assertTrue(descriptorError(dir, "{ \"description\": 1 }").getMessage().contains("description must be a string"));
+    }
 }

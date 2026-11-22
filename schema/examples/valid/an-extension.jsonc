@@ -2,5 +2,14 @@
   "name": "jpm-lint",
   "version": "1.4.0",
   "main": "com.example.lint.Main",
-  "extension": {}
+  "extension": {
+    "description": "Lints the sources",
+    "commands": {
+      "lint": {
+        "description": "Lint every module",
+        "options": { "--fix": { "description": "Fix what can be fixed" }, "--module": { "argument": "name" } }
+      }
+    },
+    "checks": { "style": { "description": "The code follows the style" } }
+  }
 }

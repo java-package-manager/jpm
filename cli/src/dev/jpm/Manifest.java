@@ -161,6 +161,20 @@ public final class Manifest {
     public final List<ExtensionDecl> declaredExtensions;
     /** True when this manifest is an extension's own ({@code "extension": {...}}), which {@code jpm add} detects. */
     public final boolean isExtension;
+    /** What an extension's manifest says it adds ({@code "extension"}); null for other manifests. */
+    public final ExtensionDescriptor extension;
+
+    /** An extension's description of itself: its commands with their options, and the checks it adds to {@code jpm check}. */
+    public record ExtensionDescriptor(String description, List<ExtensionCommand> commands, List<ExtensionCheck> checks) {}
+
+    /** A command an extension adds: {@code name} is what follows {@code jpm} ({@code publish}, {@code format check}). */
+    public record ExtensionCommand(String name, String description, List<ExtensionOption> options) {}
+
+    /** An option of an extension's command; {@code argument} names its value, null for a flag. */
+    public record ExtensionOption(String name, String argument, String description) {}
+
+    /** A check an extension adds to {@code jpm check}, by id. */
+    public record ExtensionCheck(String id, String description) {}
 
     /** An extension declared in {@code "extensions"}: {@code "github:me/jpm-foo": "^1.0"}. */
     public record ExtensionDecl(DepKey key, String spec, int line) {
@@ -380,6 +394,7 @@ public final class Manifest {
         Jsonc.Node marker = root.get("extension");
         if (marker != null && !marker.isObject()) throw err(marker, "extension must be an object describing the extension, such as {}");
         this.isExtension = marker != null;
+        this.extension = marker == null ? null : descriptor(marker);
         if (!packaging.equals("jar") && !packaging.equals("bundle")) throw err(root.get("package"), "package must be \"jar\" or \"bundle\"");
         String layoutName = reader.str("layout", false);
         this.layout = layoutName == null && parent != null ? parent.layout : Layout.named(layoutName);
@@ -441,6 +456,56 @@ public final class Manifest {
     /** True when the manifest lists {@code "workspace"} modules. */
     public boolean isWorkspaceRoot() {
         return !workspace.isEmpty();
+    }
+
+    private ExtensionDescriptor descriptor(Jsonc.Node n) {
+        for (Jsonc.Member m : n.members.values()) {
+            if (!Set.of("description", "commands", "checks").contains(m.key)) {
+                throw JpmException.at(file, line(m.keyStart), "unknown field \"" + m.key + "\" in extension; it has description, commands and checks");
+            }
+        }
+        String prefix = name.replaceFirst("^jpm-", "");
+        List<ExtensionCommand> commands = new ArrayList<>();
+        Jsonc.Node cs = n.get("commands");
+        if (cs != null) {
+            if (!cs.isObject()) throw err(cs, "extension.commands must be an object of command to its description");
+            for (Jsonc.Member c : cs.members.values()) {
+                if (!c.value.isObject()) throw err(c.value, "extension.commands." + c.key + " must be an object");
+                if (!c.key.equals(prefix) && !c.key.startsWith(prefix + " ")) {
+                    throw JpmException.at(file, line(c.keyStart), "the command \"" + c.key + "\" must start with \"" + prefix
+                            + "\": jpm runs this extension as `jpm " + prefix + "`");
+                }
+                List<ExtensionOption> options = new ArrayList<>();
+                Jsonc.Node os = c.value.get("options");
+                if (os != null) {
+                    if (!os.isObject()) throw err(os, "options must be an object of option to its description");
+                    for (Jsonc.Member o : os.members.values()) {
+                        if (!o.key.startsWith("-")) throw JpmException.at(file, line(o.keyStart), "the option \"" + o.key + "\" must start with -");
+                        if (!o.value.isObject()) throw err(o.value, "the option " + o.key + " must be an object");
+                        options.add(new ExtensionOption(o.key, text(o.value, "argument"), text(o.value, "description")));
+                    }
+                }
+                commands.add(new ExtensionCommand(c.key, text(c.value, "description"), List.copyOf(options)));
+            }
+        }
+        List<ExtensionCheck> checks = new ArrayList<>();
+        Jsonc.Node ks = n.get("checks");
+        if (ks != null) {
+            if (!ks.isObject()) throw err(ks, "extension.checks must be an object of check id to its description");
+            for (Jsonc.Member k : ks.members.values()) {
+                if (!k.key.matches("[a-z][a-z0-9-]*")) throw JpmException.at(file, line(k.keyStart), "a check id is lowercase letters, digits and -, not \"" + k.key + "\"");
+                if (!k.value.isObject()) throw err(k.value, "the check " + k.key + " must be an object");
+                checks.add(new ExtensionCheck(k.key, text(k.value, "description")));
+            }
+        }
+        return new ExtensionDescriptor(text(n, "description"), List.copyOf(commands), List.copyOf(checks));
+    }
+
+    private String text(Jsonc.Node obj, String key) {
+        Jsonc.Node v = obj.get(key);
+        if (v == null) return null;
+        if (!(v.value instanceof String s)) throw err(v, key + " must be a string");
+        return s;
     }
 
     /** The 1-based line of an offset in the manifest's text. */

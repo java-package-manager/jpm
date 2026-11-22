@@ -92,8 +92,10 @@ that want a file write it themselves; the protocol does not write `~/.jpm/schema
 ### `extensions/list`
 
 The commands and checks of every extension: the ones installed globally and, when `dir` is given, the ones
-the project declares (Milestone 4, item 6). jpm reads each extension's descriptor from its manifest; it never
-runs an extension to list it.
+the project declares, which come first and take the place of global ones of the same name. jpm reads each
+extension's descriptor from its manifest at the locked commit; it never runs an extension to list it. An
+extension without a descriptor (a Maven jar, or a manifest that lists no commands) gets one command named
+after it.
 
 ### `check/run`
 
@@ -196,10 +198,31 @@ name, the same for every define of a module).
 
 ### ExtensionDescriptor
 
-`name` (`publish` for `jpm publish`), `version`, `source` (`global` or `project`), `description?`,
-`commands`: [{`name`, `description`, `options`: [{`name`, `argument?`, `description`}]}], `checks`:
-[{`id`, `description`}]. The format of the descriptor in an extension's manifest is part of item 7 and is
-specified there.
+`name` (`publish` for `jpm publish`), `key` (its dependency key), `version?` (absent before it is installed),
+`source` (`global` or `project`), `description?`, `commands`: [{`name`, `description?`, `options`: [{`name`,
+`argument?`, `description?`}]}], `checks`: [{`id`, `description?`}].
+
+An extension describes itself in its own `project.jsonc`, under `"extension"`:
+
+```jsonc
+"extension": {
+  "description": "Publish jpm projects to Maven repositories and Maven Central",
+  "commands": {
+    "publish": {
+      "description": "Publish the modules to a Maven repository",
+      "options": {
+        "--dry-run": { "description": "Show what would be uploaded" },
+        "--module": { "argument": "name", "description": "Publish only this module" }
+      }
+    }
+  },
+  "checks": { "pom": { "description": "The POM has what Maven Central requires" } }
+}
+```
+
+A command's name is what follows `jpm` and starts with the extension's name (`publish`, `format check`);
+options start with `-`; check ids are lowercase letters, digits and `-`. jpm rejects a descriptor that
+breaks these rules when it reads the manifest.
 
 ### Problem
 
