@@ -10,8 +10,7 @@
   "workspace": ["api", "cli"],
   "url": "https://github.com/java-package-manager/jpm",
   "extensions": {
-    // main until jpm 0.12.0: it uploads unique snapshot names and needs `jpm api`
-    "github:java-package-manager/jpm-publish": "#main",
+    "github:java-package-manager/jpm-publish": "^0.3",
     "publish": {
       "repositories": {
         // CI publishes releases and snapshots of main here: `jpm publish thenextlvl`
