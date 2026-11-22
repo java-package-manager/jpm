@@ -1,0 +1,10 @@
+// The public API of jpm, published as dev.jpm:jpm-api: dev.jpm.api only, with full Javadoc.
+{
+  "name": "jpm-api",
+  "visibility": "public",
+  // the build fails on missing or broken Javadoc of anything public
+  "javacArgs": ["-Xdoclint:all/protected", "-Werror"],
+  "test": {
+    "org.junit.jupiter:junit-jupiter": "[6.0.0,)"
+  }
+}

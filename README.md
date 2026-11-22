@@ -54,7 +54,7 @@ Versions like `1.0.0-rc1` become GitHub prereleases, which `jpm upgrade` and the
 
 ```sh
 # or from source:
-./bootstrap.sh            # compiles jpm with javac, then jpm builds itself into dist/
+./bootstrap.sh            # compiles jpm with javac, then jpm builds itself into cli/dist/ and api/dist/
 export PATH="$PWD/bin:$PATH"
 
 mkdir hello && cd hello
@@ -233,7 +233,7 @@ resources), `scripts/`, `patches/`, `.cache/` (build cache, not committed), `dis
 
 ## Editor support
 
-`project.jsonc` has a JSON Schema, [`src/assets/dev/jpm/project.schema.json`](src/assets/dev/jpm/project.schema.json),
+`project.jsonc` has a JSON Schema, [`cli/src/assets/dev/jpm/project.schema.json`](cli/src/assets/dev/jpm/project.schema.json),
 built into jpm and attached to every release at a stable address:
 
 ```

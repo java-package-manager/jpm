@@ -1,28 +1,11 @@
 // jpm builds itself: `./bootstrap.sh` once, then `bin/jpm build`, `bin/jpm test` and `bin/jpm build --native`.
 {
-  "$schema": "./src/assets/dev/jpm/project.schema.json",
-  "name": "jpm",
+  "$schema": "./cli/src/assets/dev/jpm/project.schema.json",
+  "name": "jpm-workspace",
   "version": "0.9.0",
+  "group": "dev.jpm",
   "license": "MIT",
   "java": "21",
-  "main": "dev.jpm.cli.Main",
-  // generated with NAME and VERSION from this manifest; Main reads the version from it
-  "defineClass": "dev.jpm.BuildConfig",
-  "runtime": {},
-  "test": {
-    "org.junit.jupiter:junit-jupiter": "[6.0.0,)"
-  },
-  "nativeArgs": [
-    "-O2",
-    "-H:+ReportExceptionStackTraces",
-    "--enable-url-protocols=https,http",
-    // As the java shim, jpm passes -X, -XX and -D arguments to the JDK instead of reading them itself.
-    "-H:-ParseRuntimeOptions",
-    // The JDK's XML parser (used for POMs) loads its messages from resource bundles at run time.
-    "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.XMLMessages",
-    "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.DOMMessages",
-    "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.xpath.regex.message",
-    // `jpm schema` serves the manifest schema from the binary.
-    "-H:IncludeResources=dev/jpm/project\\.schema\\.json"
-  ]
+  // api: the public API, published as dev.jpm:jpm-api; cli: jpm itself
+  "workspace": ["api", "cli"]
 }

@@ -17,7 +17,7 @@ failed=""
 step() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 fail() { failed="$failed\n  - $1"; }
 
-ls dist/jpm-*.jar >/dev/null 2>&1 || [ -f .cache/bootstrap/jpm.jar ] || ./bootstrap.sh
+ls cli/dist/jpm-*.jar >/dev/null 2>&1 || [ -f .cache/bootstrap/jpm.jar ] || ./bootstrap.sh
 
 step "build"
 bin/jpm build --frozen || fail "build"
@@ -32,7 +32,7 @@ PY=${PYTHON:-$(command -v python3 || command -v python || true)}
 if [ -z "$PY" ] || ! "$PY" -c "import jsonschema" 2>/dev/null; then
   fail "schema: needs python3 with jsonschema (pip install jsonschema)"
 else
-  "$PY" schema/check.py project.jsonc fixtures/*/project.jsonc fixtures/*/*/project.jsonc schema/examples/valid/*.jsonc || fail "schema"
+  "$PY" schema/check.py project.jsonc api/project.jsonc cli/project.jsonc fixtures/*/project.jsonc fixtures/*/*/project.jsonc schema/examples/valid/*.jsonc || fail "schema"
   "$PY" schema/check.py --expect-invalid schema/examples/invalid/*.jsonc || fail "schema (invalid examples)"
 fi
 

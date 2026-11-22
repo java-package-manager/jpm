@@ -126,7 +126,7 @@ The goal is code that a new contributor can read top to bottom.
 
 - [ ] Move code into the three layers.
 - [ ] Javadoc on every public and internal API type and member; none on implementations.
-- [ ] Build fails on missing Javadoc in `dev.jpm.api` and on exported packages outside it.
+- [x] Build fails on missing Javadoc in `dev.jpm.api` and on exported packages outside it.
 
 ### Tests
 
@@ -482,10 +482,12 @@ Builds the test and tooling base that the restructure depends on.
 
 **Needs:** Milestone 1 items 1 to 4.
 
-1. **Workspace layout.**
-   - The jpm repository becomes a workspace with an `api` module (`dev.jpm.api`, published) and the
-     root module (the CLI and everything else).
-   - Add `module-info.java` to both modules.
+1. **Workspace layout.** Done.
+   - The jpm repository is a workspace with an `api` module (`dev.jpm.api`, published as
+     `dev.jpm:jpm-api`) and a `cli` module (the CLI and everything else). A workspace root lists modules
+     only, so the CLI moved into `cli/` rather than staying in the root.
+   - Both modules have a `module-info.java`; `cli` exports nothing. The `api` module is compiled with
+     `-Xdoclint:all/protected -Werror`, so missing Javadoc fails the build.
 2. **Command registry.**
    - Split `cli/Commands.java` into one class per command, registered in one place.
    - Generate `jpm help`, the README command table and **shell completions** (`jpm completions

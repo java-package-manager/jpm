@@ -109,12 +109,12 @@ jobs:
 
       - name: End-to-end tests on the native binary
         if: runner.os != 'Windows'
-        run: JPM_E2E_BINARY="$PWD/dist/jpm" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest
+        run: JPM_E2E_BINARY="$PWD/cli/dist/jpm" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest
 
       - name: Smoke test the native binary
         run: |
           set -eux
-          JPM="$PWD/dist/jpm${{ matrix.exe }}"
+          JPM="$PWD/cli/dist/jpm${{ matrix.exe }}"
           "$JPM" --version
           "$JPM" java list
           work="$RUNNER_TEMP/smoke"
@@ -149,7 +149,7 @@ jobs:
       - name: Smoke test toolchains and native builds
         run: |
           set -eux
-          JPM="$PWD/dist/jpm${{ matrix.exe }}"
+          JPM="$PWD/cli/dist/jpm${{ matrix.exe }}"
           mkdir -p "$RUNNER_TEMP/bin"
           JVM="$RUNNER_TEMP/bin/jvm${{ matrix.exe }}"
           cp "$JPM" "$JVM"
@@ -168,7 +168,7 @@ jobs:
       - name: Import real Maven and Gradle builds
         run: |
           set -eux
-          JPM="$PWD/dist/jpm${{ matrix.exe }}"
+          JPM="$PWD/cli/dist/jpm${{ matrix.exe }}"
           work="$RUNNER_TEMP/imports"
           rm -rf "$work" && mkdir -p "$work"
           # A real-world Maven project: parent POM chain, managed versions, Java 8 target.
@@ -185,7 +185,7 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           set -eux
-          JPM="$PWD/dist/jpm${{ matrix.exe }}"
+          JPM="$PWD/cli/dist/jpm${{ matrix.exe }}"
           base="$RUNNER_TEMP/gitbase"; rm -rf "$base" && mkdir -p "$base/me"
           git init -q -b main "$base/me/lib" && cd "$base/me/lib"
           git config user.email ci@example.com && git config user.name ci
@@ -209,7 +209,7 @@ jobs:
       - name: Build and run a jar-in-jar bundle
         run: |
           set -eux
-          JPM="$PWD/dist/jpm${{ matrix.exe }}"
+          JPM="$PWD/cli/dist/jpm${{ matrix.exe }}"
           cp -r fixtures/bundle-demo "$RUNNER_TEMP/bundle-demo"
           cd "$RUNNER_TEMP/bundle-demo"
           "$JPM" build
@@ -222,7 +222,7 @@ jobs:
           set -eux
           rel="$RUNNER_TEMP/release"
           mkdir -p "$rel"
-          cp "dist/jpm${{ matrix.exe }}" "$rel/jpm-${{ matrix.name }}${{ matrix.exe }}"
+          cp "cli/dist/jpm${{ matrix.exe }}" "$rel/jpm-${{ matrix.name }}${{ matrix.exe }}"
           cd "$rel" && (sha256sum * 2>/dev/null || shasum -a 256 *) > SHA256SUMS && cat SHA256SUMS
           if [ "${{ matrix.exe }}" = "" ]; then
             # a fresh home, so the PATH setup is checked without touching the runner's
@@ -305,7 +305,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: jpm-${{ matrix.name }}
-          path: dist/jpm${{ matrix.exe }}
+          path: cli/dist/jpm${{ matrix.exe }}
           if-no-files-found: error
 
   # Tests tagged "live" reach Maven Central; every other test is hermetic and runs in the build job.

@@ -9,11 +9,15 @@ jpm builds itself. It needs a JDK 21; `bootstrap.sh` compiles it once with plain
 
 ```sh
 ./bootstrap.sh                 # once: javac, then jpm builds itself into dist/
-bin/jpm build                  # dist/jpm-<version>.jar (bin/jpm runs it; bin\jpm.cmd on Windows)
-bin/jpm build --native         # dist/jpm, the native binary (GraalVM, installed if needed)
+bin/jpm build                  # cli/dist/jpm-<version>.jar and api/dist/jpm-api-<version>.jar (bin/jpm runs
+                               # them; bin\jpm.cmd on Windows)
+bin/jpm build --native         # cli/dist/jpm, the native binary (GraalVM, installed if needed)
 ```
 
-To try a change on another project, run `bin/jpm` (or `dist/jpm`) there. To keep your own `~/.jpm`
+The repository is a workspace of two modules: `api` (`dev.jpm.api`, the public API, published as
+`dev.jpm:jpm-api`) and `cli` (jpm itself, which exports nothing). Each has a `module-info.java`.
+
+To try a change on another project, run `bin/jpm` (or `cli/dist/jpm`) there. To keep your own `~/.jpm`
 out of it, give it an empty home: `JPM_HOME=$(mktemp -d) bin/jpm build`.
 
 If `bin/jpm` fails with `Could not find option 'UseSerialGC'`, the `java` on your PATH is the shim of a
@@ -29,7 +33,7 @@ bin/jpm test dev.jpm.e2e.EndToEndTest
 checks/coverage.sh              # tests with JaCoCo; report in .cache/coverage/
 ```
 
-- Unit tests live next to the area they test (`test/dev/jpm/<area>`). Every test gets an empty jpm home
+- Unit tests live next to the area they test (`cli/test/dev/jpm/<area>`, `api/test/...`). Every test gets an empty jpm home
   (`dev.jpm.testing.JpmHome`), so tests never touch `~/.jpm`. Local Maven repositories come from
   `dev.jpm.testing.TestRepo`.
 - Tests need no network. One that does is tagged `@Tag("live")` and runs in its own CI job; the
@@ -46,8 +50,8 @@ checks/coverage.sh              # tests with JaCoCo; report in .cache/coverage/
   non-obvious decision goes into an ADR in [docs/adr](docs/adr); `/delete-comment` cleans up comments that
   crept in. Javadoc is not a comment: it is required on public and internal API, unwanted on
   implementations.
-- **Layers.** `dev.jpm.api…` is the public API: exported, with full Javadoc, kept stable once jpm reaches
-  1.0. `dev.jpm.<area>` (such as `resolve`, `build`, `toolchain`) is internal API: the interfaces and
+- **Layers.** `dev.jpm.api…` (the `api` module) is the public API: exported, with full Javadoc (javac
+  fails the build on anything missing), kept stable once jpm reaches 1.0. `dev.jpm.<area>` (such as `resolve`, `build`, `toolchain`) is internal API: the interfaces and
   records areas use to talk to each other, with Javadoc, not exported. `dev.jpm.<area>.impl` holds
   implementations, without Javadoc, and is never used from another area. The code is moving into these
   layers (roadmap Milestone 2).

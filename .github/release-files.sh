@@ -12,6 +12,6 @@ for d in artifacts/jpm-*; do
     case "$f" in *.exe) cp "$f" "release/jpm-$platform.exe" ;; *) cp "$f" "release/jpm-$platform" ;; esac
   done
 done
-cp install.sh install.ps1 src/assets/dev/jpm/project.schema.json release/
+cp install.sh install.ps1 cli/src/assets/dev/jpm/project.schema.json release/
 printf '%s\n' "$version" > release/VERSION
 cd release && sha256sum * > SHA256SUMS && cat SHA256SUMS

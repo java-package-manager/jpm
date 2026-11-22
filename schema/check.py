@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validates project.jsonc files against jpm's schema, src/assets/dev/jpm/project.schema.json.
+"""Validates project.jsonc files against jpm's schema, cli/src/assets/dev/jpm/project.schema.json.
 
 Usage: python3 schema/check.py [--expect-invalid] FILE...   (needs `pip install jsonschema`)
 """
@@ -47,7 +47,7 @@ def strip_jsonc(text: str) -> str:
 def main(args):
     expect_invalid = "--expect-invalid" in args
     files = [a for a in args if a != "--expect-invalid"]
-    schema = json.loads((pathlib.Path(__file__).parent.parent / "src/assets/dev/jpm/project.schema.json").read_text())
+    schema = json.loads((pathlib.Path(__file__).parent.parent / "cli/src/assets/dev/jpm/project.schema.json").read_text())
     jsonschema.Draft7Validator.check_schema(schema)
     validator = jsonschema.Draft7Validator(schema, format_checker=jsonschema.FormatChecker())
     failed = False

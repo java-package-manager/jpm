@@ -1,0 +1,4 @@
+/** The public API of jpm: what extensions, IDEs and other tools use to work with jpm projects. */
+module dev.jpm.api {
+    exports dev.jpm.api.json;
+}

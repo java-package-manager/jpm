@@ -16,26 +16,27 @@ Facts for AI agents working on jpm. The reasons behind them are in [CONTRIBUTING
 | Rewrite end-to-end transcripts | `JPM_UPDATE_EXPECTED=1 bin/jpm test dev.jpm.e2e.EndToEndTest` |
 | Ratchets | `java checks/Ratchets.java` (`--list <name>` shows the hits, `--update` lowers baselines) |
 | Comments in a file | `java checks/Comments.java list <path>` |
-| Native binary | `bin/jpm build --native` |
+| Native binary | `bin/jpm build --native` (`cli/dist/jpm`) |
 
 If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21.
 
 ## Where things live
 
-- `src/dev/jpm/cli`: commands (`Commands`, `Main` dispatches), shims, upgrade.
-- `src/dev/jpm/resolve`: dependency resolution and `project.lock`. `src/dev/jpm/maven`: repositories, POMs.
-- `src/dev/jpm/build`: compiling, jars, bundles, patches, scripts, the test runner.
-- `src/dev/jpm/toolchain`: finding and installing JDKs. `src/dev/jpm/importer`: Maven and Gradle import.
-- `src/dev/jpm/log`: all console output. `src/dev/jpm/util`: files, processes, HTTP, `JpmException`.
-- `src/assets/dev/jpm/project.schema.json`: the manifest schema; `schema/examples` must stay valid/invalid.
-- `test/dev/jpm/<area>`: unit tests. `test/dev/jpm/testing`: shared helpers (`JpmHome`, `TestRepo`).
-- `test/dev/jpm/e2e` with `fixtures/` and `fixtures/expected/`: end-to-end tests of the binary.
+- `api/`: the public API module (`dev.jpm.api`, `module-info.java` exports only it). `cli/`: jpm itself.
+- `cli/src/dev/jpm/cli`: commands (`Commands`, `Main` dispatches), shims, upgrade.
+- `cli/src/dev/jpm/resolve`: dependency resolution and `project.lock`. `cli/src/dev/jpm/maven`: repositories, POMs.
+- `cli/src/dev/jpm/build`: compiling, jars, bundles, patches, scripts, the test runner.
+- `cli/src/dev/jpm/toolchain`: finding and installing JDKs. `cli/src/dev/jpm/importer`: Maven and Gradle import.
+- `cli/src/dev/jpm/log`: all console output. `cli/src/dev/jpm/util`: files, processes, HTTP, `JpmException`.
+- `cli/src/assets/dev/jpm/project.schema.json`: the manifest schema; `schema/examples` must stay valid/invalid.
+- `cli/test/dev/jpm/<area>`: unit tests. `cli/test/dev/jpm/testing`: shared helpers (`JpmHome`, `TestRepo`).
+- `cli/test/dev/jpm/e2e` with `fixtures/` and `fixtures/expected/`: end-to-end tests of the binary.
 - `docs/adr`: decisions. `checks/`: ratchets, coverage, the comment tool.
 
 ## Rules that must not be broken
 
 - No dependencies in jpm: the JDK only.
-- No `//` or `/* */` comments in `src/` or `test/`. Put decisions in `docs/adr`; Javadoc is fine on API.
+- No `//` or `/* */` comments in `api/` or `cli/` sources and tests. Put decisions in `docs/adr`; Javadoc is fine on API.
 - No `System.out`/`System.err` outside `dev.jpm.log.Log`.
 - jpm never parses `.java`/`.kt` sources itself.
 - Tests never use the network unless tagged `@Tag("live")`, and never touch `~/.jpm`.
@@ -50,6 +51,6 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
 1. `bin/check` passes.
 2. Behavior changes have tests: a unit test, and an end-to-end scenario for anything a user sees.
 3. User-facing changes are in `README.md` (commands, manifest fields, environment variables), and in
-   `src/assets/dev/jpm/project.schema.json` for manifest fields.
+   `cli/src/assets/dev/jpm/project.schema.json` for manifest fields.
 4. The roadmap item is ticked in `ROADMAP.md` if the change finishes it.
 5. The commit message says what changed and why, and ends with the attribution line if one is asked for.

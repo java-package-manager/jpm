@@ -1,4 +1,4 @@
-Projects that the end-to-end tests (`test/dev/jpm/e2e/EndToEndTest.java`) and CI build with the `jpm`
+Projects that the end-to-end tests (`cli/test/dev/jpm/e2e/EndToEndTest.java`) and CI build with the `jpm`
 binary. They are not part of jpm's own sources.
 
 - `workspace-demo`: a workspace with a library module that depends on a Maven artifact, an app module
@@ -14,7 +14,7 @@ binary. They are not part of jpm's own sources.
 The end-to-end tests need no network: each one gets an empty jpm home and a local Maven repository with
 stubs of the libraries the fixtures use, plus JUnit copied from the cache of the jpm running the tests.
 
-- `bin/jpm test dev.jpm.e2e.EndToEndTest` runs them on jpm's classes; `JPM_E2E_BINARY=dist/jpm` runs
+- `bin/jpm test dev.jpm.e2e.EndToEndTest` runs them on jpm's classes; `JPM_E2E_BINARY=cli/dist/jpm` runs
   them on the native binary instead.
 - A changed transcript is a change in behavior. When it is intended, `JPM_UPDATE_EXPECTED=1` rewrites
   the files in `expected/`; review the diff before committing it.
