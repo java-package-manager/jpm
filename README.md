@@ -34,8 +34,13 @@ Open a new terminal afterwards. `JPM_VERSION=0.3.0` installs that version instea
 **Upgrading:** `jpm upgrade` replaces jpm with the latest release (checksum-verified, in place) and
 refreshes the shims. `jpm upgrade --check` only reports; `jpm upgrade 0.3.0` installs a given version.
 
-`jpm version` says when a newer release is out (on stderr, after the version, so scripts reading the version
-are unaffected). jpm publishes releases only; there are no builds of single commits.
+**Prereleases** (canaries) are versions like `0.13.0-beta.0`, released from jpm-changeset's prerelease mode.
+`jpm upgrade` and the install scripts skip them; `jpm upgrade --canary` (and `JPM_VERSION=canary` for the
+install scripts) installs the newest prerelease or release, whichever is newer, and `jpm upgrade` from a
+prerelease moves to the release once it is out. `jpm upgrade <version>` installs a given one.
+
+`jpm version` says when a newer release is out, and on a prerelease also when a newer prerelease is (on
+stderr, after the version, so scripts reading the version are unaffected).
 
 **Releases** are built by CI for Linux (x64, arm64), macOS (arm64, x64) and Windows (x64), when the main
 branch gets a version that has no release yet: merging the "Version packages" pull request that
@@ -102,7 +107,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `jvm use <java>` | Choose the JDK that `java` runs outside projects (shims in ~/.jpm/bin) |
 | `jvm current` | Which JDK `java` runs here, and why. `jpm java …` and `jvm …` are the same commands |
 | `jvm exec [java] <cmd>` | Run one command with a JDK |
-| `upgrade [version]` | Upgrade jpm itself to the latest release (`--check` only reports, `--canary` installs the newest build of the main branch) |
+| `upgrade [version]` | Upgrade jpm itself to the latest release (`--check` only reports, `--canary` also takes prereleases, such as `0.13.0-beta.0`) |
 | `version` | Show jpm's version (also `--version`), and whether a newer one is out |
 | `help` | Show this list of commands (also -h, --help) |
 | `completions <shell>` | Print shell completions: `jpm completions bash > ~/.local/share/bash-completion/completions/jpm`, and the same for `zsh`, `fish` and `powershell` |

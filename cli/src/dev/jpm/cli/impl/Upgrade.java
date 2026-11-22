@@ -20,15 +20,12 @@ import java.util.List;
 public final class Upgrade {
     private Upgrade() {}
 
-    private static final java.util.regex.Pattern CANARY = java.util.regex.Pattern.compile("(.+)-([0-9a-f]{7,40})");
-
     static boolean isCanary(String version) {
-        return CANARY.matcher(version).matches();
+        return version.contains("-");
     }
 
-    static String releaseOf(String version) {
-        java.util.regex.Matcher m = CANARY.matcher(version);
-        return m.matches() ? m.group(1) : version;
+    private static int compare(String a, String b) {
+        return Version.of(a).compareTo(Version.of(b));
     }
 
     static String canaryBase() {
@@ -100,20 +97,18 @@ public final class Upgrade {
 
     static String updateNotice(String current, String latestUrl, String canaryUrl) {
         String latest = quickFetch(latestUrl);
-        boolean onCanary = isCanary(current);
-        String release = onCanary ? releaseOf(current) : current;
         java.util.List<String> lines = new java.util.ArrayList<>();
         try {
-            if (latest != null && !isCanary(latest) && Version.of(latest).compareTo(Version.of(release)) > 0) {
+            if (latest != null && !isCanary(latest) && compare(latest, current) > 0) {
                 lines.add("jpm " + latest + " is available. Run `jpm upgrade`.");
             }
-        } catch (RuntimeException ignored) {
-        }
-        if (onCanary) {
-            String canary = quickFetch(canaryUrl);
-            if (canary != null && !canary.equals(current) && isCanary(canary)) {
-                lines.add("jpm " + canary + " is the newest canary build. Run `jpm upgrade --canary`.");
+            if (isCanary(current)) {
+                String canary = quickFetch(canaryUrl);
+                if (canary != null && isCanary(canary) && compare(canary, current) > 0) {
+                    lines.add("jpm " + canary + " is the newest prerelease. Run `jpm upgrade --canary`.");
+                }
             }
+        } catch (RuntimeException ignored) {
         }
         return lines.isEmpty() ? null : String.join("\n", lines);
     }
@@ -151,16 +146,16 @@ public final class Upgrade {
             try {
                 latest = fetch(canaryBase() + "/VERSION").strip();
             } catch (JpmException e) {
-                throw new JpmException("Could not find the newest jpm canary build (" + e.getMessage() + ")");
+                throw new JpmException("Could not find the newest jpm prerelease (" + e.getMessage() + ")");
             }
             base = base(latest);
             if (check) {
-                Log.info(latest.equals(current) ? "jpm " + current + " is the newest canary build."
-                        : "jpm " + latest + " is the newest canary build (you have " + current + "). Run `jpm upgrade --canary`.");
+                Log.info(latest.equals(current) ? "jpm " + current + " is the newest prerelease or release."
+                        : "jpm " + latest + " is the newest prerelease or release (you have " + current + "). Run `jpm upgrade --canary`.");
                 return 0;
             }
             if (latest.equals(current) && !force) {
-                Log.info("jpm " + current + " is already the newest canary build.");
+                Log.info("jpm " + current + " is already the newest prerelease or release.");
                 return 0;
             }
         } else {
@@ -179,10 +174,10 @@ public final class Upgrade {
                 return 0;
             }
             boolean onCanary = isCanary(current) && wanted == null;
-            int cmp = Version.of(latest).compareTo(Version.of(onCanary ? releaseOf(current) : current));
+            int cmp = compare(latest, current);
             if (onCanary && cmp <= 0 && !force) {
-                Log.info("jpm " + current + " is a canary build after the latest release (" + latest + "). Run `jpm upgrade --canary`"
-                        + " for newer canary builds, or `jpm upgrade " + latest + "` to go back to the release.");
+                Log.info("jpm " + current + " is a prerelease after the latest release (" + latest + "). Run `jpm upgrade --canary`"
+                        + " for newer prereleases, or `jpm upgrade " + latest + "` to go back to the release.");
                 return 0;
             }
             if (check) {

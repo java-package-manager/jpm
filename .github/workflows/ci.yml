@@ -456,9 +456,9 @@ jobs:
           gh release create "$VERSION" release/* $pre --target "$GITHUB_SHA" --title "jpm $VERSION" $notes
 
       - name: Point the canary release at it
-        # the newest build is this release, so `jpm upgrade --canary` installs it too
+        # "canary" names the newest release or prerelease, which `jpm upgrade --canary` installs
         run: |
           printf '%s\n' "$VERSION" > VERSION
           gh release view canary >/dev/null 2>&1 || gh release create canary --prerelease --title "jpm canary" \
-            --notes "Names the newest canary build in VERSION, for \`jpm upgrade --canary\`. The builds themselves are the <version>-<commit> prereleases."
+            --notes "Names the newest release or prerelease in VERSION, for \`jpm upgrade --canary\`."
           gh release upload canary VERSION --clobber

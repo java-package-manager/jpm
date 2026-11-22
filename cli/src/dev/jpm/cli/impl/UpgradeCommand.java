@@ -21,8 +21,8 @@ final class UpgradeCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(new Usage(Group.MAINTENANCE, "upgrade [version]",
-                "Upgrade jpm to the latest release (--check only reports, --canary installs the newest build of the main branch)",
-                "Upgrade jpm itself to the latest release (`--check` only reports, `--canary` installs the newest build of the main branch)"));
+                "Upgrade jpm to the latest release (--check only reports, --canary also takes prereleases, such as 0.13.0-beta.0)",
+                "Upgrade jpm itself to the latest release (`--check` only reports, `--canary` also takes prereleases, such as `0.13.0-beta.0`)"));
     }
 
     @Override

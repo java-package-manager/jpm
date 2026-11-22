@@ -23,11 +23,8 @@ class UpgradeTest {
 
     @Test
     void recognizesCanaryVersions() {
-        assertTrue(Upgrade.isCanary("0.5.0-3ff03ab"));
-        assertTrue(Upgrade.isCanary("1.0.0-SNAPSHOT-0123456789abcdef0123456789abcdef01234567"));
-        assertEquals("0.5.0", Upgrade.releaseOf("0.5.0-3ff03ab"));
-        assertEquals("0.5.0", Upgrade.releaseOf("0.5.0"));
-        assertTrue(!Upgrade.isCanary("0.5.0") && !Upgrade.isCanary("1.0.0-rc1") && !Upgrade.isCanary("1.0.0-beta.2"));
+        assertTrue(Upgrade.isCanary("0.6.0-beta.0") && Upgrade.isCanary("1.0.0-rc1"), "a canary is any prerelease");
+        assertTrue(!Upgrade.isCanary("0.5.0"));
         assertTrue(dev.jpm.version.Version.of("0.5.0-3ff03ab").compareTo(dev.jpm.version.Version.of("0.4.0")) > 0);
         assertTrue(dev.jpm.version.Version.of("0.5.0-3ff03ab").compareTo(dev.jpm.version.Version.of("0.6.0")) < 0);
         assertEquals("https://github.com/java-package-manager/jpm/releases/download/canary", Upgrade.canaryBase());
@@ -37,16 +34,16 @@ class UpgradeTest {
     void versionTellsWhatIsNewer(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir) {
         java.nio.file.Path latest = dir.resolve("latest"), canary = dir.resolve("canary");
         dev.jpm.util.Fs.write(latest, "0.6.0\n");
-        dev.jpm.util.Fs.write(canary, "0.6.0-abcdef1\n");
+        dev.jpm.util.Fs.write(canary, "0.7.0-beta.1\n");
         String l = latest.toUri().toString(), c = canary.toUri().toString();
 
         assertEquals("jpm 0.6.0 is available. Run `jpm upgrade`.", Upgrade.updateNotice("0.5.0", l, c));
         assertNull(Upgrade.updateNotice("0.6.0", l, c), "releases hear about releases only");
-        assertEquals("jpm 0.6.0-abcdef1 is the newest canary build. Run `jpm upgrade --canary`.",
-                Upgrade.updateNotice("0.6.0-1234567", l, c));
-        assertEquals("jpm 0.6.0 is available. Run `jpm upgrade`.\njpm 0.6.0-abcdef1 is the newest canary build. Run `jpm upgrade --canary`.",
-                Upgrade.updateNotice("0.5.0-1234567", l, c));
-        assertNull(Upgrade.updateNotice("0.6.0-abcdef1", l, c));
+        assertEquals("jpm 0.7.0-beta.1 is the newest prerelease. Run `jpm upgrade --canary`.", Upgrade.updateNotice("0.7.0-beta.0", l, c),
+                "0.6.0 is older than 0.7.0-beta.0");
+        assertEquals("jpm 0.6.0 is available. Run `jpm upgrade`.\njpm 0.7.0-beta.1 is the newest prerelease. Run `jpm upgrade --canary`.",
+                Upgrade.updateNotice("0.6.0-beta.2", l, c), "0.6.0 is newer than its own prerelease");
+        assertNull(Upgrade.updateNotice("0.7.0-beta.1", l, c));
         assertNull(Upgrade.updateNotice("0.5.0", c, c));
         assertNull(Upgrade.updateNotice("0.5.0", dir.resolve("missing").toUri().toString(), c));
     }
