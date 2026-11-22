@@ -47,7 +47,8 @@ stderr, after the version, so scripts reading the version are unaffected).
 **Releases** are built by CI for Linux (x64, arm64), macOS (arm64, x64) and Windows (x64), when the main
 branch gets a version that has no release yet: merging the "Version packages" pull request that
 [jpm-changeset](https://github.com/java-package-manager/jpm-changeset) keeps (see CONTRIBUTING.md) tags that
-version (plain, no `v` prefix) and releases it. Other pushes only run the checks on Linux. There is no tag
+version (plain, no `v` prefix) and releases it. That pull request gets the same builds and tests first, so
+a release is known to pass before it is merged; other pushes only run the checks on Linux. There is no tag
 to push by hand. Nothing is published unless every platform passes, and a version is never released twice.
 Versions like `1.0.0-rc1` become GitHub prereleases, which `jpm upgrade` and the install scripts skip.
 

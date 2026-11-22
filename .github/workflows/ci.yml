@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       canary:
-        description: "Build and publish a canary release (<version>-<commit>) of this commit"
+        description: "Also publish a canary release (<version>-<commit>) of this commit (main only); without it, a manual run is the full suite"
         type: boolean
         default: false
 
@@ -16,11 +16,13 @@ permissions:
   contents: read
 
 jobs:
-  # Runs first and decides what this run publishes (outputs.kind):
+  # Runs first and decides what this run publishes (outputs.kind) and whether it is the full suite (outputs.full:
+  #   every platform, live tests, Java versions, coverage):
   #   release  the main branch has a version that has no tag yet (the merged "Version packages" pull request,
-  #            see release.yml): CI builds every platform, tags this commit and releases it
-  #   canary   a manual run (Run workflow, with "canary") on the main branch: <version>-<commit>
-  #   none     every other push and pull request: the checks on Linux only, nothing is published
+  #            see release.yml): the full suite, then CI tags this commit and releases it
+  #   canary   a manual run (Run workflow, with "canary") on the main branch: the full suite, then <version>-<commit>
+  #   none     publishes nothing: pull requests (the Version packages one too) and manual runs get the full
+  #            suite, so a release is known to pass before it is merged; other pushes get the checks on Linux
   version:
     name: version
     runs-on: ubuntu-latest
@@ -28,6 +30,7 @@ jobs:
       kind: ${{ steps.decide.outputs.kind }}
       version: ${{ steps.decide.outputs.version }}
       matrix: ${{ steps.decide.outputs.matrix }}
+      full: ${{ steps.decide.outputs.full }}
     steps:
       - uses: actions/checkout@v7
 
@@ -45,8 +48,10 @@ jobs:
           elif [ "$GITHUB_REF" = "$main" ] && [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ "${{ inputs.canary }}" = true ]; then
             kind=canary
           fi
+          full=false
+          if [ "$kind" != none ] || [ "$GITHUB_EVENT_NAME" = pull_request ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then full=true; fi
           linux='{ "name": "linux-x64", "os": "ubuntu-latest", "exe": "" }'
-          if [ "$kind" = none ]; then
+          if [ "$full" = false ]; then
             matrix="[$linux]"
           else
             matrix="[$linux, { \"name\": \"linux-arm64\", \"os\": \"ubuntu-24.04-arm\", \"exe\": \"\" },
@@ -56,6 +61,7 @@ jobs:
           fi
           echo "matrix=$(echo "$matrix" | tr -d '\n')" >> "$GITHUB_OUTPUT"
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "full=$full" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "This run: $kind ($version)"
 
@@ -328,7 +334,7 @@ jobs:
   # Tests tagged "live" reach Maven Central; every other test is hermetic and runs in the build job.
   live-tests:
     name: live tests
-    if: needs.version.outputs.kind != 'none'
+    if: needs.version.outputs.full == 'true'
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
@@ -359,7 +365,7 @@ jobs:
 
   java-versions:
     name: java versions
-    if: needs.version.outputs.kind != 'none'
+    if: needs.version.outputs.full == 'true'
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
@@ -393,7 +399,7 @@ jobs:
   # coverage agent sees them.
   coverage:
     name: coverage
-    if: needs.version.outputs.kind != 'none'
+    if: needs.version.outputs.full == 'true'
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
