@@ -1,5 +1,6 @@
 package dev.jpm.resolve;
 
+import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.build.Builder;
 import dev.jpm.build.Env;
@@ -25,11 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class IsolatedModuleTest {
     private static void publish(Path repo, String a, String v, String deps) {
-        Path dir = repo.resolve("g/" + a + "/" + v);
-        Fs.write(dir.resolve(a + "-" + v + ".pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>" + a
-                + "</artifactId><version>" + v + "</version><dependencies>" + deps + "</dependencies></project>");
-        Fs.write(dir.resolve(a + "-" + v + ".jar"), "not really a jar");
-        Fs.write(repo.resolve("g/" + a + "/maven-metadata.xml"), "<metadata><versioning><versions><version>1.0</version><version>2.0</version></versions></versioning></metadata>");
+        new TestRepo(repo).artifact("g:" + a + ":" + v).dependenciesXml(deps).publish();
     }
 
     private static String dep(String a, String v) {

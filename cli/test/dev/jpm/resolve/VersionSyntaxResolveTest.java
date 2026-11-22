@@ -1,5 +1,6 @@
 package dev.jpm.resolve;
 
+import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
@@ -7,32 +8,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Resolves a project that uses every version syntax against a local Maven repository. */
 class VersionSyntaxResolveTest {
-    private static void publish(Path repo, String artifact, List<String> versions) throws IOException {
-        Path dir = repo.resolve("org/example/" + artifact);
-        StringBuilder meta = new StringBuilder("<metadata><groupId>org.example</groupId><artifactId>" + artifact + "</artifactId><versioning><versions>");
-        for (String v : versions) {
-            meta.append("<version>").append(v).append("</version>");
-            Path vd = dir.resolve(v);
-            Fs.write(vd.resolve(artifact + "-" + v + ".pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>org.example</groupId>"
-                    + "<artifactId>" + artifact + "</artifactId><version>" + v + "</version></project>");
-            try (OutputStream out = Files.newOutputStream(vd.resolve(artifact + "-" + v + ".jar")); ZipOutputStream z = new ZipOutputStream(out)) {
-                z.putNextEntry(new java.util.zip.ZipEntry("META-INF/MANIFEST.MF"));
-                z.write("Manifest-Version: 1.0\n".getBytes());
-            }
-        }
-        Fs.write(dir.resolve("maven-metadata.xml"), meta.append("</versions></versioning></metadata>").toString());
+    private static void publish(Path repo, String artifact, List<String> versions) {
+        for (String v : versions) new TestRepo(repo).artifact("org.example:" + artifact + ":" + v).publish();
     }
 
     @Test

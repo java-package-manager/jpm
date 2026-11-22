@@ -1,5 +1,6 @@
 package dev.jpm.build;
 
+import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Graph;
@@ -38,12 +39,10 @@ class FlatBundleTest {
         }
     }
 
-    private static void publish(Path repo, String artifact, String version, Map<String, String> entries) throws IOException {
-        Path dir = repo.resolve("org/example/" + artifact);
-        Fs.write(dir.resolve(version + "/" + artifact + "-" + version + ".pom"), "<project><modelVersion>4.0.0</modelVersion>"
-                + "<groupId>org.example</groupId><artifactId>" + artifact + "</artifactId><version>" + version + "</version></project>");
-        zip(dir.resolve(version + "/" + artifact + "-" + version + ".jar"), entries);
-        Fs.write(dir.resolve("maven-metadata.xml"), "<metadata><versioning><versions><version>" + version + "</version></versions></versioning></metadata>");
+    private static void publish(Path repo, String artifact, String version, Map<String, String> entries) {
+        TestRepo.Artifact a = new TestRepo(repo).artifact("org.example:" + artifact + ":" + version);
+        entries.forEach(a::entry);
+        a.publish();
     }
 
     private static Map<String, String> read(Path jar) throws IOException {

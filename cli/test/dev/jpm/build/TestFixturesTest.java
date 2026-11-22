@@ -1,5 +1,6 @@
 package dev.jpm.build;
 
+import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Graph;
@@ -13,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,11 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class TestFixturesTest {
     private static void publish(Path repo, String group, String artifact, String version, String deps, Path dir) {
-        Path v = repo.resolve(group.replace('.', '/') + "/" + artifact + "/" + version);
-        Fs.write(v.resolve(artifact + "-" + version + ".pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>" + group
-                + "</groupId><artifactId>" + artifact + "</artifactId><version>" + version + "</version><dependencies>" + deps
-                + "</dependencies></project>");
-        Jars.write(v.resolve(artifact + "-" + version + ".jar"), List.of(dir), Map.of());
+        new TestRepo(repo).artifact(group + ":" + artifact + ":" + version).entries(dir).dependenciesXml(deps).publish();
     }
 
     private static String dep(String group, String artifact, String version) {

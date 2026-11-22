@@ -1,5 +1,6 @@
 package dev.jpm.resolve;
 
+import dev.jpm.testing.TestRepo;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.build.Builder;
@@ -10,34 +11,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** "api": true on a dev dependency: consumers compile against it (Gradle's compileOnlyApi), nothing runs with it. */
 class ApiDevDependencyTest {
-    private static void publish(Path repo, String group, String artifact, String version, String cls) throws IOException {
-        Path dir = repo.resolve(group.replace('.', '/') + "/" + artifact);
-        Fs.write(dir.resolve(version + "/" + artifact + "-" + version + ".pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>"
-                + group + "</groupId><artifactId>" + artifact + "</artifactId><version>" + version + "</version></project>");
-        Path jar = dir.resolve(version + "/" + artifact + "-" + version + ".jar");
-        Files.createDirectories(jar.getParent());
-        try (OutputStream out = Files.newOutputStream(jar); ZipOutputStream z = new ZipOutputStream(out)) {
-            z.putNextEntry(new ZipEntry(cls));
-            z.write(new byte[]{1});
-        }
-        Fs.write(dir.resolve("maven-metadata.xml"), "<metadata><versioning><versions><version>" + version + "</version></versions></versioning></metadata>");
+    private static void publish(Path repo, String group, String artifact, String version, String cls) {
+        new TestRepo(repo).artifact(group + ":" + artifact + ":" + version).entry(cls, "x").publish();
     }
 
     @Test

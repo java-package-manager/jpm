@@ -131,15 +131,16 @@ The goal is code that a new contributor can read top to bottom.
 
 ### Tests
 
-- [ ] Reorganize tests to mirror the new package layout: unit tests per area, plus one set of
+- [x] Reorganize tests to mirror the new package layout: unit tests per area, plus one set of
       end-to-end tests that run the `jpm` binary on the projects in `fixtures/`.
-- [ ] Remove tests that only check implementation details, repeat other tests, or exist for a bug in
+- [~] Remove tests that only check implementation details, repeat other tests, or exist for a bug in
       code that no longer exists. Merge grab-bag tests (for example `SmallGapsTest`) into the tests of
-      the feature they cover.
+      the feature they cover. `SmallGapsTest` is merged into `ResourcesTest`; the other test classes are
+      not audited one by one yet.
 - [x] Make tests hermetic: serve Maven and Git fixtures from a local server or directory instead of
       the network (about 10 test classes reach out today). Keep a small, separately run set of live
       tests against Maven Central.
-- [ ] Shared test helpers (temporary projects, fake repositories) in one place.
+- [x] Shared test helpers (temporary projects, fake repositories) in one place.
 - [x] Coverage report in CI, to find dead code during the restructure.
 
 ---

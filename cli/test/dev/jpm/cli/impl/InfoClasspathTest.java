@@ -1,5 +1,6 @@
 package dev.jpm.cli.impl;
 
+import dev.jpm.testing.TestRepo;
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.Test;
@@ -7,7 +8,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,16 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** {@code jpm info --json --classpath}: every classpath as packages with coordinates, jars and edges. */
 class InfoClasspathTest {
-    private static void publish(Path repo, String a, String deps) throws Exception {
-        Path dir = repo.resolve("g/" + a + "/1.0");
-        Fs.write(dir.resolve(a + "-1.0.pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>" + a
-                + "</artifactId><version>1.0</version><dependencies>" + deps + "</dependencies></project>");
-        Files.createDirectories(dir);
-        try (var out = new java.util.jar.JarOutputStream(Files.newOutputStream(dir.resolve(a + "-1.0.jar")))) {
-            out.putNextEntry(new java.util.zip.ZipEntry(a + "/Marker.txt"));
-            out.write(a.getBytes());
-            out.closeEntry();
-        }
+    private static void publish(Path repo, String a, String deps) {
+        new TestRepo(repo).artifact("g:" + a + ":1.0").entry(a + "/Marker.txt", a).dependenciesXml(deps).publish();
     }
 
     @Test

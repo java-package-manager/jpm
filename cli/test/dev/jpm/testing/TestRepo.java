@@ -221,6 +221,12 @@ public final class TestRepo {
             return dependsOn(coordinates, "compile");
         }
 
+        /** Dependencies as POM XML ({@code <dependency>...</dependency>} elements), as written in a POM. */
+        public Artifact dependenciesXml(String xml) {
+            dependencies.add(xml);
+            return this;
+        }
+
         /** A dependency {@code group:artifact:version} with a Maven scope. */
         public Artifact dependsOn(String coordinates, String scope) {
             String[] p = coordinates.split(":");
