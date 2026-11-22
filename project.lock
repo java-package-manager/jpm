@@ -15,8 +15,8 @@
   },
   "extensions": {
     "publish": { "packages": {
-      "github:java-package-manager/jpm-publish": { "version": "0.2.1+9cf654d", "commit": "9cf654d6feb9bebab00cd75db9376b413a938163", "dependencies": { "github:java-package-manager/jpm/jpm-api": "compile" } },
-      "github:java-package-manager/jpm/jpm-api": { "version": "0.11.0+c5c4e02", "commit": "c5c4e024633d14e80c1a182f1e992487702c64fd" }
+      "dev.jpm:jpm-api": { "version": "0.11.0-20261122.163616-1", "sha256": "9c8a8f940de38e61ffacba70cf34c82916a4d0bbffce5f435bc2224e3d7599d7" },
+      "github:java-package-manager/jpm-publish": { "version": "0.2.1+3211464", "commit": "3211464cf778dc7e4301ac4bb4b8069d1b46c4e4", "dependencies": { "dev.jpm:jpm-api": "compile" } }
     } }
   }
 }
