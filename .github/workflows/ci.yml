@@ -351,7 +351,9 @@ jobs:
         run: |
           set -e
           homes=""
-          for v in 8 11 17 21 25 27; do
+          # 8 is pinned to 8u512: GitHub's download of 8u514 (re-uploaded by Adoptium on 2026-11-19) still serves a
+          # file whose checksum does not match the published one on some runners
+          for v in 8.0.512 11 17 21 25 27; do
             .cache/native/jpm java install "temurin-$v"
             homes="$homes${homes:+:}$(.cache/native/jpm java home "temurin-$v" | tail -n 1)"
           done
