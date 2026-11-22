@@ -131,11 +131,16 @@ public final class Project {
             if (!names.add(m.name())) throw new JpmException("Two workspace modules are named \"" + m.name() + "\"");
         }
         for (Module m : modules) {
-            for (Manifest.Dependency d : m.manifest.dependencies) {
+            for (var it = m.manifest.dependencies.listIterator(); it.hasNext(); ) {
+                Manifest.Dependency d = it.next();
                 if (!d.key().isWorkspace()) continue;
                 Module target = p.module(d.key().artifact());
                 if (target == null) {
                     throw JpmException.at(m.manifest.file, d.line(), "no workspace module named \"" + d.key().artifact() + "\"");
+                }
+                if (!target.name().equals(d.key().artifact())) {
+                    it.set(new Manifest.Dependency(dev.jpm.DepKey.parse("workspace:" + target.name()), d.spec(), d.scope(), d.line(),
+                            d.exclusions(), d.runtimeOnly(), d.api(), d.tests()));
                 }
                 if (m.manifest.isolated) {
                     throw JpmException.at(m.manifest.file, d.line(), "an isolated module cannot depend on workspace modules"

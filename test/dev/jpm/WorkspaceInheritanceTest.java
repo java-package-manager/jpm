@@ -54,4 +54,15 @@ class WorkspaceInheritanceTest {
         assertEquals(null, m.java);
         assertSame(Layout.JPM, m.layout);
     }
+
+    @org.junit.jupiter.api.Test
+    void aWorkspaceDependencyMayNameTheModulesFolder(@org.junit.jupiter.api.io.TempDir Path dir) {
+        dev.jpm.util.Fs.write(dir.resolve("project.jsonc"), "{ \"name\": \"ws\", \"version\": \"1.0.0\", \"workspace\": [\"lib\", \"app\"] }");
+        dev.jpm.util.Fs.write(dir.resolve("lib/project.jsonc"), "{ \"name\": \"my-lib\" }");
+        dev.jpm.util.Fs.write(dir.resolve("app/project.jsonc"), "{ \"name\": \"app\", \"runtime\": { \"workspace:lib\": \"*\" } }");
+        Project p = Project.load(dir);
+        assertEquals("workspace:my-lib", p.module("app").manifest.dependencies.get(0).key().toString());
+        assertEquals(java.util.List.of(new dev.jpm.resolve.Graph.Edge("workspace:my-lib", false, java.util.Set.of())),
+                dev.jpm.resolve.Resolver.rootEdges(p.module("app"), Manifest.Scope.RUNTIME));
+    }
 }
