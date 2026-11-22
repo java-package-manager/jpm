@@ -21,7 +21,7 @@ class CommandsTest {
     @Test
     void theReadmeTableIsTheRegistrys() {
         Path readme = Checkout.root().resolve("README.md");
-        String text = Fs.read(readme);
+        String text = Fs.read(readme).replace("\r\n", "\n");
         int a = text.indexOf(START), b = text.indexOf(END);
         assertTrue(a >= 0 && b > a, "README.md has no command table markers");
         String want = text.substring(0, a + START.length()) + "\n" + Commands.readmeTable() + "\n" + text.substring(b);
