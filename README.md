@@ -291,6 +291,8 @@ BOMs, exclusions, optional/provided/test scopes and relocation. For libraries pu
 Gradle Module Metadata next to the POM decides what is needed when: `compileOnlyApi` dependencies (which
 the POM lists as `compile`) are on the compile classpath only, never at run time or in bundles, and
 `implementation` and `runtimeOnly` dependencies are on the runtime classpath only.
+The resolver is jpm's own rather than an embedded Maven Resolver or Coursier, so that jpm has no
+dependencies and builds as a native image.
 
 **Git dependencies** go through the system `git` (so SSH keys and credential helpers work), into bare
 mirrors under `~/.jpm/git`. Versions are ranges in any of the syntaxes above matched against tags,
@@ -675,19 +677,6 @@ jar and is picked up by native-image automatically.
 | `JPM_GIT_BASE_GITHUB` (`_GITLAB`, `_CODEBERG`) | Redirect a Git host, e.g. to a mirror or `file:///…` for tests |
 | `JPM_VERSION`, `JPM_NO_MODIFY_PATH`, `JPM_NO_SHIMS` | Install scripts: version, skip the PATH change, skip the shims |
 | `JPM_REPO`, `JPM_INSTALL_BASE` | Install scripts and `jpm upgrade`: another GitHub repository, or another download location |
-
-## Not yet done
-
-- Maven and Gradle features with no manifest equivalent: code-generating plugins, Groovy and Scala sources.
-- Kotlin builds a module's Kotlin as a whole rather than incrementally per file; Kotlin Multiplatform builds
-  (other targets than the JVM) are not supported.
-- Separate version resolution for isolated modules (today one version per package across a bundle).
-- Running the tracing agent automatically during tests (an open question); for now `start --trace`
-  records what one run of the app does.
-- Hot reload is restart-based; in-process reload (JetBrains Runtime or similar) is an open question.
-- Changesets: `.changeset/` is reserved only. The IntelliJ plugin is a separate project.
-- The resolver is jpm's own rather than an embedded Coursier or Maven Resolver, to keep jpm free of
-  dependencies for native-image. It does not evaluate POM profiles or Gradle module metadata.
 
 ## License
 

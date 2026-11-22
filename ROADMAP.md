@@ -336,6 +336,15 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 ### More
 
 - [ ] Dependabot support, or document that Renovate is the supported option.
+- [ ] Evaluate POM profiles (activation by JDK, OS and properties) when reading POMs.
+- [ ] Maven and Gradle features with no manifest equivalent yet: code-generating plugins, and Groovy and
+      Scala sources.
+- [ ] Kotlin: compile a module's Kotlin incrementally (per file) instead of as a whole; Kotlin
+      Multiplatform builds with targets other than the JVM.
+- [ ] Run the GraalVM tracing agent during tests (open question); today `start --trace` records what one
+      run of the app does.
+- [ ] Hot reload in the running JVM (JetBrains Runtime or similar; open question); today `jpm dev`
+      restarts the app.
 
 ---
 
@@ -628,7 +637,9 @@ The tracks below are independent. Each one is released from its own repository.
   - `jpm test --watch`;
   - checksums in `project.lock`, then `jpm audit`, then SBOM;
   - `jpm doctor`;
-  - the full test suite on Windows in CI.
+  - the full test suite on Windows in CI;
+  - POM profiles, Groovy and Scala sources, code-generating plugins, incremental and Multiplatform
+    Kotlin, the tracing agent in tests, in-process hot reload (Phase 5, *More*).
 
   Order them by user demand. Supply-chain checksums come first, because they change the lockfile
   format, which is cheaper to do early.
