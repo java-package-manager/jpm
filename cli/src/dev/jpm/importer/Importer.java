@@ -28,7 +28,7 @@ public final class Importer {
         if (tool == null) throw new JpmException("No pom.xml or Gradle build found in " + dir);
         return switch (tool) {
             case "maven" -> MavenImport.run(dir, repo);
-            default -> noExecution ? GradleImport.runStatic(dir, repo) : GradleImport.run(dir, repo);
+            default -> noExecution ? GradleScripts.runStatic(dir, repo) : GradleImport.run(dir, repo);
         };
     }
 }

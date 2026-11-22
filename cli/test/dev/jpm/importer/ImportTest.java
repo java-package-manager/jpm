@@ -116,7 +116,7 @@ class ImportTest {
                     runtimeOnly("org.slf4j:slf4j-simple:2.0.16")
                 }
                 """);
-        Imported imp = GradleImport.runStatic(dir);
+        Imported imp = GradleScripts.runStatic(dir);
         assertEquals(List.of("lib", "app"), imp.manifests.get("").get("workspace"));
         Map<String, Object> lib = imp.manifests.get("lib");
         assertEquals("com.example", lib.get("group"));
@@ -189,7 +189,7 @@ class ImportTest {
                     }
                 }
                 """);
-        Imported imp = GradleImport.runStatic(dir);
+        Imported imp = GradleScripts.runStatic(dir);
         assertEquals(List.of("server-api", "server-core"), imp.manifests.get("").get("workspace"), "includeBuild is another build");
         assertEquals(List.of("https://repo.example.org/releases/", "https://repo.example.org/snapshots/"),
                 imp.manifests.get("").get("repositories"));
@@ -208,16 +208,16 @@ class ImportTest {
 
     @Test
     void stripsCommentsButNotUrls() {
-        assertEquals("maven(\"https://a.b/c\") \nx  \"/* kept */\"", GradleImport.stripComments("maven(\"https://a.b/c\") // gone\nx /* gone */\"/* kept */\""));
+        assertEquals("maven(\"https://a.b/c\") \nx  \"/* kept */\"", GradleScripts.stripComments("maven(\"https://a.b/c\") // gone\nx /* gone */\"/* kept */\""));
     }
 
     @Test
     void readsJavaVersionsAndMainClasses() {
-        assertEquals(17, GradleImport.javaVersion("java { sourceCompatibility = JavaVersion.VERSION_17 }"));
-        assertEquals(8, GradleImport.javaVersion("sourceCompatibility = '1.8'"));
-        assertEquals(21, GradleImport.javaVersion("tasks.withType<JavaCompile> { options.release.set(21) }"));
-        assertEquals(11, GradleImport.javaVersion("kotlin { jvmToolchain(11) }"));
-        assertEquals("a.B", GradleImport.mainClass("application { mainClassName = 'a.B' }"));
+        assertEquals(17, GradleScripts.javaVersion("java { sourceCompatibility = JavaVersion.VERSION_17 }"));
+        assertEquals(8, GradleScripts.javaVersion("sourceCompatibility = '1.8'"));
+        assertEquals(21, GradleScripts.javaVersion("tasks.withType<JavaCompile> { options.release.set(21) }"));
+        assertEquals(11, GradleScripts.javaVersion("kotlin { jvmToolchain(11) }"));
+        assertEquals("a.B", GradleScripts.mainClass("application { mainClassName = 'a.B' }"));
         assertEquals("21", Imported.jdkFor(21));
         assertEquals("17", Imported.jdkFor(8));
         assertEquals(8, Imported.major("1.8"));
@@ -226,7 +226,7 @@ class ImportTest {
 
     @Test
     void stripsSubprojectBlocks() {
-        String s = GradleImport.withoutBlocks("a { x }\nsubprojects { apply plugin: 'java'\n inner { y } }\nb", "subprojects");
+        String s = GradleScripts.withoutBlocks("a { x }\nsubprojects { apply plugin: 'java'\n inner { y } }\nb", "subprojects");
         assertEquals("a { x }\n\nb", s);
     }
 }
