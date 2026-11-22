@@ -587,6 +587,8 @@ Builds the test and tooling base that the restructure depends on.
    - Release jpm, jpm-publish and jpm-intellij together, so nothing calls the removed commands.
    - Document the versioned schema URL in the same change.
    - Plain `jpm info` stays.
+   - With the release, jpm-publish and jpm-format add `"extension": {}` to their manifests (jpm 0.11
+     rejects the field, so it waits for 0.12) and pin `dev.jpm:jpm-api` instead of the Git dependency.
 
 ### Milestone 5: ecosystem (later 0.x releases)
 
