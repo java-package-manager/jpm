@@ -136,4 +136,15 @@ class KotlinTest {
             throw new IllegalStateException(e);
         }
     }
+
+    @Test
+    void wrongKotlinSettingsSayWhatIsExpected() {
+        JpmException notAVersion = assertThrows(JpmException.class, () -> dev.jpm.Manifest.parse(Path.of("project.jsonc"),
+                "{ \"name\": \"p\", \"kotlin\": 2 }"));
+        assertEquals("kotlin must be a Kotlin version or {\"version\": ..., \"plugins\": [...], \"args\": [...]}", notAVersion.getMessage());
+        JpmException plugin = assertThrows(JpmException.class, () -> dev.jpm.Manifest.parse(Path.of("project.jsonc"),
+                "{ \"name\": \"p\", \"kotlin\": { \"version\": \"2.2.20\", \"plugins\": [\"nope\"] } }"));
+        assertTrue(plugin.getMessage().startsWith("kotlin.plugins: \"nope\" is neither group:artifact[:version] nor one of Kotlin's own: "),
+                plugin.getMessage());
+    }
 }

@@ -36,7 +36,7 @@ final class ManifestReader {
         Jsonc.Node n = root.get("kotlin");
         if (n == null) return null;
         if (n.isString()) return new Manifest.Kotlin(checkKotlinVersion(n, (String) n.value), List.of(), List.of());
-        if (!n.isObject()) throw err(n, "kotlin must be a Manifest.Kotlin version or {\"version\": ..., \"plugins\": [...], \"args\": [...]}");
+        if (!n.isObject()) throw err(n, "kotlin must be a Kotlin version or {\"version\": ..., \"plugins\": [...], \"args\": [...]}");
         for (String k : n.members.keySet()) {
             if (!Set.of("version", "plugins", "args").contains(k)) throw err(n.get(k), "unknown kotlin option \"" + k + "\"");
         }
@@ -46,7 +46,7 @@ final class ManifestReader {
         for (String p : plugins) {
             boolean coords = p.matches("[^:\\s]+:[^:\\s]+(:[^:\\s]+)?");
             if (!coords && !Manifest.Kotlin.BUILT_IN.contains(p)) {
-                throw err(n.get("plugins"), "kotlin.plugins: \"" + p + "\" is neither group:artifact[:version] nor one of Manifest.Kotlin's own: "
+                throw err(n.get("plugins"), "kotlin.plugins: \"" + p + "\" is neither group:artifact[:version] nor one of Kotlin's own: "
                         + String.join(", ", new java.util.TreeSet<>(Manifest.Kotlin.BUILT_IN)));
             }
         }
