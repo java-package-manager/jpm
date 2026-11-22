@@ -93,10 +93,14 @@ public final class Install {
 
     private static final Set<String> WARNED = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-    /** Warns, once per process, about settings for extensions that the root manifest does not declare. */
+    /**
+     * Warns, once per process, about settings for extensions that the root manifest does not declare. An extension's own
+     * repository may configure the extension it is, without declaring itself.
+     */
     static void warnUndeclared(Project project) {
         Set<String> declared = new java.util.HashSet<>();
         for (Manifest.ExtensionDecl d : project.root.declaredExtensions) declared.add(d.name());
+        if (project.root.isExtension) declared.add(project.root.name.replaceFirst("^jpm-", ""));
         for (Project.Module m : project.modules) {
             for (String name : m.manifest.extensions.keySet()) {
                 if (name.contains(":") || declared.contains(name) || !WARNED.add(project.dir + " " + name)) continue;

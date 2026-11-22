@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -130,5 +131,24 @@ class ProjectExtensionsTest {
         assertTrue(descriptorError(dir, "{ \"checks\": { \"Style\": {} } }").getMessage().contains("a check id is lowercase"));
         assertTrue(descriptorError(dir, "{ \"command\": {} }").getMessage().contains("unknown field \"command\" in extension"));
         assertTrue(descriptorError(dir, "{ \"description\": 1 }").getMessage().contains("description must be a string"));
+    }
+
+    @Test
+    void anExtensionMayConfigureItself(@TempDir Path dir) {
+        System.setProperty("jpm.home", dir.resolve("home").toString());
+        Fs.write(dir.resolve("e/project.jsonc"), "{ \"name\": \"jpm-lint\", \"version\": \"1.0.0\", \"extension\": {},"
+                + " \"extensions\": { \"lint\": { \"strict\": true }, \"other\": {} } }");
+        List<String> warnings = new java.util.ArrayList<>();
+        dev.jpm.log.Log.sink((level, message) -> {
+            if (level == dev.jpm.log.Log.Level.WARN) warnings.add(message);
+        });
+        try {
+            Project p = Project.load(dir.resolve("e"));
+            Install.run(p, new MavenRepo(p.root.repositories), Install.Options.normal());
+        } finally {
+            dev.jpm.log.Log.sink(null);
+        }
+        assertEquals(1, warnings.size(), warnings.toString());
+        assertTrue(warnings.get(0).contains("\"other\""), warnings.toString());
     }
 }
