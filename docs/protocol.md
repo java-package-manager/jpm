@@ -263,8 +263,7 @@ trace as a `log` at level `debug`.
 The `api` module of jpm's repository, `dev.jpm.api`, holds the types above as records, the JSON reader and
 writer (`dev.jpm.api.json.Jsonc`) and a client:
 
-It is published as `dev.jpm:jpm-api` to `https://repo.thenextlvl.net/releases` with every jpm release, and
-to `https://repo.thenextlvl.net/snapshots` as `<version>-SNAPSHOT` with every canary build of jpm:
+It is published as `dev.jpm:jpm-api` to `https://repo.thenextlvl.net/releases` with every jpm release:
 
 ```jsonc
 "repositories": ["https://repo.thenextlvl.net/releases"],

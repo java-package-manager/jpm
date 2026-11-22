@@ -1,5 +1,5 @@
 // The public API of jpm: dev.jpm.api only, with full Javadoc. Published as dev.jpm:jpm-api to
-// https://repo.thenextlvl.net/releases (and /snapshots for the main branch).
+// https://repo.thenextlvl.net/releases with every jpm release.
 {
   "name": "jpm-api",
   "description": "The client of the jpm protocol and its model: what IDEs and tools use to work with jpm projects",

@@ -2,66 +2,40 @@ name: CI
 
 on:
   # Releases are not started by tags: CI creates the tag when the version changes (see the version job).
+  # A pull request's commits run once, as pull_request; push is only for main, so they do not run twice.
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
-  workflow_dispatch:
-    inputs:
-      canary:
-        description: "Also publish a canary release (<version>-<commit>) of this commit (main only); without it, a manual run is the full suite"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 jobs:
-  # Runs first and decides what this run publishes (outputs.kind) and whether it is the full suite (outputs.full:
-  #   every platform, live tests, Java versions, coverage):
-  #   release  the main branch has a version that has no tag yet (the merged "Version packages" pull request,
-  #            see release.yml): the full suite, then CI tags this commit and releases it
-  #   canary   a manual run (Run workflow, with "canary") on the main branch: the full suite, then <version>-<commit>
-  #   none     publishes nothing: pull requests (the Version packages one too) and manual runs get the full
-  #            suite, so a release is known to pass before it is merged; other pushes get the checks on Linux
+  # Runs first and decides whether this run publishes (outputs.kind). Every push and pull request gets the full
+  # suite (every platform, live tests, Java versions, coverage); only a release publishes:
+  #   release  the main branch has a version that has no tag yet, which merging the "Version packages" pull
+  #            request (release.yml, jpm-changeset) brings: CI tags this commit and releases it
+  #   none     everything else: tested, nothing is published
   version:
     name: version
     runs-on: ubuntu-latest
     outputs:
       kind: ${{ steps.decide.outputs.kind }}
       version: ${{ steps.decide.outputs.version }}
-      matrix: ${{ steps.decide.outputs.matrix }}
-      full: ${{ steps.decide.outputs.full }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Decide between a release and a canary build
+      - name: Decide whether this is a release
         id: decide
         run: |
           version=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' project.jsonc | head -n 1)
           kind=none
-          main="refs/heads/${{ github.event.repository.default_branch }}"
-          if [ "$GITHUB_REF" = "$main" ] && ! git ls-remote --exit-code --tags origin "refs/tags/$version" >/dev/null; then
-            if [ "$GITHUB_EVENT_NAME" = push ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-              kind=release
-              echo "::notice::$version has no release yet: releasing it"
-            fi
-          elif [ "$GITHUB_REF" = "$main" ] && [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ "${{ inputs.canary }}" = true ]; then
-            kind=canary
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = "refs/heads/${{ github.event.repository.default_branch }}" ] &&
+             ! git ls-remote --exit-code --tags origin "refs/tags/$version" >/dev/null; then
+            kind=release
+            echo "::notice::$version has no release yet: releasing it"
           fi
-          full=false
-          if [ "$kind" != none ] || [ "$GITHUB_EVENT_NAME" = pull_request ] || [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then full=true; fi
-          linux='{ "name": "linux-x64", "os": "ubuntu-latest", "exe": "" }'
-          if [ "$full" = false ]; then
-            matrix="[$linux]"
-          else
-            matrix="[$linux, { \"name\": \"linux-arm64\", \"os\": \"ubuntu-24.04-arm\", \"exe\": \"\" },
-              { \"name\": \"macos-arm64\", \"os\": \"macos-latest\", \"exe\": \"\" },
-              { \"name\": \"macos-x64\", \"os\": \"macos-15-intel\", \"exe\": \"\" },
-              { \"name\": \"windows-x64\", \"os\": \"windows-latest\", \"exe\": \".exe\" }]"
-          fi
-          echo "matrix=$(echo "$matrix" | tr -d '\n')" >> "$GITHUB_OUTPUT"
           echo "kind=$kind" >> "$GITHUB_OUTPUT"
-          echo "full=$full" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "This run: $kind ($version)"
 
@@ -72,7 +46,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(needs.version.outputs.matrix) }}
+        include:
+          - { name: linux-x64, os: ubuntu-latest, exe: "" }
+          - { name: linux-arm64, os: ubuntu-24.04-arm, exe: "" }
+          - { name: macos-arm64, os: macos-latest, exe: "" }
+          - { name: macos-x64, os: macos-15-intel, exe: "" }
+          - { name: windows-x64, os: windows-latest, exe: ".exe" }
     defaults:
       run:
         shell: bash
@@ -82,16 +61,6 @@ jobs:
       JPM_NO_UPDATE_CHECK: "1"
     steps:
       - uses: actions/checkout@v7
-
-      # A canary build is versioned <version>-<commit>.
-      - name: Stamp the canary version
-        if: needs.version.outputs.kind == 'canary'
-        run: |
-          v=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' project.jsonc | head -n 1)
-          canary="$v-${GITHUB_SHA::7}"
-          perl -pi -e 'if (!$done && s/"version": "\Q'"$v"'\E"/"version": "'"$canary"'"/) { $done = 1 }' project.jsonc
-          grep -q "\"version\": \"$canary\"" project.jsonc
-          echo "Canary build $canary"
 
       - uses: graalvm/setup-graalvm@v1
         with:
@@ -334,7 +303,6 @@ jobs:
   # Tests tagged "live" reach Maven Central; every other test is hermetic and runs in the build job.
   live-tests:
     name: live tests
-    if: needs.version.outputs.full == 'true'
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
@@ -365,7 +333,6 @@ jobs:
 
   java-versions:
     name: java versions
-    if: needs.version.outputs.full == 'true'
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
@@ -399,7 +366,6 @@ jobs:
   # coverage agent sees them.
   coverage:
     name: coverage
-    if: needs.version.outputs.full == 'true'
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
@@ -428,7 +394,7 @@ jobs:
 
   publish-api:
     name: publish api
-    if: needs.version.outputs.kind != 'none'
+    if: needs.version.outputs.kind == 'release'
     needs: [version, build]
     runs-on: ubuntu-latest
     env:
@@ -442,9 +408,6 @@ jobs:
       - name: Publish
         run: |
           chmod +x jpm
-          if [ '${{ needs.version.outputs.kind }}' = canary ]; then
-            sed -i '0,/"version": "[^"]*"/s//"version": "${{ needs.version.outputs.version }}-SNAPSHOT"/' project.jsonc
-          fi
           v=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' project.jsonc | head -n 1)
           # two pushes can both see a version untagged (the second before the first one's release is done)
           if [ '${{ needs.version.outputs.kind }}' = release ] &&
@@ -499,56 +462,3 @@ jobs:
           gh release view canary >/dev/null 2>&1 || gh release create canary --prerelease --title "jpm canary" \
             --notes "Names the newest canary build in VERSION, for \`jpm upgrade --canary\`. The builds themselves are the <version>-<commit> prereleases."
           gh release upload canary VERSION --clobber
-
-  # A prerelease for every commit on the main branch, tagged <version>-<commit>. The release tagged
-  # "canary" holds a VERSION file naming the newest one, which `jpm upgrade --canary` reads. Prereleases
-  # never become releases/latest, so stable installs and upgrades are not affected.
-  canary:
-    name: canary
-    if: needs.version.outputs.kind == 'canary'
-    needs: [version, build]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    concurrency:
-      group: canary
-      cancel-in-progress: false
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/download-artifact@v8
-        with:
-          path: artifacts
-
-      - name: Assemble release files
-        run: |
-          v=$(sed -n 's/^ *"version": *"\([^"]*\)".*/\1/p' project.jsonc | head -n 1)
-          echo "CANARY=$v-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
-          .github/release-files.sh "$v-${GITHUB_SHA::7}"
-
-      - name: Publish the canary build
-        run: |
-          if gh release view "$CANARY" >/dev/null 2>&1; then
-            echo "$CANARY is already released"
-          else
-            gh release create "$CANARY" release/* --prerelease --target "$GITHUB_SHA" --title "jpm $CANARY (canary)" \
-              --notes "Canary build of $GITHUB_SHA on ${{ github.event.repository.default_branch }}. Install it with \`jpm upgrade --canary\` or \`JPM_VERSION=canary\` for the install script."
-          fi
-
-      - name: Point the canary release at it
-        run: |
-          printf '%s\n' "$CANARY" > VERSION
-          gh release view canary >/dev/null 2>&1 || gh release create canary --prerelease --title "jpm canary" \
-            --notes "Names the newest canary build in VERSION, for \`jpm upgrade --canary\`. The builds themselves are the <version>-<commit> prereleases."
-          gh release upload canary VERSION --clobber
-
-      - name: Keep the newest ten canary builds
-        run: |
-          gh release list --limit 200 --json tagName,isPrerelease,createdAt \
-            --jq '[.[] | select(.isPrerelease and (.tagName | test("^[0-9][^ ]*-[0-9a-f]{7}$")))] | sort_by(.createdAt) | reverse | .[10:] | .[].tagName' |
-          while read -r tag; do
-            echo "Deleting old canary $tag"
-            gh release delete "$tag" --cleanup-tag --yes
-          done

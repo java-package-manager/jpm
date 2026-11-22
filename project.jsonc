@@ -13,11 +13,8 @@
     "github:java-package-manager/jpm-publish": "^0.3",
     "publish": {
       "repositories": {
-        // CI publishes releases and snapshots of main here: `jpm publish thenextlvl`
-        "thenextlvl": {
-          "url": "https://repo.thenextlvl.net/releases",
-          "snapshots": "https://repo.thenextlvl.net/snapshots"
-        }
+        // CI publishes every release here: `jpm publish thenextlvl`
+        "thenextlvl": { "url": "https://repo.thenextlvl.net/releases" }
       },
       "javadoc": true
     },
