@@ -1,5 +1,6 @@
 package dev.jpm.cli;
 
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
@@ -10,7 +11,6 @@ import dev.jpm.build.Jars;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.resolve.Graph;
-import dev.jpm.resolve.Resolver;
 import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
 
@@ -191,9 +191,9 @@ final class InfoCommand extends Command {
      */
     private List<Object> ideDependencies(Ctx c, Builder b, Project.Module m) {
         Graph graph = b.graph;
-        List<Graph.Edge> runtime = dev.jpm.resolve.Resolver.rootEdges(m, Manifest.Scope.RUNTIME);
-        List<Graph.Edge> devOnly = dev.jpm.resolve.Resolver.rootEdges(m, Manifest.Scope.DEV);
-        List<Graph.Edge> test = dev.jpm.resolve.Resolver.rootEdges(m, Manifest.Scope.TEST);
+        List<Graph.Edge> runtime = dev.jpm.resolve.ResolveInputs.rootEdges(m, Manifest.Scope.RUNTIME);
+        List<Graph.Edge> devOnly = dev.jpm.resolve.ResolveInputs.rootEdges(m, Manifest.Scope.DEV);
+        List<Graph.Edge> test = dev.jpm.resolve.ResolveInputs.rootEdges(m, Manifest.Scope.TEST);
         Map<String, String> scopes = new LinkedHashMap<>();
         for (String id : graph.closure(runtime, Graph.Walk.COMPILE)) scopes.putIfAbsent(id, "compile");
         for (String id : graph.closure(runtime, Graph.Walk.RUNTIME)) scopes.putIfAbsent(id, "runtime");

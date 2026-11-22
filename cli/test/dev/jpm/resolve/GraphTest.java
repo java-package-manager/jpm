@@ -80,12 +80,12 @@ class GraphTest {
         DepKey api = DepKey.parse("github:u/r/api");
         DepKey plain = DepKey.parse("github:u/r");
         List<String> lockstep = List.of("v1.0.0", "v1.1.0", "nightly");
-        assertEquals("1.1.0", Resolver.tagVersion(api, "v1.1.0", lockstep));
-        assertNull(Resolver.tagVersion(plain, "nightly", lockstep));
+        assertEquals("1.1.0", GitVersions.tagVersion(api, "v1.1.0", lockstep));
+        assertNull(GitVersions.tagVersion(plain, "nightly", lockstep));
         List<String> prefixed = List.of("api/v1.2.0", "impl/v0.3.0", "v9.0.0");
-        assertEquals("1.2.0", Resolver.tagVersion(api, "api/v1.2.0", prefixed));
-        assertNull(Resolver.tagVersion(api, "v9.0.0", prefixed));
-        assertNull(Resolver.tagVersion(api, "impl/v0.3.0", prefixed));
+        assertEquals("1.2.0", GitVersions.tagVersion(api, "api/v1.2.0", prefixed));
+        assertNull(GitVersions.tagVersion(api, "v9.0.0", prefixed));
+        assertNull(GitVersions.tagVersion(api, "impl/v0.3.0", prefixed));
     }
 
     @Test

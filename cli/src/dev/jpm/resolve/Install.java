@@ -27,18 +27,18 @@ public final class Install {
     public static Graph run(Project project, MavenRepo repo, Options o) {
         Path lockPath = project.lockFile();
         Lockfile lock = Lockfile.read(lockPath);
-        String inputs = Resolver.inputs(project);
+        String inputs = ResolveInputs.inputs(project);
         boolean fresh = lock != null && inputs.equals(lock.inputs) && !o.updateAll() && o.update().isEmpty();
         Graph graph;
         if (fresh) {
             graph = lock.graph;
-            Resolver.addLocal(graph, project);
+            ResolveInputs.addLocal(graph, project);
             for (Project.Module m : project.isolatedModules()) {
                 Graph iso = graph.isolated.get(m.name());
                 if (iso == null) {
                     throw new JpmException(Manifest.LOCK + " has no section for the isolated module " + m.name() + ". Run `jpm install`.");
                 }
-                Resolver.addLocal(iso, project.isolatedView(m));
+                ResolveInputs.addLocal(iso, project.isolatedView(m));
             }
             graph.isolated.keySet().retainAll(project.isolatedModules().stream().map(Project.Module::name).toList());
         } else {

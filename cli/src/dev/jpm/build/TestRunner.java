@@ -1,5 +1,6 @@
 package dev.jpm.build;
 
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.DepKey;
 import dev.jpm.Project;
 import dev.jpm.toolchain.Jdk;
@@ -42,7 +43,7 @@ public final class TestRunner {
         String platform = platformVersion(b.graph, m);
         if (platform == null) {
             throw new JpmException(m.name() + ": the test classpath has no JUnit Platform engine. Add a test framework such as "
-                    + Resolver.JUNIT_JUPITER + " to \"test\".");
+                    + ResolveInputs.JUNIT_JUPITER + " to \"test\".");
         }
         List<Path> launcher = b.resolveTool(List.of(new Resolver.Root("jpm test runner",
                 DepKey.maven("org.junit.platform", "junit-platform-console"), platform)), null, dev.jpm.resolve.Graph.Walk.RUNTIME);
@@ -111,8 +112,8 @@ public final class TestRunner {
             "--add-opens=java.base/java.time=ALL-UNNAMED");
 
     private static String platformVersion(Graph g, Project.Module m) {
-        List<Graph.Edge> roots = new ArrayList<>(Resolver.rootEdges(m, dev.jpm.Manifest.Scope.TEST));
-        roots.addAll(Resolver.rootEdges(m, dev.jpm.Manifest.Scope.RUNTIME));
+        List<Graph.Edge> roots = new ArrayList<>(ResolveInputs.rootEdges(m, dev.jpm.Manifest.Scope.TEST));
+        roots.addAll(ResolveInputs.rootEdges(m, dev.jpm.Manifest.Scope.RUNTIME));
         for (String id : g.closure(roots, dev.jpm.resolve.Graph.Walk.ALL)) {
             if (id.equals("org.junit.platform:junit-platform-engine")) return g.get(id).version;
         }

@@ -1,9 +1,9 @@
 package dev.jpm.cli;
 
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.resolve.Graph;
-import dev.jpm.resolve.Resolver;
 import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
 
@@ -44,7 +44,7 @@ final class WhyCommand extends Command {
         Map<String, Collection<Graph.Edge>> roots = new LinkedHashMap<>();
         for (Project.Module m : c.project().modules) {
             for (Manifest.Scope s : Manifest.Scope.values()) {
-                List<Graph.Edge> e = Resolver.rootEdges(m, s);
+                List<Graph.Edge> e = ResolveInputs.rootEdges(m, s);
                 if (!e.isEmpty()) roots.put(m.name() + " (" + s.key + ")", e);
             }
         }

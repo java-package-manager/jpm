@@ -3,20 +3,16 @@ package dev.jpm.resolve;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
-import dev.jpm.git.GitRepo;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.maven.Pom;
-import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 import dev.jpm.version.VersionSpec;
 import dev.jpm.version.VersionSpecs;
 
-import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -27,7 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 /**
  * Resolves the dependencies of a project into a {@link Graph}.
@@ -39,15 +34,10 @@ import java.util.regex.Pattern;
  * edit does not move unrelated packages.
  */
 public final class Resolver {
-    /** JUnit added to tests when no test framework is declared. */
-    public static final String JUNIT_JUPITER = "org.junit.jupiter:junit-jupiter";
-    public static final String JUNIT_VERSION = "5.11.4";
 
-    private static final Pattern HEX = Pattern.compile("[0-9a-f]{7,40}");
+    record Request(String spec, boolean hard, boolean direct, String from) {}
 
-    private record Request(String spec, boolean hard, boolean direct, String from) {}
-
-    private record Selected(String version, String commit, String tag) {}
+    record Selected(String version, String commit, String tag) {}
 
     private record EdgeReq(String target, Graph.Kind kind, String spec, boolean runtimeOnly, Set<String> exclusions, boolean compileOnly) {
         EdgeReq(String target, Graph.Kind kind, String spec, boolean runtimeOnly, Set<String> exclusions) {
@@ -73,22 +63,22 @@ public final class Resolver {
     private final boolean unlockAll;
     private final Map<String, Graph.Kind> kinds = new HashMap<>();
     private final Map<String, Expanded> expandMemo = new HashMap<>();
-    private final Map<String, Map<String, String>> tagMemo = new HashMap<>();
+    private final GitVersions gitVersions;
 
     public Resolver(Project project, MavenRepo repo, Graph previous, Set<String> unlocked, boolean unlockAll) {
         this.project = project;
         this.roots = new ArrayList<>();
         for (Project.Module m : project.sharedModules()) {
-            for (Manifest.Dependency d : effectiveDeps(m)) {
+            for (Manifest.Dependency d : ResolveInputs.effectiveDeps(m)) {
                 if (d.key().isWorkspace()) continue;
-                validateSpec(d);
+                ResolveInputs.validateSpec(d);
                 roots.add(new Root(m.id(), d.key(), d.spec(), d.exclusions()));
             }
         }
-        for (Map.Entry<String, Manifest> e : patchManifests(project).entrySet()) {
+        for (Map.Entry<String, Manifest> e : ResolveInputs.patchManifests(project).entrySet()) {
             for (Manifest.PatchOptions o : e.getValue().patchOptions.values()) {
                 for (Manifest.Dependency d : o.dependencies()) {
-                    validateSpec(d);
+                    ResolveInputs.validateSpec(d);
                     roots.add(new Root(e.getKey(), d.key(), d.spec(), d.exclusions()));
                 }
             }
@@ -96,16 +86,9 @@ public final class Resolver {
         this.repo = repo;
         this.poms = new Pom.Loader(repo);
         this.previous = previous;
+        this.gitVersions = new GitVersions(previous, this::locked);
         this.unlocked = unlocked;
         this.unlockAll = unlockAll;
-    }
-
-    /** The manifests that may hold patches, by the id their patch dependencies are requested from. */
-    private static Map<String, Manifest> patchManifests(Project project) {
-        Map<String, Manifest> out = new LinkedHashMap<>();
-        if (project.root.isWorkspaceRoot()) out.put("workspace root", project.root);
-        for (Project.Module m : project.modules) out.put(m.id(), m.manifest);
-        return out;
     }
 
     /** Resolves explicit roots without a project (tools, a dependency's own build dependencies). */
@@ -115,60 +98,9 @@ public final class Resolver {
         this.repo = repo;
         this.poms = new Pom.Loader(repo);
         this.previous = previous;
+        this.gitVersions = new GitVersions(previous, this::locked);
         this.unlocked = Set.of();
         this.unlockAll = false;
-    }
-
-    /** Effective dependencies of a module, including implicit ones (JUnit for tests). */
-    public static List<Manifest.Dependency> effectiveDeps(Project.Module m) {
-        List<Manifest.Dependency> deps = new ArrayList<>(m.manifest.dependencies);
-        boolean hasTests = m.testDirs().stream().anyMatch(Files::isDirectory);
-        boolean hasFramework = deps.stream().anyMatch(d -> d.scope() == Manifest.Scope.TEST && d.key().isMaven()
-                && (d.key().group().startsWith("org.junit") || d.key().group().equals("junit")
-                || d.key().group().equals("org.testng") || d.key().group().startsWith("io.kotest")
-                || d.key().group().startsWith("net.jqwik")));
-        if (hasTests && !hasFramework) {
-            deps.add(new Manifest.Dependency(DepKey.parse(JUNIT_JUPITER), JUNIT_VERSION, Manifest.Scope.TEST, 0));
-        }
-        return deps;
-    }
-
-    /** A hash of everything that feeds resolution; the lockfile is reused while it matches. */
-    public static String inputs(Project project) {
-        Hash h = new Hash().add("v1");
-        for (String r : project.root.repositories) h.add("repo " + r);
-        for (Project.Module m : project.modules) {
-            h.add("module " + m.name() + (m.manifest.isolated ? " isolated" : ""));
-            for (Manifest.Dependency d : effectiveDeps(m)) {
-                h.add(d.scope().key + " " + d.key() + " " + d.spec() + " " + d.exclusions() + (d.runtimeOnly() ? " rt" : ""));
-            }
-        }
-        for (Map.Entry<String, Manifest> e : patchManifests(project).entrySet()) {
-            for (Map.Entry<String, Manifest.PatchOptions> po : e.getValue().patchOptions.entrySet()) {
-                for (Manifest.Dependency d : po.getValue().dependencies()) {
-                    h.add("patch " + e.getKey() + " " + po.getKey() + " " + d.key() + " " + d.spec() + " " + d.exclusions());
-                }
-            }
-        }
-        return h.hex().substring(0, 32);
-    }
-
-    /** Root edges of a module for one scope. Workspace siblings map to their LOCAL packages. */
-    public static List<Graph.Edge> rootEdges(Project.Module m, Manifest.Scope scope) {
-        List<Graph.Edge> out = new ArrayList<>();
-        for (Manifest.Dependency d : effectiveDeps(m)) {
-            if (d.scope() != scope) continue;
-            out.add(new Graph.Edge(idOf(d.key()), d.runtimeOnly(), d.exclusions()));
-        }
-        return out;
-    }
-
-    public static String idOf(DepKey k) {
-        return k.toString();
-    }
-
-    static Graph.Kind kindOf(DepKey k) {
-        return k.isGit() ? Graph.Kind.GIT : k.isGradle() ? Graph.Kind.GRADLE : k.isExtension() ? Graph.Kind.EXTENSION : Graph.Kind.MAVEN;
     }
 
     public Graph resolve() {
@@ -183,8 +115,8 @@ public final class Resolver {
             Deque<Object[]> queue = new ArrayDeque<>();
 
             for (Root r : roots) {
-                String id = idOf(r.key());
-                kinds.put(id, kindOf(r.key()));
+                String id = ResolveInputs.idOf(r.key());
+                kinds.put(id, ResolveInputs.kindOf(r.key()));
                 requests.computeIfAbsent(id, k -> new ArrayList<>()).add(new Request(r.spec(), true, true, r.from()));
                 queue.add(new Object[]{id, new LinkedHashSet<>(r.exclusions())});
             }
@@ -244,7 +176,7 @@ public final class Resolver {
             g.put(p);
         }
         checkVisibility(g, requests);
-        if (project != null) addLocal(g, project);
+        if (project != null) ResolveInputs.addLocal(g, project);
         return g;
     }
 
@@ -265,33 +197,6 @@ public final class Resolver {
         }
     }
 
-    /** Adds LOCAL packages for the project's own modules so classpaths can be walked through them. */
-    public static void addLocal(Graph g, Project project) {
-        for (Project.Module m : project.sharedModules()) {
-            Graph.Pkg p = new Graph.Pkg(m.id(), Graph.Kind.LOCAL);
-            p.version = m.version();
-            p.dir = m.dir;
-            for (Manifest.Dependency d : m.manifest.deps(Manifest.Scope.RUNTIME)) {
-                String id = idOf(d.key());
-                p.deps.put(id, new Graph.Edge(id, d.runtimeOnly(), d.exclusions()));
-            }
-            for (Manifest.Dependency d : m.manifest.deps(Manifest.Scope.DEV)) {
-                if (!d.api()) continue;
-                String id = idOf(d.key());
-                p.deps.putIfAbsent(id, new Graph.Edge(id, false, d.exclusions(), true));
-            }
-            g.put(p);
-        }
-    }
-
-    private static void validateSpec(Manifest.Dependency d) {
-        try {
-            if (d.key().isMaven()) VersionSpecs.parse(d.spec());
-        } catch (IllegalArgumentException e) {
-            throw new JpmException(d.key() + " (" + Manifest.FILE + " line " + d.line() + "): " + e.getMessage());
-        }
-    }
-
     private boolean locked(String id) {
         return previous != null && !unlockAll && !unlocked.contains(id) && previous.get(id) != null;
     }
@@ -299,7 +204,7 @@ public final class Resolver {
     private Selected choose(String id, List<Request> reqs) {
         if (reqs == null || reqs.isEmpty()) throw new IllegalStateException("no requests for " + id);
         return switch (kinds.get(id)) {
-            case GIT -> chooseGit(id, reqs);
+            case GIT -> gitVersions.choose(id, reqs);
             case GRADLE -> chooseGradle(id, reqs);
             case EXTENSION -> chooseExtension(id, reqs);
             default -> chooseMaven(id, reqs);
@@ -332,13 +237,6 @@ public final class Resolver {
         }
         return new Selected(version, null, null);
     }
-
-    /** The commit a branch requirement stands for: the locked one until updated, else the branch's newest. */
-    private String branchCommit(String id, GitRepo git, String branch, Request r) {
-        Graph.Pkg prev = previous == null ? null : previous.get(id);
-        return locked(id) && prev.tag == null && prev.commit != null && r.direct ? prev.commit : git.branchHead(branch);
-    }
-
     private Selected chooseMaven(String id, List<Request> reqs) {
         List<VersionSpec> hard = new ArrayList<>();
         List<Version> soft = new ArrayList<>();
@@ -383,167 +281,17 @@ public final class Resolver {
         return true;
     }
 
-    private static JpmException conflict(String id, List<Request> reqs) {
+    static JpmException conflict(String id, List<Request> reqs) {
         StringBuilder sb = new StringBuilder("No version of " + id + " satisfies every requirement:");
         for (Request r : reqs) sb.append("\n  ").append(r.spec).append("  required by ").append(r.from);
         return new JpmException(sb.toString());
     }
 
-    /** Intersection of several specs. */
     private record AllOf(List<VersionSpec> specs) implements VersionSpec {
         public boolean matches(Version v) { return satisfies(v, specs); }
         public String text() { return String.join(" ", specs.stream().map(VersionSpec::text).toList()); }
         public boolean isExact() { return false; }
     }
-
-    private Selected chooseGit(String id, List<Request> reqs) {
-        DepKey key = DepKey.parse(id);
-        GitRepo git = GitRepo.of(key);
-        List<Selected> pins = new ArrayList<>();
-        List<Request> pinReqs = new ArrayList<>();
-        List<VersionSpec> ranges = new ArrayList<>();
-        boolean onlySiblingPins = reqs.stream().allMatch(r -> r.spec.trim().startsWith("@"));
-        for (Request r : reqs) {
-            String s = r.spec.trim();
-            if (s.startsWith("@") && !onlySiblingPins) continue;
-            if (s.startsWith("@")) {
-                pins.add(commitSelection(key, s.substring(1), null));
-                pinReqs.add(r);
-            } else if (s.startsWith("#")) {
-                pins.add(commitSelection(key, branchCommit(id, git, s.substring(1), r), null));
-                pinReqs.add(r);
-            } else if (HEX.matcher(s).matches() && !VersionSpecs.looksLikeSpec(s)) {
-                String full = git.resolveCommit(s);
-                if (full == null) throw new JpmException(id + ": commit " + s + " not found");
-                pins.add(commitSelection(key, full, null));
-                pinReqs.add(r);
-            } else if (VersionSpecs.looksLikeSpec(s)) {
-                try {
-                    ranges.add(VersionSpecs.parse(s, true));
-                } catch (IllegalArgumentException e) {
-                    throw new JpmException(id + " (required by " + r.from + "): " + e.getMessage());
-                }
-            } else {
-                Map<String, String> tags = tags(key);
-                String commit = tags.get(s);
-                if (commit != null) {
-                    pins.add(tagSelection(key, s, commit));
-                } else if (git.hasBranch(s)) {
-                    pins.add(commitSelection(key, branchCommit(id, git, s, r), null));
-                } else {
-                    throw new JpmException(id + ": no tag or branch \"" + s + "\" in " + key.repoKey()
-                            + " (a version range, tag, branch or commit; #name is always a branch)");
-                }
-                pinReqs.add(r);
-            }
-        }
-        if (!pins.isEmpty()) {
-            Selected chosen = null;
-            for (int i = 0; i < pins.size(); i++) {
-                if (pinReqs.get(i).direct) { chosen = pins.get(i); break; }
-            }
-            if (chosen == null) {
-                for (Selected s : pins) {
-                    if (chosen == null || Version.of(s.version).compareTo(Version.of(chosen.version)) > 0) chosen = s;
-                }
-            }
-            for (Selected s : pins) {
-                if (!s.commit.equals(chosen.commit)) {
-                    Log.warn(id + " is pinned to several commits; using " + chosen.commit.substring(0, 7) + " (" + chosen.version + ")");
-                    break;
-                }
-            }
-            for (VersionSpec r : ranges) {
-                if (!r.matches(Version.of(stripBuild(chosen.version)))) {
-                    throw conflict(id, reqs);
-                }
-            }
-            return chosen;
-        }
-        Map<String, String> tags = tags(key);
-        Map<Version, String> byVersion = new LinkedHashMap<>();
-        for (String tag : tags.keySet()) {
-            String v = tagVersion(key, tag, tags.keySet());
-            if (v != null) byVersion.putIfAbsent(Version.of(v), tag);
-        }
-        if (locked(id)) {
-            Graph.Pkg p = previous.get(id);
-            if (p.tag != null && tags.containsKey(p.tag) && tags.get(p.tag).equals(p.commit)) {
-                Version v = Version.of(p.version);
-                boolean ok = true;
-                for (VersionSpec r : ranges) ok &= r.matches(v);
-                if (ok) return new Selected(p.version, p.commit, p.tag);
-            }
-        }
-        Version best = null;
-        for (Version v : byVersion.keySet()) {
-            boolean ok = true;
-            for (VersionSpec r : ranges) {
-                if (!r.matches(v) || (v.isPreRelease() && !r.text().contains("-"))) { ok = false; break; }
-            }
-            if (ok && (best == null || v.compareTo(best) > 0)) best = v;
-        }
-        if (best == null) {
-            StringBuilder sb = new StringBuilder("No tag of " + key.repoKey() + " matches every requirement for " + id + ":");
-            for (Request r : reqs) sb.append("\n  ").append(r.spec).append("  required by ").append(r.from);
-            List<String> avail = byVersion.keySet().stream().sorted().map(Version::toString).toList();
-            sb.append("\nAvailable versions: ").append(avail.isEmpty() ? "(no version tags)" : String.join(", ", avail));
-            throw new JpmException(sb.toString());
-        }
-        String tag = byVersion.get(best);
-        return tagSelection(key, tag, tags.get(tag));
-    }
-
-    private static String stripBuild(String v) {
-        int p = v.indexOf('+');
-        return p < 0 ? v : v.substring(0, p);
-    }
-
-    private Map<String, String> tags(DepKey key) {
-        return tagMemo.computeIfAbsent(key.repoKey().toString(), k -> GitRepo.of(key).tags());
-    }
-
-    /**
-     * Version a tag stands for, for this module. Prefixed tags ({@code api/v1.2.0}) are used for a module
-     * when the repository has any; otherwise plain tags ({@code v1.2.0}) version the whole workspace.
-     */
-    static String tagVersion(DepKey key, String tag, Collection<String> allTags) {
-        String module = key.module();
-        boolean prefixed = module != null && allTags.stream().anyMatch(t -> t.startsWith(module + "/"));
-        String v;
-        if (prefixed) {
-            if (!tag.startsWith(module + "/")) return null;
-            v = tag.substring(module.length() + 1);
-        } else {
-            if (tag.contains("/")) return null;
-            v = tag;
-        }
-        if (v.startsWith("v")) v = v.substring(1);
-        return v.matches("\\d+(\\.\\d+){0,2}(-[0-9A-Za-z.-]+)?") ? v : null;
-    }
-
-    private Selected tagSelection(DepKey key, String tag, String commit) {
-        GitModule mod = GitModule.locate(key, commit);
-        String declared = mod.version();
-        String fromTag = tagVersion(key, tag, tags(key).keySet());
-        if (fromTag != null && !Version.of(fromTag).equals(Version.of(declared))) {
-            throw new JpmException(key + ": tag " + tag + " points to a commit whose " + Manifest.FILE
-                    + " says version " + declared + ". Tags must match the manifest version.");
-        }
-        return new Selected(fromTag != null ? fromTag : declared, commit, tag);
-    }
-
-    private Selected commitSelection(DepKey key, String commit, String tag) {
-        Map<String, String> tags = tags(key);
-        for (Map.Entry<String, String> t : tags.entrySet()) {
-            if (t.getValue().equals(commit) && tagVersion(key, t.getKey(), tags.keySet()) != null) {
-                return tagSelection(key, t.getKey(), commit);
-            }
-        }
-        GitModule mod = GitModule.locate(key, commit);
-        return new Selected(mod.version() + "+" + commit.substring(0, 7), commit, tag);
-    }
-
     private Expanded expand(String id, Selected sel) {
         String memoKey = id + "@" + sel.version + "@" + sel.commit;
         Expanded e = expandMemo.get(memoKey);
@@ -624,16 +372,16 @@ public final class Resolver {
                 }
                 GitModule sm = GitModule.locate(key.withModule(sib), sel.commit);
                 boolean runtimeOnly = !sm.isPublic();
-                String target = idOf(key.withModule(sib));
+                String target = ResolveInputs.idOf(key.withModule(sib));
                 edges.add(new EdgeReq(target, Graph.Kind.GIT, "@" + sel.commit, runtimeOnly, Set.of()));
             } else {
-                edges.add(new EdgeReq(idOf(d.key()), kindOf(d.key()), d.spec(),
+                edges.add(new EdgeReq(ResolveInputs.idOf(d.key()), ResolveInputs.kindOf(d.key()), d.spec(),
                         d.runtimeOnly(), d.exclusions()));
             }
         }
         for (Manifest.Dependency d : mod.manifest().deps(Manifest.Scope.DEV)) {
             if (!d.api() || d.key().isWorkspace()) continue;
-            edges.add(new EdgeReq(idOf(d.key()), kindOf(d.key()), d.spec(),
+            edges.add(new EdgeReq(ResolveInputs.idOf(d.key()), ResolveInputs.kindOf(d.key()), d.spec(),
                     false, d.exclusions(), true));
         }
         return new Expanded(edges, true, mod.isPublic());

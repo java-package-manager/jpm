@@ -1,5 +1,6 @@
 package dev.jpm.build;
 
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
@@ -128,7 +129,7 @@ public final class Scripts {
         }
         Graph g = new Resolver(roots, b.repo, null).resolve();
         Install.fetch(g, b.repo);
-        List<Graph.Edge> edges = roots.stream().map(r -> new Graph.Edge(Resolver.idOf(r.key()), false, Set.of())).toList();
+        List<Graph.Edge> edges = roots.stream().map(r -> new Graph.Edge(ResolveInputs.idOf(r.key()), false, Set.of())).toList();
         List<Path> out = new ArrayList<>();
         for (String id : g.closure(edges, Graph.Walk.RUNTIME)) {
             Graph.Pkg p = g.get(id);

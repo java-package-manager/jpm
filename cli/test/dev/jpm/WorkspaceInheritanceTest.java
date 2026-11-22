@@ -1,5 +1,6 @@
 package dev.jpm;
 
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -63,6 +64,6 @@ class WorkspaceInheritanceTest {
         Project p = Project.load(dir);
         assertEquals("workspace:my-lib", p.module("app").manifest.dependencies.get(0).key().toString());
         assertEquals(java.util.List.of(new dev.jpm.resolve.Graph.Edge("workspace:my-lib", false, java.util.Set.of())),
-                dev.jpm.resolve.Resolver.rootEdges(p.module("app"), Manifest.Scope.RUNTIME));
+                dev.jpm.resolve.ResolveInputs.rootEdges(p.module("app"), Manifest.Scope.RUNTIME));
     }
 }

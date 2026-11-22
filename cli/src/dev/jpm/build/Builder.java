@@ -1,6 +1,7 @@
 package dev.jpm.build;
 
 
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
@@ -143,9 +144,9 @@ public final class Builder {
 
     /** The packages on one of a module's classpaths, in classpath order, without fetching or building any. */
     public List<String> classpathIds(Project.Module m, Cp kind) {
-        List<Graph.Edge> runtime = Resolver.rootEdges(m, Manifest.Scope.RUNTIME);
-        List<Graph.Edge> dev = Resolver.rootEdges(m, Manifest.Scope.DEV);
-        List<Graph.Edge> test = Resolver.rootEdges(m, Manifest.Scope.TEST);
+        List<Graph.Edge> runtime = ResolveInputs.rootEdges(m, Manifest.Scope.RUNTIME);
+        List<Graph.Edge> dev = ResolveInputs.rootEdges(m, Manifest.Scope.DEV);
+        List<Graph.Edge> test = ResolveInputs.rootEdges(m, Manifest.Scope.TEST);
         List<String> ids = new ArrayList<>();
         switch (kind) {
             case COMPILE -> {
@@ -175,7 +176,7 @@ public final class Builder {
     /** Runtime dependency classpath without compiling the project's own modules (for scripts). */
     public List<Path> classpathNoBuild(Project.Module m) {
         List<Path> out = new ArrayList<>();
-        for (String id : graph.closure(Resolver.rootEdges(m, Manifest.Scope.RUNTIME), Graph.Walk.RUNTIME)) {
+        for (String id : graph.closure(ResolveInputs.rootEdges(m, Manifest.Scope.RUNTIME), Graph.Walk.RUNTIME)) {
             Graph.Pkg p = graph.get(id);
             if (p != null && p.kind == Graph.Kind.LOCAL) {
                 Project.Module mod = project.module(id.substring("workspace:".length()));
@@ -502,7 +503,7 @@ public final class Builder {
         Path appJar = jar(m);
         List<Path> inputs = new ArrayList<>();
         inputs.add(appJar);
-        for (String id : graph.closure(Resolver.rootEdges(m, Manifest.Scope.RUNTIME), Graph.Walk.RUNTIME)) inputs.addAll(bundleJars(id, m));
+        for (String id : graph.closure(ResolveInputs.rootEdges(m, Manifest.Scope.RUNTIME), Graph.Walk.RUNTIME)) inputs.addAll(bundleJars(id, m));
         inputs = Compiler.distinct(inputs);
         Map<String, String> attrs = new LinkedHashMap<>();
         if (!m.manifest.mains.isEmpty()) attrs.put("Main-Class", m.manifest.mains.getOrDefault("main", m.manifest.mains.values().iterator().next()));
@@ -532,7 +533,7 @@ public final class Builder {
         if (mains.isEmpty()) throw new JpmException(m.manifest.file + " has no \"main\", so it cannot be bundled");
         String main = mains.getOrDefault("main", mains.values().iterator().next());
         Path appJar = jar(m);
-        List<Graph.Edge> roots = Resolver.rootEdges(m, Manifest.Scope.RUNTIME);
+        List<Graph.Edge> roots = ResolveInputs.rootEdges(m, Manifest.Scope.RUNTIME);
         Set<String> isolated = new java.util.TreeSet<>();
         for (String id : graph.closure(roots, Graph.Walk.RUNTIME)) {
             Graph.Pkg p = graph.get(id);
@@ -650,7 +651,7 @@ public final class Builder {
         List<Path> patchDeps = new ArrayList<>();
         if (options != null && !options.dependencies().isEmpty()) {
             List<Graph.Edge> roots = new ArrayList<>();
-            for (Manifest.Dependency d : options.dependencies()) roots.add(new Graph.Edge(Resolver.idOf(d.key()), false, d.exclusions()));
+            for (Manifest.Dependency d : options.dependencies()) roots.add(new Graph.Edge(ResolveInputs.idOf(d.key()), false, d.exclusions()));
             for (String id : graph.closure(roots, Graph.Walk.ALL)) {
                 if (graph.get(id) == null) throw new JpmException("Patch dependency " + id + " of " + p.id + " is not resolved. Run `jpm install`.");
                 patchDeps.addAll(paths(id, consumer));
@@ -912,7 +913,7 @@ public final class Builder {
         Graph g = new Resolver(roots, repo, prev).resolve();
         Install.fetch(g, repo);
         List<Graph.Edge> edges = new ArrayList<>();
-        for (Resolver.Root r : roots) edges.add(new Graph.Edge(Resolver.idOf(r.key()), false, Set.of()));
+        for (Resolver.Root r : roots) edges.add(new Graph.Edge(ResolveInputs.idOf(r.key()), false, Set.of()));
         Builder sub = new Builder(project, g, repo, Env.Mode.PRODUCTION);
         List<Path> out = new ArrayList<>();
         for (String id : g.closure(edges, walk)) out.addAll(sub.paths(id, null));

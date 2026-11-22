@@ -168,7 +168,7 @@ class GradleMetadataTest {
         Graph g = Install.run(p, mr, new Install.Options(false, true, Set.of(), true));
         assertTrue(g.get("com.acme:lib").deps.get("org.jspecify:jspecify").compileOnly());
         assertFalse(g.get("com.acme:lib").deps.containsKey("org.example:hidden"), "other provided dependencies stay out");
-        var roots = Resolver.rootEdges(p.modules.get(0), dev.jpm.Manifest.Scope.RUNTIME);
+        var roots = ResolveInputs.rootEdges(p.modules.get(0), dev.jpm.Manifest.Scope.RUNTIME);
         assertTrue(g.closure(roots, Graph.Walk.COMPILE).contains("org.jspecify:jspecify"));
         assertFalse(g.closure(roots, Graph.Walk.RUNTIME).contains("org.jspecify:jspecify"));
     }
@@ -209,7 +209,7 @@ class GradleMetadataTest {
         assertTrue(adventure.compileOnly(), "adventure is compile only for i18n");
         assertFalse(g.get("net.thenextlvl:i18n").deps.get("org.example:util").compileOnly());
 
-        var roots = Resolver.rootEdges(p.modules.get(0), dev.jpm.Manifest.Scope.RUNTIME);
+        var roots = ResolveInputs.rootEdges(p.modules.get(0), dev.jpm.Manifest.Scope.RUNTIME);
         assertTrue(g.closure(roots, Graph.Walk.COMPILE).contains("net.kyori:adventure-api"), "on the compile classpath");
         assertFalse(g.closure(roots, Graph.Walk.RUNTIME).contains("net.kyori:adventure-api"), "not on the runtime classpath");
         assertTrue(g.closure(roots, Graph.Walk.RUNTIME).contains("org.example:util"));
