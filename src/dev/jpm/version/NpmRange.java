@@ -59,7 +59,6 @@ public final class NpmRange implements VersionSpec {
                 set.add(new Cmp(">=", lo.filled(), lo.pre));
                 set.add(upperFromPartial(Part.of(hy[1])));
             } else {
-                // ">= 1.0" is ">=1.0": join operators with the version after them
                 for (String tok : alt.replaceAll("([<>=^~]+)\\s+", "$1").split("\\s+")) {
                     if (tok.isEmpty()) continue;
                     set.addAll(comparators(tok, text));
@@ -131,7 +130,6 @@ public final class NpmRange implements VersionSpec {
         List<Cmp> out = new ArrayList<>();
         switch (op) {
             case "^" -> {
-                // the left-most non-zero part may not change: ^1.2.3 <2, ^0.2.3 <0.3, ^0.0.3 <0.0.4
                 Version hi;
                 if (p.major() < 0) {
                     out.add(new Cmp(">=", Version.of("0"), null));
@@ -143,7 +141,6 @@ public final class NpmRange implements VersionSpec {
                 out.add(new Cmp("<", hi, null));
             }
             case "~", "~>" -> {
-                // ~1.2.3 and ~1.2 allow patch changes, ~1 minor changes
                 if (p.major() < 0) {
                     out.add(new Cmp(">=", Version.of("0"), null));
                     return out;
@@ -166,8 +163,7 @@ public final class NpmRange implements VersionSpec {
                 }
             }
             case ">" -> {
-                // >1.2 means >=1.3.0, >1 means >=2.0.0
-                if (p.major() < 0) out.add(new Cmp("<", Version.of("0"), null)); // nothing is >*
+                if (p.major() < 0) out.add(new Cmp("<", Version.of("0"), null));
                 else if (p.minor() < 0) out.add(new Cmp(">=", version(p.major() + 1, 0, 0, null), null));
                 else if (p.patch() < 0) out.add(new Cmp(">=", version(p.major(), p.minor() + 1, 0, null), null));
                 else out.add(new Cmp(">", p.filled(), p.pre));
@@ -196,7 +192,6 @@ public final class NpmRange implements VersionSpec {
             }
             if (!ok) continue;
             if (!pre) return true;
-            // a pre-release needs a comparator naming a pre-release of the same version
             for (Cmp c : set) {
                 if (c.pre != null && sameRelease(version, c.v)) return true;
             }

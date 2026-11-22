@@ -59,8 +59,6 @@ final class Commands {
         this.cwd = cwd;
     }
 
-    // ---------------------------------------------------------------- helpers
-
     private static boolean flag(List<String> args, String... names) {
         boolean found = false;
         for (String n : names) found |= args.remove(n);
@@ -133,8 +131,6 @@ final class Commands {
                 p.modules.stream().map(Project.Module::relDir).toList()) + ")");
     }
 
-    // ---------------------------------------------------------------- init
-
     int init(List<String> args) {
         noMoreFlags(args);
         if (Files.exists(cwd.resolve(Manifest.FILE))) throw new JpmException(Manifest.FILE + " already exists here");
@@ -201,8 +197,6 @@ final class Commands {
         return 0;
     }
 
-    // ---------------------------------------------------------------- add / remove
-
     private record DepArg(DepKey key, String spec) {}
 
     static DepArg parseDepArg(String s) {
@@ -217,7 +211,6 @@ final class Commands {
             spec = s.substring(at + 1);
         } else if (!s.startsWith("github:") && !s.startsWith("gitlab:") && !s.startsWith("codeberg:")
                 && !s.startsWith("workspace:")) {
-            // g:a:version, g:a:classifier, or g:a:classifier:version
             String[] parts = s.split(":");
             if ((parts.length == 3 && !parts[2].isEmpty() && Character.isDigit(parts[2].charAt(0))) || parts.length == 4) {
                 int last = s.lastIndexOf(':');
@@ -311,7 +304,6 @@ final class Commands {
         Manifest.Scope scope = dev ? Manifest.Scope.DEV : test ? Manifest.Scope.TEST : Manifest.Scope.RUNTIME;
         Project p = Project.find(cwd);
         Project.Module m = single(p, "add");
-        // Repositories are read from the root manifest (the workspace root in a workspace).
         Path rootFile = p.root.file, moduleFile = m.manifest.file;
         String rootOriginal = Fs.read(rootFile);
         String moduleOriginal = Fs.read(moduleFile);
@@ -340,8 +332,6 @@ final class Commands {
                         throw new JpmException(e.getMessage());
                     }
                 }
-                // adding to a scope moves the dependency there, except that dev and test may share it (a
-                // compile-only dependency tests run with); the other entry then gets the same version
                 Manifest.Scope pair = scope == Manifest.Scope.DEV ? Manifest.Scope.TEST : scope == Manifest.Scope.TEST ? Manifest.Scope.DEV : null;
                 for (Manifest.Scope s : Manifest.Scope.values()) {
                     if (s == scope) continue;
@@ -357,7 +347,6 @@ final class Commands {
             Fs.write(moduleFile, src);
             Install.run(Project.find(cwd), repo, new Install.Options(false, false, Set.of(), false));
         } catch (RuntimeException e) {
-            // leave the manifests exactly as they were
             Fs.write(moduleFile, moduleOriginal);
             if (!rootFile.equals(moduleFile)) Fs.write(rootFile, rootOriginal);
             String msg = e instanceof JpmException ? e.getMessage() : "unexpected failure: " + e;
@@ -398,8 +387,6 @@ final class Commands {
         Install.run(fresh, new MavenRepo(fresh.root.repositories), new Install.Options(false, false, Set.of(), false));
         return 0;
     }
-
-    // ---------------------------------------------------------------- install / update / outdated / why
 
     int install(List<String> args) {
         boolean frozen = flag(args, "--frozen", "--frozen-lockfile");
@@ -530,8 +517,6 @@ final class Commands {
         return 0;
     }
 
-    // ---------------------------------------------------------------- build / start / dev / test / run / clean
-
     int build(List<String> args) {
         boolean release = flag(args, "--release");
         boolean nativeImage = flag(args, "--native");
@@ -552,7 +537,6 @@ final class Commands {
             Scripts.hooks(mb, m, m.manifest, "pre", "build", profile, Env.Mode.PRODUCTION);
             mb.jar(m);
             if (bundleFlag || flat || m.manifest.packaging.equals("bundle")) {
-                // a runnable jar-in-jar for apps; one flat jar for modules without a main (plugins) or with --flat
                 if (flat || m.manifest.mains.isEmpty()) mb.flatBundle(m);
                 else mb.bundle(m);
             }
@@ -608,7 +592,6 @@ final class Commands {
         List<String> cmd = new ArrayList<>();
         cmd.add(jdk.java());
         if (trace) {
-            // merge into an earlier trace, or write a fresh one the first time
             boolean earlier = Files.exists(traceDir(m).resolve("reflect-config.json"));
             Fs.mkdirs(traceDir(m));
             cmd.add("-agentlib:native-image-agent=config-" + (earlier ? "merge" : "output") + "-dir=" + traceDir(m));
@@ -650,7 +633,6 @@ final class Commands {
             args.add("--add-reads");
             args.add(module + "=ALL-UNNAMED");
         }
-        // resolve every module on the path, so services they provide are found too
         args.add("--add-modules");
         args.add("ALL-MODULE-PATH");
         args.add("-m");
@@ -728,7 +710,6 @@ final class Commands {
         if (!args.isEmpty() && args.get(0).equals("--")) args.remove(0);
         Ctx c = open(false);
         Project.Module m = c.project.moduleAt(cwd);
-        // <module>:<script> runs another module's script from anywhere in the workspace
         int colon = name.indexOf(':');
         if (colon > 0 && !name.endsWith(":") && c.project.module(name.substring(0, colon)) != null) {
             m = c.project.module(name.substring(0, colon));
@@ -748,8 +729,6 @@ final class Commands {
         Log.step("Cleaned", "build output");
         return 0;
     }
-
-    // ---------------------------------------------------------------- info
 
     /**
      * Packages on a module's classpaths with the narrowest IDE scope that covers them: compile (needed to
@@ -1047,8 +1026,6 @@ final class Commands {
         return 0;
     }
 
-    // ---------------------------------------------------------------- import
-
     int importBuild(List<String> args) {
         boolean dryRun = flag(args, "--dry-run", "-n");
         boolean force = flag(args, "--force", "-f");
@@ -1082,8 +1059,6 @@ final class Commands {
         return 0;
     }
 
-    // ---------------------------------------------------------------- patch
-
     int patch(List<String> args) {
         boolean commit = flag(args, "--commit");
         noMoreFlags(args);
@@ -1097,13 +1072,9 @@ final class Commands {
         return 0;
     }
 
-    // ---------------------------------------------------------------- java
-
     int java(List<String> args, boolean asJvm) {
         return new JavaCommands(cwd, asJvm).run(args);
     }
-
-    // ---------------------------------------------------------------- extensions
 
     static Path globalBin() {
         return Fs.home().resolve("bin");
@@ -1117,7 +1088,6 @@ final class Commands {
                     + " provides it with `jpm add -g <dependency>` (it runs as jpm-" + cmd + ")");
         }
         Map<String, String> env = new LinkedHashMap<>();
-        // so the extension can call back into this jpm (jpm build, jpm info --json)
         env.put("JPM_EXE", dev.jpm.util.Self.exe());
         env.put("JPM_VERSION_OF_JPM", Main.VERSION);
         env.putAll(Log.childEnv());

@@ -83,7 +83,6 @@ class GradleApiTest {
         assertEquals("9.9.0", pkg.version);
         assertEquals(sha, pkg.sha256);
 
-        // locked like a Maven jar, and read back as a Gradle distribution
         Lockfile lock = Lockfile.read(p.resolve(Manifest.LOCK));
         assertEquals(Graph.Kind.GRADLE, lock.graph.get("gradle:api").kind);
         assertEquals(sha, lock.graph.get("gradle:api").sha256);
@@ -96,7 +95,6 @@ class GradleApiTest {
         assertEquals(3, b.classpath(m, Builder.Cp.TEST_RUNTIME).size());
         assertTrue(Files.isRegularFile(home.resolve("gradle/9.9.0/gradle-9.9.0/bin/gradle")));
 
-        // TestKit's withPluginClasspath(): the plugin's classes and runtime classpath, as java-gradle-plugin writes it
         Path meta = b.pluginUnderTestMetadata(m);
         assertNotNull(meta);
         Properties props = new Properties();

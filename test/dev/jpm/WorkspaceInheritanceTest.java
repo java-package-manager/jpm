@@ -38,7 +38,6 @@ class WorkspaceInheritanceTest {
         assertSame(Layout.MAVEN, a.layout);
         assertEquals(List.of("-Xlint:all"), a.javacArgs);
         assertEquals(List.of("-O2"), a.nativeArgs);
-        // a module's own settings win; flags are added after the root's
         assertEquals("21", b.java);
         assertEquals("org.other", b.group);
         assertSame(Layout.JPM, b.layout);

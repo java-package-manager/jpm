@@ -17,7 +17,6 @@ public final class JsoncEdit {
         for (String p : path) {
             Jsonc.Node next = obj.get(p);
             if (next == null) {
-                // Build the remaining nesting as a fresh multi-line value and insert it.
                 List<String> names = new java.util.ArrayList<>(path.subList(depth + 1, path.size()));
                 names.add(key);
                 return insertMember(src, obj, p, nest(names, rawValue, memberIndent(src, obj)));
@@ -42,7 +41,6 @@ public final class JsoncEdit {
         }
         Jsonc.Member m = obj.members.get(key);
         if (m == null) return src;
-        // Remove from the start of the key's line (if only whitespace precedes it) to after the comma.
         int start = m.keyStart;
         int lineStart = src.lastIndexOf('\n', start - 1) + 1;
         if (src.substring(lineStart, start).isBlank()) start = lineStart;
@@ -51,7 +49,6 @@ public final class JsoncEdit {
         boolean hadComma = i < src.length() && src.charAt(i) == ',';
         if (hadComma) {
             end = i + 1;
-            // swallow a trailing line comment and newline
             int j = end;
             while (j < src.length() && (src.charAt(j) == ' ' || src.charAt(j) == '\t')) j++;
             if (src.startsWith("//", j)) {
@@ -60,7 +57,6 @@ public final class JsoncEdit {
             if (j < src.length() && src.charAt(j) == '\n') end = j + 1;
             else if (start == lineStart) end = j;
         } else {
-            // last member: drop the comma of the previous member if there is one
             int k = start - 1;
             while (k > obj.start && Character.isWhitespace(src.charAt(k))) k--;
             if (src.charAt(k) == ',') {
@@ -98,7 +94,7 @@ public final class JsoncEdit {
 
     private static String insertMember(String src, Jsonc.Node obj, String key, String rawValue) {
         String objIndent = indentOf(src, obj);
-        int close = obj.end - 1; // position of '}'
+        int close = obj.end - 1;
         if (obj.members.isEmpty()) {
             String inner = objIndent + "  ";
             return src.substring(0, obj.start + 1) + "\n" + inner + Jsonc.quote(key) + ": " + rawValue
@@ -122,7 +118,6 @@ public final class JsoncEdit {
         }
         String piece;
         if (multiline) {
-            // put after the end of the line holding the last member (keeping its trailing comment)
             int eol = src.indexOf('\n', insertAt);
             if (eol < 0 || eol > close) eol = -1;
             if (eol >= 0) {

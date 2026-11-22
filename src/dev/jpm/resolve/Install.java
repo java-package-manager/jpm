@@ -50,7 +50,6 @@ public final class Install {
             if (o.updateAll()) repo.setRefreshMetadata(true);
             Graph prev = lock == null ? null : lock.graph;
             graph = new Resolver(project, repo, prev, o.update(), o.updateAll()).resolve();
-            // isolated modules: each resolved on its own, pinned by its own section of the lockfile
             for (Project.Module m : project.isolatedModules()) {
                 Graph before = prev == null ? null : prev.isolated.get(m.name());
                 graph.isolated.put(m.name(), new Resolver(project.isolatedView(m), repo, before, o.update(), o.updateAll()).resolve());

@@ -38,7 +38,6 @@ public record GitModule(DepKey key, String commit, Manifest root, Manifest manif
     private static GitModule locateUncached(DepKey key, String commit) {
         GitRepo repo = GitRepo.of(key);
         repo.ensureCommit(commit);
-        // Manifests come from the repository, or from importing its Maven or Gradle build.
         java.util.function.Function<String, String> read = rel -> repo.show(commit, rel.isEmpty() ? Manifest.FILE : rel + "/" + Manifest.FILE);
         String rootText = read.apply("");
         if (rootText == null) {
@@ -47,7 +46,7 @@ public record GitModule(DepKey key, String commit, Manifest root, Manifest manif
             rootText = read.apply("");
         }
         Manifest root = Manifest.parse(Path.of(key.repoKey() + "@" + commit.substring(0, 7), Manifest.FILE), rootText);
-        Map<String, String> siblings = new LinkedHashMap<>(); // module name -> subdir
+        Map<String, String> siblings = new LinkedHashMap<>();
         Map<String, Manifest> manifests = new LinkedHashMap<>();
         if (root.isWorkspaceRoot()) {
             for (String rel : root.workspace) {

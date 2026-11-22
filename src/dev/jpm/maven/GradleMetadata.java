@@ -32,7 +32,7 @@ public record GradleMetadata(Set<String> api, Set<String> runtime) {
             if (!(v instanceof Map<?, ?> variant)) continue;
             Map<String, Object> attrs = variant.get("attributes") instanceof Map<?, ?> a ? (Map<String, Object>) a : Map.of();
             Object category = attrs.get("org.gradle.category");
-            if (category != null && !"library".equals(category)) continue; // documentation, platforms
+            if (category != null && !"library".equals(category)) continue;
             Object usage = attrs.get("org.gradle.usage");
             Set<String> into = "java-api".equals(usage) ? api : "java-runtime".equals(usage) ? runtime : null;
             if (into == null) continue;
@@ -70,9 +70,7 @@ public record GradleMetadata(Set<String> api, Set<String> runtime) {
             if (!"java-runtime".equals(attrs.get("org.gradle.usage"))) continue;
             Object category = attrs.get("org.gradle.category");
             if (category != null && !"library".equals(category)) continue;
-            // the library has JVM classes of its own (kotlin-test); its other variants are optional features
             if (!(variant.get("available-at") instanceof Map<?, ?> at)) return null;
-            // a variant for an optional feature (kotlin-test's JUnit support) is not the library itself
             if (variant.get("capabilities") instanceof List<?> caps && !caps.isEmpty()) continue;
             if (at.get("group") == null || at.get("module") == null || at.get("version") == null) continue;
             String target = at.get("group") + ":" + at.get("module") + ":" + at.get("version");

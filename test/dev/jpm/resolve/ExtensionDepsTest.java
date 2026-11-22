@@ -60,7 +60,6 @@ class ExtensionDepsTest {
         Fs.write(classes.resolve("srv/Server.class"), "x");
         Path serverJar = tmp.resolve("server.jar");
         Jars.write(serverJar, List.of(classes), Map.of());
-        // its dependency, from a local repository
         Path repo = tmp.resolve("repo");
         Path v = repo.resolve("org/api/api/1.0");
         Fs.write(v.resolve("api-1.0.pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>org.api</groupId><artifactId>api</artifactId><version>1.0</version></project>");
@@ -102,7 +101,6 @@ class ExtensionDepsTest {
     void answersAreChecked(@TempDir Path tmp) throws IOException {
         DepKey key = DepKey.parse("ext:x/y");
         assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "not json"));
-        // paths as JSON strings: Windows paths have backslashes
         assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [" + q(tmp.resolve("nope.jar")) + "]}"));
         Path jar = Files.writeString(tmp.resolve("a.jar"), "x");
         assertThrows(JpmException.class, () -> ExtensionDeps.parse(key, "{\"version\": \"1\", \"jars\": [" + q(jar) + "],"

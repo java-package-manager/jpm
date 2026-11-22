@@ -33,7 +33,6 @@ class RepositoriesTest {
         Path repo = dir.resolve("repo");
         Fs.write(repo.resolve("g/a/1.0/a-1.0.pom"), "<project><groupId>g</groupId><artifactId>a</artifactId><version>1.0</version></project>");
         System.setProperty("jpm.home", dir.resolve("home").toString());
-        // no network: an empty local folder stands in for Maven Central, which is asked first
         System.setProperty("jpm.mavenCentral", dir.resolve("central").toUri().toString());
         try {
             MavenRepo r = new MavenRepo(List.of(repo.toUri().toString()));

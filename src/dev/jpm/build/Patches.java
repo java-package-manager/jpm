@@ -126,15 +126,12 @@ public final class Patches {
         }
         String target = owner.patches.getOrDefault(id, rel);
         Fs.write(owner.dir().resolve(target), diff.out());
-        // a patch with options keeps them: only its "file" is written
         Fs.write(owner.file, owner.patchOptions.containsKey(id)
                 ? JsoncEdit.set(src, List.of("patches", id), "file", Jsonc.quote(target))
                 : JsoncEdit.set(src, List.of("patches"), id, Jsonc.quote(target)));
         Fs.deleteTree(work);
         Log.step("Saved", target + " and recorded it in " + owner.dir().relativize(owner.file));
     }
-
-    // ---------------------------------------------------------------- applying
 
     /** Copies {@code src} to {@code dest} and applies the patch there. */
     public static void applyTo(Path src, Path dest, Path patch, String id, String version) {
@@ -147,7 +144,6 @@ public final class Patches {
     static void apply(Path dir, Path patch, String id, String version) {
         if (!Files.exists(patch)) throw new JpmException("Patch file " + patch + " for " + id + " does not exist");
         GitRepo.requireGit();
-        // Make the directory its own repository root so paths in the patch resolve against it.
         if (!Files.exists(dir.resolve(".git"))) Exec.capture(dir, cmd("init", "-q"));
         Exec.Result r = Exec.capture(dir, cmd("apply", "--whitespace=nowarn", patch.toString()));
         if (!r.ok()) {

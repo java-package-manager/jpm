@@ -44,7 +44,6 @@ public final class Scripts {
 
     private static int exec(Builder b, Project.Module m, String name, String value, List<String> args, Env.Mode mode, Set<String> stack) {
         if (!stack.add(name)) throw new JpmException("Script \"" + name + "\" calls itself");
-        // A script may name another script (useful for hooks).
         String alias = m.manifest.scripts.get(value);
         if (alias != null && !value.equals(name)) return exec(b, m, value, alias, args, mode, stack);
 
@@ -57,7 +56,6 @@ public final class Scripts {
             Jdk jdk = b.jdk(m.manifest);
             if (jdk.major() < 11) throw new JpmException("Java scripts need JDK 11 or newer");
             cmd.add(jdk.java());
-            // the script's own //DEPS come first, then the module's runtime classpath
             List<Path> own = scriptClasspath(b, file);
             String cp = env.get("JPM_CLASSPATH");
             String all = own.isEmpty() ? cp : Compiler.join(own) + (cp == null || cp.isEmpty() ? "" : java.io.File.pathSeparator + cp);
@@ -144,7 +142,6 @@ public final class Scripts {
     /** Build information passed to scripts and extensions. */
     public static Map<String, String> info(Builder b, Project.Module m) {
         Map<String, String> env = new LinkedHashMap<>();
-        // so scripts and hooks can call back into this jpm (jpm info --json, jpm build <module>)
         env.put("JPM_EXE", dev.jpm.util.Self.exe());
         env.put("JPM_VERSION_OF_JPM", dev.jpm.BuildConfig.VERSION);
         env.putAll(Log.childEnv());

@@ -101,7 +101,6 @@ class ToolchainTest {
 
     @Test
     void findsNestedJdkHomes(@TempDir Path dir) {
-        // Zulu's macOS layout: <top>/zulu-21.jdk/Contents/Home, metadata written at <top>
         String javac = System.getProperty("os.name").toLowerCase().contains("win") ? "javac.exe" : "javac";
         Path home = dir.resolve("zulu-21.jdk/Contents/Home");
         Fs.write(home.resolve("bin").resolve(javac), "");

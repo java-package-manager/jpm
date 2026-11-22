@@ -11,7 +11,7 @@ import java.util.Locale;
  */
 public final class Version implements Comparable<Version> {
     private final String raw;
-    private final List<Object> items; // Long or String (qualifier); String items are lower-cased
+    private final List<Object> items;
 
     private Version(String raw) {
         this.raw = raw;
@@ -50,7 +50,6 @@ public final class Version implements Comparable<Version> {
     }
 
     private static List<Object> tokenize(String v) {
-        // drop build metadata (semver +...), it does not take part in ordering
         int plus = v.indexOf('+');
         if (plus >= 0) v = v.substring(0, plus);
         if (v.startsWith("v") && v.length() > 1 && Character.isDigit(v.charAt(1))) v = v.substring(1);
@@ -65,7 +64,6 @@ public final class Version implements Comparable<Version> {
                 if (cur.length() > 0) {
                     Object it = item(cur.toString(), digit);
                     if (it instanceof String) {
-                        // "1.0-rc1" == "1-rc1": zeros before a qualifier do not count
                         while (!out.isEmpty() && out.get(out.size() - 1) instanceof Long l && l == 0L) {
                             out.remove(out.size() - 1);
                         }
@@ -79,7 +77,6 @@ public final class Version implements Comparable<Version> {
             cur.append(c);
             digit = isDigit;
         }
-        // trim trailing zeros and release qualifiers ("1.0.0" == "1" == "1.0-final")
         while (!out.isEmpty()) {
             Object last = out.get(out.size() - 1);
             if ((last instanceof Long l && l == 0L) || (last instanceof String s && qualifierRank(s) == 5)) {
@@ -136,7 +133,7 @@ public final class Version implements Comparable<Version> {
         if (a instanceof Long la) {
             if (b == null) return la == 0 ? 0 : 1;
             if (b instanceof Long lb) return Long.compare(la, lb);
-            return 1; // number beats qualifier
+            return 1;
         }
         String sa = (String) a;
         if (b == null) return Integer.compare(qualifierRank(sa), 5);

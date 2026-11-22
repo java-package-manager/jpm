@@ -28,7 +28,6 @@ class UpgradeTest {
         assertEquals("0.5.0", Upgrade.releaseOf("0.5.0-3ff03ab"));
         assertEquals("0.5.0", Upgrade.releaseOf("0.5.0"));
         assertTrue(!Upgrade.isCanary("0.5.0") && !Upgrade.isCanary("1.0.0-rc1") && !Upgrade.isCanary("1.0.0-beta.2"));
-        // Canary versions parse like any version; `jpm upgrade` compares a canary through releaseOf.
         assertTrue(dev.jpm.version.Version.of("0.5.0-3ff03ab").compareTo(dev.jpm.version.Version.of("0.4.0")) > 0);
         assertTrue(dev.jpm.version.Version.of("0.5.0-3ff03ab").compareTo(dev.jpm.version.Version.of("0.6.0")) < 0);
         assertEquals("https://github.com/java-package-manager/jpm/releases/download/canary", Upgrade.canaryBase());
@@ -43,15 +42,12 @@ class UpgradeTest {
 
         assertEquals("jpm 0.6.0 is available. Run `jpm upgrade`.", Upgrade.updateNotice("0.5.0", l, c));
         assertNull(Upgrade.updateNotice("0.6.0", l, c), "releases hear about releases only");
-        // canary builds hear about newer canaries, and about releases after the one they follow
         assertEquals("jpm 0.6.0-abcdef1 is the newest canary build. Run `jpm upgrade --canary`.",
                 Upgrade.updateNotice("0.6.0-1234567", l, c));
         assertEquals("jpm 0.6.0 is available. Run `jpm upgrade`.\njpm 0.6.0-abcdef1 is the newest canary build. Run `jpm upgrade --canary`.",
                 Upgrade.updateNotice("0.5.0-1234567", l, c));
         assertNull(Upgrade.updateNotice("0.6.0-abcdef1", l, c));
-        // a canary is never announced as a release
         assertNull(Upgrade.updateNotice("0.5.0", c, c));
-        // no answer, no notice
         assertNull(Upgrade.updateNotice("0.5.0", dir.resolve("missing").toUri().toString(), c));
     }
 

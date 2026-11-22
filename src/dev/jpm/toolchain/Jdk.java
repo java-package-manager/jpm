@@ -141,7 +141,6 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         } catch (NumberFormatException e) {
             return null;
         }
-        // jpm records what it installed; otherwise guess the distribution from the vendor.
         Path meta = metadataFile(home);
         String distribution = null;
         boolean managed = false;
@@ -155,7 +154,6 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
 
     /** The metadata file for a jpm-installed JDK. */
     private static Path metadataFile(Path home) {
-        // jpm writes it at the top of the install directory, which may be a few levels above the home
         Path p = home;
         for (int i = 0; i < 4 && p != null; i++, p = p.getParent()) {
             Path m = p.resolve(METADATA);

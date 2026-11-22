@@ -44,7 +44,6 @@ public final class Relocator {
         if (name.startsWith("META-INF/services/") && name.indexOf('/', 18) < 0) {
             return "META-INF/services/" + dotted(name.substring(18));
         }
-        // multi-release jars: META-INF/versions/9/org/yaml/... moves like org/yaml/...
         java.util.regex.Matcher mr = java.util.regex.Pattern.compile("^(META-INF/versions/\\d+/)(.+)$").matcher(name);
         if (mr.matches()) return mr.group(1) + entryName(mr.group(2));
         for (Map.Entry<String, String> e : internal.entrySet()) {
@@ -89,11 +88,10 @@ public final class Relocator {
             DataInputStream in = new DataInputStream(new ByteArrayInputStream(b));
             ByteArrayOutputStream bos = new ByteArrayOutputStream(b.length + 64);
             DataOutputStream out = new DataOutputStream(bos);
-            out.writeInt(in.readInt()); // magic
-            out.writeShort(in.readUnsignedShort()); // minor
-            out.writeShort(in.readUnsignedShort()); // major
+            out.writeInt(in.readInt());
+            out.writeShort(in.readUnsignedShort());
+            out.writeShort(in.readUnsignedShort());
             int count = in.readUnsignedShort();
-            // first pass: which Utf8 entries are string constants
             byte[] tags = new byte[count];
             Object[] values = new Object[count];
             boolean[] isString = new boolean[count];
@@ -138,7 +136,7 @@ public final class Relocator {
             out.flush();
             return bos.toByteArray();
         } catch (IOException e) {
-            return b; // not a class file we understand: leave it alone
+            return b;
         }
     }
 
@@ -151,7 +149,6 @@ public final class Relocator {
                 v = to + v.substring(from.length());
                 continue;
             }
-            // inside descriptors and signatures a class name follows L (or [ for arrays of internal names)
             v = v.replace("L" + from + "/", "L" + to + "/").replace("[" + from + "/", "[" + to + "/");
         }
         return v;

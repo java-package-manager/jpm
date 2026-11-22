@@ -82,7 +82,6 @@ public final class Compiler {
             writeState(r.stateFile, s);
             return false;
         }
-        // Annotation processors and named modules both need every source in one javac run.
         boolean processors = !r.processorPath.isEmpty() || Modules.moduleInfo(r.sourceRoots) != null;
         if (old == null || !key.equals(old.key) || !Files.isDirectory(r.outDir)) {
             full(r, sources, hashes, key);
@@ -118,7 +117,6 @@ public final class Compiler {
         }
         Set<String> compiled = new TreeSet<>();
         Set<String> batch = new TreeSet<>(changed);
-        // Sources that used a deleted class must be recompiled (and fail if they still use it).
         batch.addAll(dependents(st, affected, batch));
         affected.clear();
         int rounds = 0;
@@ -214,9 +212,6 @@ public final class Compiler {
         Fs.mkdirs(tmp);
         List<String> args = new ArrayList<>();
         if (r.jdk.major() >= 9) {
-            // --release only matters when cross-compiling for an older Java. On a JDK of the target version it
-            // changes nothing (the same API and the same bytecode), and javac refuses it together with flags
-            // that open the JDK's own modules, such as --add-exports jdk.compiler/... in "javacArgs".
             if (r.release < r.jdk.major()) {
                 args.add("--release");
                 args.add(Integer.toString(r.release));
@@ -240,8 +235,6 @@ public final class Compiler {
         cp.addAll(r.classpath);
         Path moduleInfo = Modules.moduleInfo(r.sourceRoots);
         if (moduleInfo != null && r.jdk.major() >= 9) {
-            // A named module: its `requires` come from the module path; other jars stay on the class path,
-            // which the module may read.
             Modules.Declaration decl = Modules.parse(moduleInfo);
             List<List<Path>> split = Modules.split(decl, cp);
             if (!split.get(0).isEmpty()) {
@@ -272,8 +265,6 @@ public final class Compiler {
             args.add("-s");
             args.add(gen.toString());
         }
-        // -J options are for the JVM running javac (ErrorProne needs --add-exports there); javac refuses
-        // them inside an argfile, so they go on the command line before it.
         List<String> command = new ArrayList<>();
         command.add(r.jdk.javac());
         for (String a : r.extraArgs) {
@@ -288,7 +279,6 @@ public final class Compiler {
         String out = (res.out() + res.err()).strip();
         if (!res.ok()) {
             Fs.deleteTree(tmp);
-            // A failed incremental compile must not leave a half-updated state behind.
             try {
                 Files.deleteIfExists(r.stateFile);
             } catch (IOException ignored) {
@@ -303,7 +293,6 @@ public final class Compiler {
         }
         Log.tool(out);
 
-        // Map produced classes to the source they came from.
         Map<String, Set<String>> produced = new TreeMap<>();
         Map<String, String> byPath = new LinkedHashMap<>();
         Map<String, List<String>> byName = new LinkedHashMap<>();
@@ -368,8 +357,6 @@ public final class Compiler {
             throw new JpmException("Could not read class " + c + ": " + e.getMessage());
         }
     }
-
-    // ---------------------------------------------------------------- state file
 
     @SuppressWarnings("unchecked")
     private static State readState(Path file) {

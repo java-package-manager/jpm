@@ -441,7 +441,6 @@ public final class Manifest {
         Jsonc.Node v = e.value;
         int ln = line(e.keyStart);
         if (!v.isObject()) {
-            // Shorthand: "NAME": literal
             DefineType t = v.value instanceof Boolean ? DefineType.BOOLEAN
                     : v.value instanceof BigDecimal ? DefineType.INT : DefineType.STRING;
             if (v.value == null) throw err(v, "define " + e.key + " needs a value or {\"type\": ...}");
@@ -540,7 +539,6 @@ public final class Manifest {
     /** The module's source folders: {@code "sources"}, or the layout's one. */
     public List<Path> sourceDirs(Path moduleDir) {
         if (!sources.isEmpty()) return sources.stream().map(moduleDir::resolve).toList();
-        // Kotlin in the Maven layout: src/main/kotlin too, as the Kotlin Gradle and Maven plugins have it
         if (kotlin != null && layout == Layout.MAVEN) return List.of(layout.sources(moduleDir), moduleDir.resolve("src/main/kotlin"));
         return List.of(layout.sources(moduleDir));
     }
@@ -623,7 +621,6 @@ public final class Manifest {
                 dev = null;
             }
             if (runtime != null && test != null && test.tests && sameVersion(runtime, test)) {
-                // the test entry brings the module's tests too, which the runtime entry does not
             } else if (runtime != null && test != null) {
                 Log.warn(file + ":" + test.line + ": " + test.key + " is in \"runtime\" and \"test\"; tests have every runtime"
                         + " dependency already, so the \"test\" entry is ignored"

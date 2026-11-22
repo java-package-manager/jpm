@@ -64,7 +64,6 @@ class IsolatedModuleTest {
         assertEquals("2.0", tools.get("g:annotations").version);
         assertNull(tools.get("g:lib"));
 
-        // the lockfile keeps both, and is reused as is
         String lock = Fs.read(ws.resolve("project.lock"));
         assertTrue(lock.contains("\"isolated\": {"), lock);
         Lockfile read = Lockfile.read(ws.resolve("project.lock"));
@@ -73,7 +72,6 @@ class IsolatedModuleTest {
         Graph again = Install.run(Project.load(ws), repo, new Install.Options(true, false, Set.of(), true));
         assertEquals("2.0", again.isolated.get("tools").get("g:annotations").version);
 
-        // each module's classpath comes from its own graph
         Project q = Project.load(ws);
         Builder b = new Builder(q, again, repo, Env.Mode.PRODUCTION);
         List<String> serverCp = names(b.forModule(q.module("server")).classpath(q.module("server"), Builder.Cp.RUNTIME));

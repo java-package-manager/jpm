@@ -66,7 +66,6 @@ public final class Modules {
         try (JarFile jf = new JarFile(jar.toFile())) {
             ZipEntry mi = jf.getEntry("module-info.class");
             if (mi == null) {
-                // multi-release jars may keep it under a version directory only
                 for (var en = jf.entries(); en.hasMoreElements(); ) {
                     ZipEntry e = en.nextElement();
                     if (e.getName().matches("META-INF/versions/\\d+/module-info\\.class")) { mi = e; break; }
@@ -129,7 +128,7 @@ public final class Modules {
         try {
             java.io.DataInputStream in = new java.io.DataInputStream(new java.io.ByteArrayInputStream(b));
             if (in.readInt() != 0xCAFEBABE) return null;
-            in.readUnsignedShort(); // minor
+            in.readUnsignedShort();
             if (in.readUnsignedShort() < 53) return null;
             int count = in.readUnsignedShort();
             String[] utf8 = new String[count];
@@ -144,16 +143,16 @@ public final class Modules {
                     case 3, 4, 9, 10, 11, 12, 17, 18 -> in.skipNBytes(4);
                     case 5, 6 -> {
                         in.skipNBytes(8);
-                        i++; // takes two entries
+                        i++;
                     }
                     default -> {
                         return null;
                     }
                 }
             }
-            in.skipNBytes(6); // access_flags, this_class, super_class
-            in.skipNBytes(2L * in.readUnsignedShort()); // interfaces
-            for (int members = 0; members < 2; members++) { // fields, methods: none in module-info, but allowed
+            in.skipNBytes(6);
+            in.skipNBytes(2L * in.readUnsignedShort());
+            for (int members = 0; members < 2; members++) {
                 int n = in.readUnsignedShort();
                 for (int i = 0; i < n; i++) {
                     in.skipNBytes(6);
@@ -203,7 +202,6 @@ public final class Modules {
         for (Path p : deps) {
             String name = declaredName(p);
             if (name == null && module.requires().contains(automaticName(p))) name = automaticName(p);
-            // one module of each name: two jars with the same module would stop javac
             if (name != null && placed.add(name)) modulePath.add(p);
             else classPath.add(p);
         }

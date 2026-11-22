@@ -91,7 +91,6 @@ public final class Foojay {
             if (libc != null && p.libc.equals(otherLibc(libc))) continue;
             if (best == null) { best = p; continue; }
             int c = Version.of(p.javaVersion).compareTo(Version.of(best.javaVersion));
-            // same version: prefer tar.gz, which keeps symlinks and permissions (zip does not)
             if (c > 0 || (c == 0 && archiveRank(p.archiveType) < archiveRank(best.archiveType))) best = p;
         }
         return best;

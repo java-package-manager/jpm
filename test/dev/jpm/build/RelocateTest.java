@@ -43,7 +43,6 @@ class RelocateTest {
     void bundleRunsWithTheDependencyRelocated(@TempDir Path dir) throws Exception {
         System.setProperty("jpm.home", dir.resolve("home").toString());
         Jdk jdk = Toolchain.require(JavaSpec.any());
-        // a library with a service, a resource and a class it loads by name
         Path libSrc = dir.resolve("lib-src"), libClasses = dir.resolve("lib-classes");
         Fs.write(libSrc.resolve("org/dep/Spi.java"), "package org.dep; public interface Spi { String hi(); }");
         Fs.write(libSrc.resolve("org/dep/SpiImpl.java"), "package org.dep; public class SpiImpl implements Spi { public String hi() { return \"spi\"; } }");

@@ -78,7 +78,6 @@ public final class Resolver {
     public Resolver(Project project, MavenRepo repo, Graph previous, Set<String> unlocked, boolean unlockAll) {
         this.project = project;
         this.roots = new ArrayList<>();
-        // isolated modules are resolved on their own, see Install
         for (Project.Module m : project.sharedModules()) {
             for (Manifest.Dependency d : effectiveDeps(m)) {
                 if (d.key().isWorkspace()) continue;
@@ -86,8 +85,6 @@ public final class Resolver {
                 roots.add(new Root(m.id(), d.key(), d.spec(), d.exclusions()));
             }
         }
-        // compile-only dependencies of patches: resolved with the project, so their versions agree with it
-        // and are locked, but on no module's classpath (only the patched classes are compiled against them)
         for (Map.Entry<String, Manifest> e : patchManifests(project).entrySet()) {
             for (Manifest.PatchOptions o : e.getValue().patchOptions.values()) {
                 for (Manifest.Dependency d : o.dependencies()) {
@@ -121,8 +118,6 @@ public final class Resolver {
         this.unlocked = Set.of();
         this.unlockAll = false;
     }
-
-    // ------------------------------------------------------------------ inputs
 
     /** Effective dependencies of a module, including implicit ones (JUnit for tests). */
     public static List<Manifest.Dependency> effectiveDeps(Project.Module m) {
@@ -176,8 +171,6 @@ public final class Resolver {
         return k.isGit() ? Graph.Kind.GIT : k.isGradle() ? Graph.Kind.GRADLE : k.isExtension() ? Graph.Kind.EXTENSION : Graph.Kind.MAVEN;
     }
 
-    // ------------------------------------------------------------------ resolution
-
     public Graph resolve() {
         Map<String, Selected> selected = new HashMap<>();
         Map<String, List<Request>> requests = null;
@@ -215,7 +208,6 @@ public final class Resolver {
                 for (EdgeReq e : exp.edges) {
                     if (Graph.excluded(e.target, ex)) continue;
                     kinds.putIfAbsent(e.target, e.kind);
-                    // a bare version from a POM is a preference; ranges in any syntax are requirements
                     boolean hard = e.kind == Graph.Kind.GIT || !VersionSpecs.isBareVersion(e.spec);
                     requests.computeIfAbsent(e.target, k -> new ArrayList<>()).add(new Request(e.spec, hard, false, id));
                     visitedFrom.computeIfAbsent(e.target, k -> new LinkedHashSet<>()).add(id);
@@ -283,7 +275,6 @@ public final class Resolver {
                 String id = idOf(d.key());
                 p.deps.put(id, new Graph.Edge(id, d.runtimeOnly(), d.exclusions()));
             }
-            // "api" dev dependencies: siblings compile against them, nothing runs with them
             for (Manifest.Dependency d : m.manifest.deps(Manifest.Scope.DEV)) {
                 if (!d.api()) continue;
                 String id = idOf(d.key());
@@ -300,8 +291,6 @@ public final class Resolver {
             throw new JpmException(d.key() + " (" + Manifest.FILE + " line " + d.line() + "): " + e.getMessage());
         }
     }
-
-    // ------------------------------------------------------------------ choosing versions
 
     private boolean locked(String id) {
         return previous != null && !unlockAll && !unlocked.contains(id) && previous.get(id) != null;
@@ -383,7 +372,6 @@ public final class Resolver {
         } else {
             String[] ga = id.split(":");
             List<Version> all = repo.versions(ga[0], ga[1]);
-            // one requirement chooses by its own rules (latest.integration takes snapshots, !! a preferred version)
             Optional<Version> best = hard.size() == 1 ? hard.get(0).best(all) : new AllOf(hard).best(all);
             if (best.isPresent()) return new Selected(best.get().toString(), null, null);
         }
@@ -414,8 +402,6 @@ public final class Resolver {
         List<Selected> pins = new ArrayList<>();
         List<Request> pinReqs = new ArrayList<>();
         List<VersionSpec> ranges = new ArrayList<>();
-        // "@<commit>" ties a module to the commit of a sibling from the same repository. It only decides
-        // when nothing else asks for the module; otherwise the sibling follows the other requests.
         boolean onlySiblingPins = reqs.stream().allMatch(r -> r.spec.trim().startsWith("@"));
         for (Request r : reqs) {
             String s = r.spec.trim();
@@ -438,7 +424,6 @@ public final class Resolver {
                     throw new JpmException(id + " (required by " + r.from + "): " + e.getMessage());
                 }
             } else {
-                // an exact tag name, else a branch name ("main" is "#main" when there is no tag "main")
                 Map<String, String> tags = tags(key);
                 String commit = tags.get(s);
                 if (commit != null) {
@@ -453,7 +438,6 @@ public final class Resolver {
             }
         }
         if (!pins.isEmpty()) {
-            // A pin in the project's own manifest wins; otherwise the highest pinned version does.
             Selected chosen = null;
             for (int i = 0; i < pins.size(); i++) {
                 if (pinReqs.get(i).direct) { chosen = pins.get(i); break; }
@@ -550,7 +534,6 @@ public final class Resolver {
     }
 
     private Selected commitSelection(DepKey key, String commit, String tag) {
-        // A commit that carries a version tag for this module is that version.
         Map<String, String> tags = tags(key);
         for (Map.Entry<String, String> t : tags.entrySet()) {
             if (t.getValue().equals(commit) && tagVersion(key, t.getKey(), tags.keySet()) != null) {
@@ -561,15 +544,13 @@ public final class Resolver {
         return new Selected(mod.version() + "+" + commit.substring(0, 7), commit, tag);
     }
 
-    // ------------------------------------------------------------------ expanding
-
     private Expanded expand(String id, Selected sel) {
         String memoKey = id + "@" + sel.version + "@" + sel.commit;
         Expanded e = expandMemo.get(memoKey);
         if (e != null) return e;
         e = switch (kinds.get(id)) {
             case GIT -> expandGit(id, sel);
-            case GRADLE -> new Expanded(List.of(), true, null); // the distribution's jars, nothing to resolve
+            case GRADLE -> new Expanded(List.of(), true, null);
             case EXTENSION -> {
                 List<EdgeReq> edges = new ArrayList<>();
                 for (Map.Entry<String, String> d : ExtensionDeps.resolve(DepKey.parse(id), sel.version).dependencies().entrySet()) {
@@ -584,7 +565,6 @@ public final class Resolver {
     }
 
     private Expanded expandMaven(String id, String version) {
-        // a classified jar (g:a:classifier) shares the POM of g:a
         String[] ga = id.split(":");
         Pom pom = poms.load(ga[0], ga[1], version);
         List<EdgeReq> edges = new ArrayList<>();
@@ -595,13 +575,10 @@ public final class Resolver {
                 return new Expanded(edges, false, null);
             }
         }
-        // Gradle's module metadata knows what a POM cannot: compile-time-only (compileOnlyApi) dependencies
         dev.jpm.maven.GradleMetadata meta = null;
         if (pom.gradleMetadata) {
             java.nio.file.Path module = repo.fetch(ga[0], ga[1], version, null, "module");
             if (module != null) {
-                // a Kotlin Multiplatform library: its JVM classes are another module (mockk -> mockk-jvm), which the
-                // POM may not depend on; like a relocation
                 String at = ga.length == 2 ? dev.jpm.maven.GradleMetadata.jvmVariantAt(module) : null;
                 if (at != null) {
                     String[] t = at.split(":");
@@ -615,8 +592,6 @@ public final class Resolver {
         }
         for (Pom.Dep d : pom.dependencies) {
             String scope = d.scope() == null ? "compile" : d.scope();
-            // provided is not passed on, except where the .module says consumers compile against it (jpm-publish
-            // writes "api" dev dependencies like that; Gradle writes compileOnlyApi as compile scope)
             boolean providedApi = scope.equals("provided") && meta != null && meta.compileOnly(d.key());
             if (!scope.equals("compile") && !scope.equals("runtime") && !providedApi) continue;
             if (d.optional()) continue;
@@ -648,7 +623,6 @@ public final class Resolver {
                     throw new JpmException(id + ": depends on workspace:" + sib + ", which is not a module of " + key.repoKey());
                 }
                 GitModule sm = GitModule.locate(key.withModule(sib), sel.commit);
-                // The implementation of a public API is used at runtime only, never compiled against.
                 boolean runtimeOnly = !sm.isPublic();
                 String target = idOf(key.withModule(sib));
                 edges.add(new EdgeReq(target, Graph.Kind.GIT, "@" + sel.commit, runtimeOnly, Set.of()));
@@ -657,7 +631,6 @@ public final class Resolver {
                         d.runtimeOnly(), d.exclusions()));
             }
         }
-        // "api" dev dependencies: consumers compile against them; the platform provides them at run time
         for (Manifest.Dependency d : mod.manifest().deps(Manifest.Scope.DEV)) {
             if (!d.api() || d.key().isWorkspace()) continue;
             edges.add(new EdgeReq(idOf(d.key()), kindOf(d.key()), d.spec(),

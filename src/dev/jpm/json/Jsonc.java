@@ -157,7 +157,7 @@ public final class Jsonc {
     }
 
     private String parseString() {
-        pos++; // opening quote
+        pos++;
         StringBuilder sb = new StringBuilder();
         while (true) {
             if (pos >= src.length()) throw error("Unterminated string");
@@ -202,7 +202,7 @@ public final class Jsonc {
         }
         while (true) {
             skipWs();
-            if (pos < src.length() && src.charAt(pos) == '}') { pos++; break; } // trailing comma
+            if (pos < src.length() && src.charAt(pos) == '}') { pos++; break; }
             if (pos >= src.length() || src.charAt(pos) != '"') throw error("Expected property name");
             int keyStart = pos;
             String key = parseString();
@@ -247,8 +247,6 @@ public final class Jsonc {
         }
         return new Node(list, start, pos, null, items);
     }
-
-    // ---------------------------------------------------------------- writing
 
     public static String quote(String s) {
         StringBuilder sb = new StringBuilder("\"");

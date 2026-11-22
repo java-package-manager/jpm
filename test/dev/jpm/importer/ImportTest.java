@@ -78,7 +78,6 @@ class ImportTest {
         assertEquals(Map.of("org.junit.jupiter:junit-jupiter", "5.11.4"), app.get("test"));
         assertTrue(imp.warnings.stream().anyMatch(w -> w.contains("protobuf-maven-plugin")), imp.warnings.toString());
 
-        // the result is a valid manifest that builds in place
         Manifest m = Manifest.parse(Path.of("app/project.jsonc"), imp.render("app"));
         assertEquals(Layout.MAVEN, m.layout);
         assertEquals(17, m.targetMajor());
@@ -123,8 +122,6 @@ class ImportTest {
         assertEquals("com.example", lib.get("group"));
         assertEquals("21", lib.get("target"));
         assertEquals(Map.of("com.google.guava:guava", "33.3.1-jre", "org.apache.commons:commons-lang3", "3.14.0"), lib.get("runtime"));
-        // dynamic versions are jpm versions too, and stay dynamic
-        // compileOnlyApi: a dev dependency that consumers compile against too
         assertEquals(Map.of("org.projectlombok:lombok", "1.18.34", "io.papermc.paper:paper-api", "26.3.build.+",
                 "org.jspecify:jspecify", Map.of("version", "1.0.0", "api", true)), lib.get("dev"));
         assertEquals(Map.of("org.junit.jupiter:junit-jupiter", "5.11.4"), lib.get("test"));

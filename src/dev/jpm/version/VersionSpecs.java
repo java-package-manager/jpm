@@ -33,7 +33,6 @@ public final class VersionSpecs {
         String s = text.trim();
         int strict = s.indexOf("!!");
         if (strict >= 0) {
-            // Gradle's strictly: "1.2!!" is exactly 1.2; "[1.0,2.0)!!1.5" is the range, preferring 1.5
             String prefer = s.substring(strict + 2).trim();
             s = s.substring(0, strict).trim();
             if (s.isEmpty()) throw new IllegalArgumentException("Invalid version \"" + text + "\": nothing before !!");
@@ -123,7 +122,6 @@ public final class VersionSpecs {
 
         static Any named(String s, String text) {
             return switch (s.toLowerCase(Locale.ROOT)) {
-                // Gradle's + is its newest version of any kind, like latest.integration
                 case "+" -> new Any(text, true, true);
                 case "*", "x", "latest", "latest.release", "release" ->
                         s.equals("LATEST") ? new Any(text, true, true) : new Any(text, false, false);

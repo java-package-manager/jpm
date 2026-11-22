@@ -23,8 +23,6 @@ public final class Fs {
         if (prop != null && !prop.isBlank()) return Path.of(prop).toAbsolutePath().normalize();
         String env = System.getenv("JPM_HOME");
         if (env != null && !env.isBlank()) return Path.of(env).toAbsolutePath().normalize();
-        // $HOME, as the shell sees it, wins over Java's user.home (which comes from the user database), so jpm
-        // and the installer agree on ~/.jpm when HOME is overridden (sudo -E, containers, CI).
         String h = System.getenv("HOME");
         boolean win = System.getProperty("os.name").toLowerCase().contains("win");
         String base = h != null && !h.isBlank() && !win ? h : System.getProperty("user.home");

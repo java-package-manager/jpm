@@ -51,7 +51,6 @@ public record JavaSpec(String distribution, String version) {
         if (s == null || s.isBlank()) return any();
         String t = s.trim().toLowerCase(Locale.ROOT);
         String dist = null, version = t;
-        // the version is the trailing part that starts with a digit after the last '-'
         int dash = t.lastIndexOf('-');
         if (!Character.isDigit(t.charAt(0))) {
             if (dash < 0 || dash + 1 >= t.length() || !Character.isDigit(t.charAt(dash + 1))) {

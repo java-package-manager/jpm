@@ -59,8 +59,6 @@ public final class Net {
         return b;
     }
 
-    // ---------------------------------------------------------------- proxies
-
     /** System properties when they set a proxy, else the proxy environment variables, else none. */
     static ProxySelector proxySelector(Map<String, String> env) {
         if (System.getProperty("https.proxyHost") != null || System.getProperty("http.proxyHost") != null) {
@@ -125,13 +123,11 @@ public final class Net {
         return false;
     }
 
-    // ---------------------------------------------------------------- certificates
-
     private static final List<String> BUNDLES = List.of(
-            "/etc/ssl/certs/ca-certificates.crt", // Debian, Ubuntu, Alpine, Arch
-            "/etc/pki/tls/certs/ca-bundle.crt", // Fedora, RHEL
-            "/etc/ssl/ca-bundle.pem", // openSUSE
-            "/etc/ssl/cert.pem"); // macOS, BSDs
+            "/etc/ssl/certs/ca-certificates.crt",
+            "/etc/pki/tls/certs/ca-bundle.crt",
+            "/etc/ssl/ca-bundle.pem",
+            "/etc/ssl/cert.pem");
 
     /** The built-in trust plus the system's certificates, or null for the default when there are none to add. */
     static SSLContext sslContext() {

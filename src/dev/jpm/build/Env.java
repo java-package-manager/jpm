@@ -63,7 +63,6 @@ public final class Env {
             if (value.startsWith("\"") || value.startsWith("'") || value.startsWith("`")) {
                 char q = value.charAt(0);
                 StringBuilder sb = new StringBuilder(value.substring(1));
-                // multi-line quoted values
                 while (sb.indexOf(String.valueOf(q)) < 0 && i + 1 < lines.length) sb.append('\n').append(lines[++i]);
                 int end = sb.indexOf(String.valueOf(q));
                 value = end >= 0 ? sb.substring(0, end) : sb.toString();

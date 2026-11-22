@@ -45,15 +45,11 @@ public final class TestRunner {
         }
         List<Path> launcher = b.resolveTool(List.of(new Resolver.Root("jpm test runner",
                 DepKey.maven("org.junit.platform", "junit-platform-console"), platform)), null, dev.jpm.resolve.Graph.Walk.RUNTIME);
-        // the console launcher and the platform launcher it was resolved with come first: a test dependency may
-        // bring an older junit-platform-launcher (kotlin-test-junit5 does), which the console cannot run on
         List<Path> full = new ArrayList<>(launcher);
         full.addAll(cp);
         Jdk jdk = b.jdk(m.manifest);
         List<String> cmd = new ArrayList<>();
         cmd.add(jdk.java());
-        // the Gradle runtime (ProjectBuilder, in-process builds) reflects into the JDK; Gradle's own test workers
-        // get these options, so tests of Gradle plugins do too
         if (m.manifest.dependencies.stream().anyMatch(d -> d.key().isGradle())) cmd.addAll(GRADLE_JVM_ARGS);
         cmd.addAll(m.manifest.testJvmArgs);
         cmd.addAll(extraJvmArgs(System.getenv("JPM_TEST_JVM_ARGS")));

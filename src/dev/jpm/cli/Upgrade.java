@@ -129,7 +129,6 @@ final class Upgrade {
                 lines.add("jpm " + latest + " is available. Run `jpm upgrade`.");
             }
         } catch (RuntimeException ignored) {
-            // a VERSION file that is not a version: say nothing
         }
         if (onCanary) {
             String canary = quickFetch(canaryUrl);
@@ -177,7 +176,6 @@ final class Upgrade {
                 throw new JpmException("Could not find the newest jpm canary build (" + e.getMessage() + ")");
             }
             base = base(latest);
-            // The newest commit is the one to have, whatever its version says.
             if (check) {
                 Log.info(latest.equals(current) ? "jpm " + current + " is the newest canary build."
                         : "jpm " + latest + " is the newest canary build (you have " + current + "). Run `jpm upgrade --canary`.");
@@ -202,7 +200,6 @@ final class Upgrade {
                 Log.info("jpm " + current + " is already the " + (wanted == null ? "latest version" : "installed version") + ".");
                 return 0;
             }
-            // A canary build is a commit after the release it is named for, so compare with that release.
             boolean onCanary = isCanary(current) && wanted == null;
             int cmp = Version.of(latest).compareTo(Version.of(onCanary ? releaseOf(current) : current));
             if (onCanary && cmp <= 0 && !force) {
@@ -251,7 +248,6 @@ final class Upgrade {
         tmp.toFile().setExecutable(true);
         replace(self, tmp);
 
-        // Refresh the shims with the new binary (hard links on Windows still point at the old file).
         Exec.Result r = Exec.capture(null, List.of(self.toString(), "jvm", "setup"));
         if (!r.ok()) Log.warn("could not refresh the java shims: " + (r.err() + r.out()).strip());
         Exec.Result v = Exec.capture(null, List.of(self.toString(), "--version"));
@@ -264,12 +260,10 @@ final class Upgrade {
         boolean win = System.getProperty("os.name").toLowerCase().contains("win");
         try {
             if (win) {
-                // A running .exe cannot be overwritten, but it can be renamed out of the way.
                 Path old = self.resolveSibling(self.getFileName() + ".old");
                 try {
                     Files.deleteIfExists(old);
                 } catch (IOException ignored) {
-                    // still in use by an earlier upgrade; the next upgrade cleans it up
                 }
                 Files.move(self, old, StandardCopyOption.REPLACE_EXISTING);
                 Files.move(fresh, self);

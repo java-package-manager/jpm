@@ -55,7 +55,6 @@ class TransientFailureTest {
     }
 
     private MavenRepo repo() {
-        // only the test server: Central would answer 404 first and is not needed
         return new MavenRepo(List.of(base), true);
     }
 
@@ -73,7 +72,6 @@ class TransientFailureTest {
         assertEquals(1, requests.get(), "no retries");
         assertFalse(Files.exists(missing(r.local("g", "a", "1.0", null, "jar"))));
 
-        // the next run asks again, and finds it
         statuses.clear();
         statuses.add(200);
         requests.set(0);

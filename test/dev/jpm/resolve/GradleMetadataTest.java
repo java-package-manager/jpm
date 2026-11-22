@@ -56,7 +56,6 @@ class GradleMetadataTest {
     @Test
     void multiplatformLibrariesResolveToTheirJvmModule(@TempDir Path tmp) throws IOException {
         System.setProperty("jpm.home", tmp.resolve("home").toString());
-        // no network: an empty folder stands in for Maven Central, which is asked first
         System.setProperty("jpm.mavenCentral", tmp.resolve("central").toUri().toString());
         try {
             multiplatform(tmp);
@@ -133,7 +132,6 @@ class GradleMetadataTest {
         List<String> processor = b.classpath(p.modules.get(0), Builder.Cp.PROCESSOR).stream().map(x -> x.getFileName().toString()).toList();
         assertTrue(processor.contains("annotations-26.1.0.jar"));
 
-        // the same for a Git package's dev dependencies, which are resolved like a tool
         List<String> tool = b.resolveTool(List.of(new Resolver.Root("test", dev.jpm.DepKey.maven("io.papermc.paper", "paper-api"), "26.3", Set.of())),
                 null, Graph.Walk.ALL).stream().map(x -> x.getFileName().toString()).toList();
         assertTrue(tool.contains("annotations-26.1.0.jar"), tool.toString());
@@ -216,7 +214,6 @@ class GradleMetadataTest {
         assertFalse(g.closure(roots, Graph.Walk.RUNTIME).contains("net.kyori:adventure-api"), "not on the runtime classpath");
         assertTrue(g.closure(roots, Graph.Walk.RUNTIME).contains("org.example:util"));
 
-        // the lockfile keeps it
         Graph locked = Lockfile.read(p.lockFile()).graph;
         assertTrue(locked.get("net.thenextlvl:i18n").deps.get("net.kyori:adventure-api").compileOnly());
 

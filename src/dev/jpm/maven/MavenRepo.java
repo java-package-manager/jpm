@@ -49,7 +49,6 @@ public final class MavenRepo {
 
     private static List<String> withCentral(List<String> extra) {
         List<String> r = new ArrayList<>();
-        // the jpm.mavenCentral system property (tests) or JPM_MAVEN_CENTRAL replaces Maven Central
         String central = System.getProperty("jpm.mavenCentral", System.getenv("JPM_MAVEN_CENTRAL"));
         r.add(central != null && !central.isBlank() ? central : CENTRAL);
         r.addAll(extra);
@@ -96,7 +95,6 @@ public final class MavenRepo {
     public Path fetch(String group, String artifact, String version, String classifier, String ext) {
         Path local = local(group, artifact, version, classifier, ext);
         if (Files.exists(local)) return local;
-        // A "not found" is remembered per set of repositories, so adding a repository looks again.
         Path missing = local.resolveSibling(local.getFileName() + ".missing");
         String searched = String.join("\n", repos);
         if (Files.exists(missing) && !refreshMetadata && Fs.read(missing).equals(searched)) return null;
@@ -107,8 +105,6 @@ public final class MavenRepo {
             Result r = download(repo + rel, local);
             if (r.found()) return local;
             if (r.problem() != null) problems.add(r.problem());
-            // Snapshot repositories publish timestamped files (lib-1.0-20250101.120000-3.jar), named in
-            // that version's maven-metadata.xml; ~/.m2 keeps the plain -SNAPSHOT name.
             if (snapshot) {
                 String timestamped = snapshotVersion(repo, group, artifact, version, classifier, ext, problems);
                 String file = group.replace('.', '/') + "/" + artifact + "/" + version + "/" + artifact + "-" + timestamped
@@ -119,8 +115,6 @@ public final class MavenRepo {
                     if (t.problem() != null) problems.add(t.problem());
                 }
             }
-            // A timestamped snapshot asked for by name (0.1-20240720.200737-2, as Gradle allows): it lives in the
-            // folder of its -SNAPSHOT version
             String base = snapshotBase(version);
             if (base != null) {
                 String file = group.replace('.', '/') + "/" + artifact + "/" + base + "/" + artifact + "-" + version
@@ -156,7 +150,6 @@ public final class MavenRepo {
 
     static String snapshotVersion(String metadata, String version, String classifier, String ext) {
         String cls = classifier == null ? "" : classifier;
-        // Maven 3: one <snapshotVersion> per file
         Matcher sv = Pattern.compile("<snapshotVersion>(.*?)</snapshotVersion>", Pattern.DOTALL).matcher(metadata);
         String found = null;
         while (sv.find()) {
@@ -165,7 +158,6 @@ public final class MavenRepo {
             if (v != null && ext.equals(e) && cls.equals(c == null ? "" : c)) found = v;
         }
         if (found != null) return found;
-        // Maven 2: one timestamp and build number for every file
         String ts = tag(metadata, "timestamp"), build = tag(metadata, "buildNumber");
         if (ts != null && build != null) return version.substring(0, version.length() - "SNAPSHOT".length()) + ts + "-" + build;
         return null;
@@ -250,7 +242,6 @@ public final class MavenRepo {
 
     private Result download(String url, Path target) {
         if (url.startsWith("file:")) {
-            // local repositories: copy the file if it is there
             try {
                 Path src = Path.of(URI.create(url));
                 if (!Files.isRegularFile(src)) return Result.ABSENT;
@@ -265,7 +256,6 @@ public final class MavenRepo {
         }
         if (offline) return Result.ABSENT;
         Log.debug("GET " + url);
-        // One request, no retries: a failure is reported, and not remembered as "missing", so the next run asks again.
         try {
             HttpRequest req = HttpRequest.newBuilder(URI.create(url))
                     .timeout(Duration.ofMinutes(2))
@@ -287,8 +277,6 @@ public final class MavenRepo {
             }
             resp.body().close();
             if (status == 404 || status == 410) return Result.ABSENT;
-            // anything else (401/403, 429, 5xx) is not proof the file does not exist: some repositories answer
-            // 401/403 for files they do not have, proxies for hosts they block
             return new Result(false, url + " answered HTTP " + status);
         } catch (IOException e) {
             Log.debug("download failed: " + e);

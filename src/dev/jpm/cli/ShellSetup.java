@@ -117,7 +117,6 @@ final class ShellSetup {
             }
             case "bash" -> {
                 out.add(home.resolve(".bashrc"));
-                // macOS terminals start login shells, which read .bash_profile rather than .bashrc
                 if (mac || Files.exists(home.resolve(".bash_profile"))) out.add(home.resolve(".bash_profile"));
             }
             case "fish" -> out.add(fishFile());
@@ -154,7 +153,6 @@ final class ShellSetup {
         if (windows()) return changed;
         Fs.writeIfChanged(envFile(), posixEnv());
         Set<Path> targets = new LinkedHashSet<>(rcFiles());
-        // migrate files that hold the old line, whatever the current shell
         for (Path f : knownRcFiles()) if (Files.isRegularFile(f) && hasOldLine(Fs.read(f))) targets.add(f);
         for (Path f : targets) {
             if (f.equals(fishFile())) {

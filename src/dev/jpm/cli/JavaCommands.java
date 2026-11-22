@@ -168,13 +168,11 @@ final class JavaCommands {
         if (args.isEmpty()) {
             throw new JpmException("Usage: " + self + " exec [java] <command...>, e.g. `jvm exec 21 -jar app.jar` or `jvm exec java -version`");
         }
-        // The JDK is optional: without one, the same choice as the java shim (project, default, PATH).
         JavaSpec spec = null;
         if (looksLikeSpec(args.get(0))) spec = JavaSpec.parse(args.remove(0));
         if (!args.isEmpty() && args.get(0).equals("--")) args.remove(0);
         if (args.isEmpty()) throw new JpmException("No command given. Example: " + self + " exec 21 java -version");
         List<String> cmd = new ArrayList<>(args);
-        // `jvm exec 21 -jar app.jar`, `jvm exec 21 app.jar` and `jvm exec 21 -version` mean java
         String first = cmd.get(0);
         if (first.startsWith("-")) cmd.add(0, "java");
         else if (first.endsWith(".jar") && Files.isRegularFile(cwd.resolve(first))) {
@@ -183,7 +181,6 @@ final class JavaCommands {
         }
         Jdk j = spec != null ? Toolchain.require(spec) : Shims.choose(cwd, cmd.get(0)).jdk();
         if (j == null) j = Toolchain.require(JavaSpec.any());
-        // Run the JDK's own tool, whatever PATH says.
         Path tool = j.bin(cmd.get(0));
         if (!cmd.get(0).contains("/") && !cmd.get(0).contains("\\") && Files.exists(tool)) cmd.set(0, tool.toString());
         return Shims.execTransparently(cmd, envFor(j));

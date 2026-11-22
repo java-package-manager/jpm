@@ -201,7 +201,6 @@ public final class Jars {
                 ZipEntry e = en.nextElement();
                 String n = e.getName();
                 if (add.containsKey(n) || drop.test(n)) continue;
-                // signatures would no longer match patched classes
                 if (n.startsWith("META-INF/") && (n.endsWith(".SF") || n.endsWith(".RSA") || n.endsWith(".DSA") || n.endsWith(".EC"))) continue;
                 ZipEntry ne = new ZipEntry(n);
                 ne.setTime(EPOCH);
@@ -234,7 +233,7 @@ public final class Jars {
             while (en.hasMoreElements()) {
                 ZipEntry e = en.nextElement();
                 Path target = dir.resolve(e.getName()).normalize();
-                if (!target.startsWith(dir)) continue; // zip slip
+                if (!target.startsWith(dir)) continue;
                 if (e.isDirectory()) {
                     Files.createDirectories(target);
                 } else {

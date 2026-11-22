@@ -82,7 +82,6 @@ class NetTest {
 
     @Test
     void readsCertificateBundles(@TempDir Path dir) throws Exception {
-        // the JDK's own CA certificates, written out as a PEM bundle
         java.security.KeyStore ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
         javax.net.ssl.TrustManagerFactory f = javax.net.ssl.TrustManagerFactory.getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
         f.init((java.security.KeyStore) null);

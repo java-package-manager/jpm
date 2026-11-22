@@ -85,7 +85,6 @@ class PatchOptionsTest {
         String manifest = "{ \"name\": \"app\", \"version\": \"1.0.0\", \"repositories\": [\"" + repo.toUri() + "\"],"
                 + " \"runtime\": { \"g:base\": \"1.0\" }, \"patches\": { \"g:base\": %s } }";
 
-        // without the options: the patched classes cannot see extra, and are compiled for Java 8
         Fs.write(ws.resolve("project.jsonc"), manifest.formatted("\"patches/base.patch\""));
         Project plain = Project.load(ws);
         MavenRepo r = new MavenRepo(plain.root.repositories);
@@ -129,7 +128,6 @@ class PatchOptionsTest {
         publish(repo, work, "mod", before, Math.min(jdk.major(), Runtime.version().feature()), List.of());
         Map<String, String> after = new java.util.HashMap<>(before);
         after.put("module-info.java", "module g.mod {\n    exports g.mod.api;\n    exports g.mod.internal;\n}\n");
-        // a changed class that uses a package-private member of an unchanged one in its package
         after.put("g/mod/internal/C.java", "package g.mod.internal; public class C { public static int f() { return B.hidden(); } }");
 
         Path ws = dir.resolve("app");

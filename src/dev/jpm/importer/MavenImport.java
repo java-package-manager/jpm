@@ -51,7 +51,6 @@ public final class MavenImport {
         Pom.Loader loader = new Pom.Loader(repo);
         Imported out = new Imported("Maven");
 
-        // Collect the reactor: buildable modules, flattening intermediate aggregators.
         Pom rootModel = loader.loadFile(rootPom);
         List<Module> modules = new ArrayList<>();
         collect(root, rootPom, "", loader, modules, new LinkedHashSet<>(), out);
@@ -84,7 +83,6 @@ public final class MavenImport {
         List<String> subs = new ArrayList<>();
         Element modulesEl = childOf(pom.chain.get(0), "modules");
         if (modulesEl != null) for (Element e : elements(modulesEl, "module")) subs.add(e.getTextContent().trim());
-        // modules in active-by-default profiles count too
         Element profiles = childOf(pom.chain.get(0), "profiles");
         if (profiles != null) {
             for (Element pr : elements(profiles, "profile")) {

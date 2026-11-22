@@ -77,7 +77,6 @@ class ModulesTest {
             newer[6] = (byte) (major >> 8);
             newer[7] = (byte) major;
             assertEquals("fr.fidorial.example", Modules.moduleNameFromBytes(newer), "class file " + major);
-            // as a classes directory (a workspace module) and in a jar
             Path classes = dir.resolve("classes-" + major);
             Files.createDirectories(classes);
             Files.write(classes.resolve("module-info.class"), newer);

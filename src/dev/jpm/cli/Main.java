@@ -167,9 +167,6 @@ public final class Main {
     private static Log.Color colorFlag;
 
     static int run(List<String> args) {
-        // Started as java, javac, ...: a shim that runs the right JDK's tool, with arguments untouched.
-        // Only the native binary can be a shim: on a JVM, argv[0] is the JVM's own java.
-        // JPM_AS=shim:<tool> simulates one (tests, the jar build).
         String as = System.getenv("JPM_AS");
         if (as != null && as.startsWith("shim:")) return Shims.run(as.substring(5), args);
         boolean nativeImage = System.getProperty("org.graalvm.nativeimage.imagecode") != null;
@@ -187,7 +184,6 @@ public final class Main {
             logOptions(args, false);
             return new Commands().java(args, true);
         }
-        // global flags, before the command
         while (!args.isEmpty() && args.get(0).startsWith("-")) {
             String a = args.get(0);
             if (a.equals("--offline")) { System.setProperty("jpm.offline", "true"); args.remove(0); }

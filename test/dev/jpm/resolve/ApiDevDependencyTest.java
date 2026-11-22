@@ -86,7 +86,6 @@ class ApiDevDependencyTest {
         assertFalse(bundled.contains("org/bukkit/Bukkit.class"), bundled.toString());
         assertTrue(bundled.contains("lib/Lib.class"));
 
-        // the lockfile marks it, so the next load reads the same
         assertTrue(g.get("workspace:lib").deps.get("io.papermc.paper:paper-api").compileOnly());
     }
 

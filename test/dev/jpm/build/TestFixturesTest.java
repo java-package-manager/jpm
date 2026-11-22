@@ -40,7 +40,6 @@ class TestFixturesTest {
     @Test
     void testsOfAnotherModule(@TempDir Path tmp) throws IOException {
         System.setProperty("jpm.home", tmp.resolve("home").toString());
-        // a test framework from a local repository, so jpm does not add JUnit from Maven Central
         Path repo = tmp.resolve("repo"), empty = tmp.resolve("empty");
         Files.createDirectories(empty);
         publish(repo, "org.junit.local", "none", "1.0", "", empty);
@@ -64,7 +63,6 @@ class TestFixturesTest {
         assertTrue(b.compileTests(core));
         assertTrue(Files.isRegularFile(Builder.testClassesDir(core).resolve("core/CoreTest.class")));
         assertTrue(b.testRuntimeClasspath(core).contains(Builder.testClassesDir(lib)));
-        // lib's tests are on core's classpath, not among core's tests
         assertFalse(Files.exists(Builder.testClassesDir(core).resolve("lib/TaskTest.class")));
     }
 
@@ -97,7 +95,6 @@ class TestFixturesTest {
         Project.Module m = p.module("plugin");
         List<String> runtime = b.classpathIds(m, Builder.Cp.RUNTIME);
         assertTrue(runtime.contains("org.lib:lib") && !runtime.contains("org.stdlib:stdlib"), runtime.toString());
-        // test dependencies keep theirs
         assertTrue(b.classpathIds(m, Builder.Cp.TEST_RUNTIME).contains("org.stdlib:stdlib"));
     }
 }

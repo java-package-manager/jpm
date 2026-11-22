@@ -78,8 +78,6 @@ public final class GradleImport {
         return Exec.which("gradle");
     }
 
-    // ---------------------------------------------------------------- reading the evaluated model
-
     @SuppressWarnings("unchecked")
     public static Imported runModel(Path dir, Path launcher, dev.jpm.maven.MavenRepo repo) {
         Path tmp;
@@ -97,7 +95,6 @@ public final class GradleImport {
             List<String> cmd = new ArrayList<>();
             if (launcher.getFileName().toString().equals("gradlew") && !Files.isExecutable(launcher)) cmd.add("sh");
             cmd.add(launcher.toString());
-            // every project runs its own jpmModel task; the configuration cache cannot hold what they read
             cmd.addAll(List.of("-q", "--no-daemon", "--console=plain", "--init-script", script.toString(),
                     "-Djpm.model.output=" + out, "-Dorg.gradle.configuration-cache=false",
                     "-Dorg.gradle.unsafe.isolated-projects=false", "jpmModel"));
@@ -112,7 +109,6 @@ public final class GradleImport {
             }
             List<Map<String, Object>> models = new ArrayList<>();
             for (Path f : reports) models.add((Map<String, Object>) Jsonc.parse(Fs.read(f)));
-            // the root first, then the subprojects in path order, as Gradle lists them
             models.sort(java.util.Comparator.comparing((Map<String, Object> m) -> !":".equals(m.get("path")))
                     .thenComparing(m -> String.valueOf(m.get("path"))));
             List<GProject> projects = new ArrayList<>();
@@ -177,8 +173,6 @@ public final class GradleImport {
         return s == null || s.isBlank() ? null : s;
     }
 
-    // ---------------------------------------------------------------- reading the files as text
-
     private static final Pattern QUOTED = Pattern.compile("[\"']([^\"']+)[\"']");
 
     /** Removes {@code name { ... }} blocks (balanced braces) from build script text. */
@@ -223,7 +217,6 @@ public final class GradleImport {
         }
         projects.add(root);
         if (settings != null) {
-            // include("a", ":b") or include 'a' — not includeBuild(...), which is another build
             Matcher inc = Pattern.compile("(?m)^\\s*include(?:\\s*\\(|\\s+)(.*)$").matcher(stripComments(settings));
             while (inc.find()) {
                 Matcher q = QUOTED.matcher(inc.group(1));
@@ -239,11 +232,9 @@ public final class GradleImport {
             if (settings.contains("projectDir")) imp.warn(null, "custom projectDir settings are not supported; modules are assumed to sit at their path");
         }
         String rootBuild = firstExisting(dir, "build.gradle.kts", "build.gradle");
-        // defaults set in allprojects/subprojects blocks, or gradle.properties
         String defGroup = props.get("group"), defVersion = props.get("version");
         if (rootBuild != null) {
             String rb = stripComments(rootBuild);
-            // the root's own settings, then what allprojects {} / subprojects {} set for everyone
             String g = assignment(topLevel(rb), "group"), v = assignment(topLevel(rb), "version");
             for (String body : blockBodies(rb, "allprojects", "subprojects")) {
                 if (g == null) g = assignment(topLevel(body), "group");
@@ -259,14 +250,12 @@ public final class GradleImport {
             p.version = defVersion;
             if (build == null) continue;
             if (!p.dir.isEmpty()) {
-                // only assignments of the project itself: `group = "verification"` in a task's block is the task's
                 String g = assignment(topLevel(stripComments(build)), "group");
                 String v = assignment(topLevel(stripComments(build)), "version");
                 if (g != null) p.group = g;
                 if (v != null) p.version = v;
             }
             String noComments = stripComments(build);
-            // what the root sets up for subprojects is not about the root itself
             String own = p.dir.isEmpty() ? withoutBlocks(noComments, "subprojects", "allprojects") : noComments;
             p.java = Pattern.compile("\\b(java|java-library|application)\\b|id\\s*\\(?\\s*[\"'](java|java-library|application)[\"']|apply\\s+plugin:\\s*[\"']java")
                     .matcher(own).find() || own.contains("libs.plugins.");
@@ -276,7 +265,6 @@ public final class GradleImport {
             readDependencies(noComments, p, catalog, accessors(projects), imp);
             readRepositories(noComments, p);
         }
-        // Java settings in subprojects {} or allprojects {} of the root apply to every module.
         if (rootBuild != null) {
             String rb = stripComments(rootBuild);
             boolean shared = rb.contains("subprojects") || rb.contains("allprojects");
@@ -521,7 +509,6 @@ public final class GradleImport {
         Matcher blocks = Pattern.compile("dependencies\\s*\\{").matcher(build);
         while (blocks.find()) {
             int start = blocks.end(), end = closing(build, blocks.end() - 1, '{', '}');
-            // skip dependency blocks of buildscript {}, which are for the build itself
             String before = build.substring(Math.max(0, blocks.start() - 200), blocks.start());
             if (before.matches("(?s).*buildscript\\s*\\{[^}]*$")) continue;
             String block = expandLoops(build.substring(start, Math.max(start, end)));
@@ -535,13 +522,11 @@ public final class GradleImport {
                     arg = block.substring(m.end(), Math.min(close, block.length())).strip();
                     next = Math.min(block.length(), close + 1);
                 } else {
-                    // Groovy without parentheses: to the end of the line
                     int eol = block.indexOf('\n', m.end());
                     eol = eol < 0 ? block.length() : eol;
                     arg = block.substring(m.end(), eol).strip();
                     next = eol;
                 }
-                // a configuration block after the call: implementation(x) { exclude(group = "g", module = "m") }
                 List<String> excludes = new ArrayList<>();
                 Matcher cfg = Pattern.compile("\\G\\s*\\{").matcher(block);
                 if (cfg.find(next)) {
@@ -564,7 +549,6 @@ public final class GradleImport {
                                        Map<String, String> accessors, Imported imp) {
         List<GDep> list = p.deps.computeIfAbsent(conf, k -> new ArrayList<>());
         String classifier = null;
-        // variantOf(libs.x) { classifier("linux-x86_64") }
         Matcher variant = Pattern.compile("^variantOf\\s*\\(\\s*(libs\\.[\\w.]+)\\s*\\)\\s*\\{[^}]*?classifier\\s*\\(?\\s*(?:[\"']([^\"']+)[\"']|(\\w+))").matcher(arg);
         if (variant.find()) {
             if (variant.group(2) == null) {
@@ -656,7 +640,6 @@ public final class GradleImport {
             Catalog c = new Catalog();
             String section = "";
             List<String> lines = new ArrayList<>();
-            // join values spanning lines (multi-line arrays and inline tables) into one line
             StringBuilder pending = null;
             int open = 0;
             for (String raw : text.split("\r?\n")) {
@@ -762,8 +745,6 @@ public final class GradleImport {
         }
     }
 
-    // ---------------------------------------------------------------- model to manifests
-
     static void convert(List<GProject> projects, Imported imp) {
         GProject root = projects.stream().filter(p -> p.path.equals(":")).findFirst().orElse(projects.get(0));
         List<GProject> modules = new ArrayList<>();
@@ -804,7 +785,6 @@ public final class GradleImport {
             }
             if (p.mainClass != null) man.put("main", p.mainClass);
             if (p.kotlin) {
-                // the Kotlin plugin's version is that of the standard library it adds
                 String kv = p.resolved.get("org.jetbrains.kotlin:kotlin-stdlib");
                 for (List<GDep> l : p.deps.values()) {
                     for (GDep d : l) {
@@ -835,7 +815,6 @@ public final class GradleImport {
                                 + " is not carried over; the versions it manages are written out instead");
                         continue;
                     }
-                    // jpm runs tests with its own JUnit Platform launcher
                     if ("org.junit.platform".equals(d.group) && "junit-platform-launcher".equals(d.name)) continue;
                     if (d.project != null) {
                         String name = byPath.get(d.project.startsWith(":") ? d.project : ":" + d.project);
@@ -849,8 +828,6 @@ public final class GradleImport {
                     }
                     String key = d.group + ":" + d.name;
                     String version = d.version;
-                    // Dynamic versions (1.+, latest.release, ranges) are jpm versions too, and stay dynamic;
-                    // what Gradle resolved fills in versions that are missing (managed by a platform) or unreadable.
                     boolean readable = version != null && !version.isBlank();
                     if (readable) {
                         try {
@@ -869,12 +846,9 @@ public final class GradleImport {
                         }
                     }
                     String k = d.classifier() != null && !d.classifier().isEmpty() ? key + ":" + d.classifier() : key;
-                    // compileOnlyApi: a dev dependency that consumers compile against too
                     target.put(k, MavenImport.depValue(version, d.excludes(), conf.equals("runtimeOnly"), conf.equals("compileOnlyApi")));
                 }
             }
-            // implementation plus testImplementation or compileOnly of one dependency: the runtime entry covers
-            // both (compileOnly plus testImplementation stays in dev and test)
             dev.keySet().removeAll(runtime.keySet());
             test.keySet().removeAll(runtime.keySet());
             if (!runtime.isEmpty()) man.put("runtime", runtime);

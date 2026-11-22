@@ -18,7 +18,6 @@ class SnapshotRepoTest {
         System.setProperty("jpm.home", tmp.resolve("home").toString());
         Path repo = tmp.resolve("snapshots");
         Path dir = repo.resolve("net/kyori/adventure-text-logger-slf4j/4.26.0-SNAPSHOT");
-        // two builds; the metadata names the newest for each file
         Fs.write(dir.resolve("adventure-text-logger-slf4j-4.26.0-20251101.100000-1.pom"), "<project>old</project>");
         Fs.write(dir.resolve("adventure-text-logger-slf4j-4.26.0-20251102.110000-2.pom"), "<project>new</project>");
         Fs.write(dir.resolve("adventure-text-logger-slf4j-4.26.0-20251102.110000-2.jar"), "jar");

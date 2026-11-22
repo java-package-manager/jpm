@@ -81,7 +81,6 @@ public record ClassInfo(String name, String sourceFile, Set<String> refs, String
                 int len = in.readInt();
                 if (an.equals("ConstantValue") && len == 2) {
                     int idx = in.readUnsignedShort();
-                    // a String constant points at a CONSTANT_String, which points at the UTF-8 text
                     constant = tags[idx] == 8 ? "s:" + pool[refsIdx[idx][0]] : String.valueOf(pool[idx]);
                 } else {
                     in.skipNBytes(len);

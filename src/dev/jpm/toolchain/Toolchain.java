@@ -144,7 +144,6 @@ public final class Toolchain {
         String name = archive.getFileName().toString();
         if (name.endsWith(".zip")) {
             Jars.extract(archive, dir);
-            // zip does not keep permissions; make launchers executable again
             if (!Jdk.windows()) {
                 try (Stream<Path> s = Files.walk(dir)) {
                     s.filter(p -> p.getParent() != null && p.getParent().getFileName() != null
@@ -179,7 +178,6 @@ public final class Toolchain {
         for (Jdk j : Jdk.discover()) {
             if (!j.managed() || !spec.matches(j)) continue;
             Path dir = j.home();
-            // macOS bundles: remove the whole bundle directory under ~/.jpm/jdks
             Path root;
             try {
                 root = Jdk.managedRoot().toRealPath();

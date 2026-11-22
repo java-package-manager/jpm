@@ -72,7 +72,6 @@ class GraphTest {
         assertEquals(Graph.Kind.GIT, back.graph.get("github:u/r").kind);
         assertEquals(Set.of("x:y", "z:*"), back.graph.get("a:a").deps.get("c:c").exclusions());
         assertTrue(back.graph.get("a:a").deps.get("c:c").runtimeOnly());
-        // one line per package
         assertEquals(4, back.render().lines().filter(l -> l.startsWith("    \"")).count());
     }
 
@@ -121,7 +120,6 @@ class GraphTest {
                 "{ \"name\": \"x\", \"test\": { \"a:b\": { \"version\": \"1\", \"runtimeOnly\": true } } }"));
         assertThrows(JpmException.class, () -> Manifest.parse(Path.of("project.jsonc"),
                 "{ \"name\": \"x\", \"runtime\": { \"a:b\": { \"version\": \"1\", \"excludes\": [] } } }"));
-        // exclusions by group:artifact also cover classified jars
         assertTrue(Graph.excluded("h:i:linux", Set.of("h:i")));
         Graph.Pkg p = new Graph.Pkg("h:i:linux", Graph.Kind.MAVEN);
         assertEquals("i", p.name());

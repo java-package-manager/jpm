@@ -158,7 +158,6 @@ public final class Pom {
                 pom.properties.putIfAbsent(prop, System.getProperty(prop, "21"));
             }
 
-            // Dependency management: parent first, then own entries, then imported BOMs (own entries win).
             if (parent != null) pom.management.putAll(parent.management);
             Element dm = child(project, "dependencyManagement");
             List<Dep> imports = new ArrayList<>();
@@ -249,8 +248,6 @@ public final class Pom {
     private static String or(String a, String b) {
         return a != null && !a.isEmpty() ? a : b;
     }
-
-    // ---------------------------------------------------------------- XML
 
     static Element parseXml(Path file) {
         try {

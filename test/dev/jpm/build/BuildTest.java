@@ -139,7 +139,6 @@ class BuildTest {
         assertFalse(Compiler.compile(req), "nothing changed");
         Fs.write(src.resolve("p/C.java"), "package p; public class C { int x; }");
         assertTrue(Compiler.compile(req));
-        // removing A breaks B, which must be recompiled and fail
         try {
             Files.delete(src.resolve("p/A.java"));
         } catch (Exception e) {
@@ -197,7 +196,6 @@ class BuildTest {
 
     @Test
     void exportsFromJdkModulesWorkWhenTheJdkIsTheTarget(@TempDir Path dir) {
-        // no --release on a JDK of the target version, so "javacArgs" can open the JDK's own modules
         Jdk jdk = Toolchain.require(JavaSpec.any());
         Fs.write(dir.resolve("src/p/A.java"), "package p; public class A { com.sun.tools.javac.tree.JCTree t; }");
         assertTrue(Compiler.compile(new Compiler.Request("t", jdk, jdk.major(), List.of(dir.resolve("src")), List.of(), List.of(),
@@ -207,7 +205,6 @@ class BuildTest {
 
     @Test
     void crossCompilingStillChecksTheTargetApi(@TempDir Path dir) {
-        // targeting an older Java keeps --release: an API added later is a compile error, not a runtime crash
         Jdk jdk = Toolchain.require(JavaSpec.any());
         Assumptions.assumeTrue(jdk.major() >= 21, "needs JDK 21+ to target 17");
         Fs.write(dir.resolve("src/p/A.java"), "package p; public class A { java.util.SequencedCollection<String> s; }");

@@ -104,7 +104,6 @@ public final class KotlinCompiler {
         args.add(r.jdk.home().toString());
         args.add("-jvm-target");
         args.add(r.release <= 8 ? "1.8" : Integer.toString(r.release));
-        // as for javac: only when cross-compiling, so the JDK's own API of the target is what is compiled against
         if (r.release < r.jdk.major()) args.add("-Xjdk-release=" + (r.release <= 8 ? "1.8" : Integer.toString(r.release)));
         args.add("-module-name");
         args.add(r.moduleName);

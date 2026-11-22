@@ -45,7 +45,6 @@ class KotlinTest {
                 "com.example:my-plugin:2.4.10", "com.example:pinned:1.0"), full.kotlin.pluginCoordinates());
         assertEquals(List.of(dir.resolve("src/main/java"), dir.resolve("src/main/kotlin")), full.sourceDirs(dir));
         assertEquals(List.of(dir.resolve("src/test/java"), dir.resolve("src/test/kotlin")), full.testSourceDirs(dir));
-        // the jpm layout: Kotlin and Java side by side in src/
         assertEquals(List.of(dir.resolve("src")), plain.sourceDirs(dir));
 
         assertNull(parse(dir, "{ \"name\": \"a\" }").kotlin);
@@ -91,7 +90,6 @@ class KotlinTest {
                   "runtime": { "org.jetbrains.kotlin:kotlin-stdlib": "2.2.20" },
                   "define": { "GREETING": "hi" }, "defineClass": "app.Config" }
                 """);
-        // Kotlin uses Java (and the generated defines class), Java uses Kotlin
         Fs.write(p.resolve("src/main/kotlin/app/Greeter.kt"), """
                 package app
                 internal fun secret() = 42
@@ -117,13 +115,11 @@ class KotlinTest {
         try (URLClassLoader cl = new URLClassLoader(b.runtimeClasspath(m).stream().map(KotlinTest::url).toArray(java.net.URL[]::new), null)) {
             assertEquals("hi JPM 42", cl.loadClass("app.UsesKotlin").getMethod("run").invoke(null));
         }
-        // nothing changed: kotlinc does not run again
         Path stamp = m.cacheDir().resolve("kotlin-classes.key");
         long before = Files.getLastModifiedTime(stamp).toMillis();
         assertTrue(!new Builder(project, b.graph, r, Env.Mode.PRODUCTION).compileMain(m));
         assertEquals(before, Files.getLastModifiedTime(stamp).toMillis());
 
-        // tests see the module's internal declarations
         Fs.write(p.resolve("src/test/kotlin/app/SecretCheck.kt"), "package app\nobject SecretCheck { fun value() = secret() }\n");
         Fs.write(p.resolve("project.jsonc"), Fs.read(p.resolve("project.jsonc")).replace("\"defineClass\"",
                 "\"test\": { \"org.junit.jupiter:junit-jupiter\": \"5.11.4\" }, \"defineClass\""));

@@ -167,7 +167,7 @@ final class Shims {
     static int execTransparently(List<String> cmd, Map<String, String> env) {
         ignoreInterrupts();
         ProcessBuilder pb = new ProcessBuilder(cmd).inheritIO();
-        pb.environment().remove("JPM_AS"); // a child java must not think it is a shim
+        pb.environment().remove("JPM_AS");
         pb.environment().putAll(env);
         try {
             Process p = pb.start();
@@ -186,11 +186,8 @@ final class Shims {
         try {
             sun.misc.Signal.handle(new sun.misc.Signal("INT"), sig -> {});
         } catch (Throwable ignored) {
-            // not supported on this platform; the child still receives the signal
         }
     }
-
-    // ---------------------------------------------------------------- creating and removing shims
 
     /** Path of the running jpm executable (the native binary), or null when running from a jar. */
     static Path self() {
@@ -198,7 +195,7 @@ final class Shims {
         if (cmd == null) return null;
         Path p = Path.of(cmd);
         String n = p.getFileName().toString().toLowerCase();
-        if (n.equals("java") || n.equals("java.exe")) return null; // jar build: no binary to link to
+        if (n.equals("java") || n.equals("java.exe")) return null;
         return p;
     }
 
@@ -225,7 +222,7 @@ final class Shims {
                     }
                     Files.delete(link);
                 }
-                if (win) Files.createLink(link, target); // a hard link: no extra disk space
+                if (win) Files.createLink(link, target);
                 else Files.createSymbolicLink(link, target.getParent().equals(dir) ? target.getFileName() : target);
                 done.add(t);
             } catch (IOException | UnsupportedOperationException e) {
@@ -240,7 +237,6 @@ final class Shims {
             Path to = link.getParent().resolve(Files.readSymbolicLink(link)).normalize();
             return to.getFileName().toString().startsWith("jpm");
         }
-        // Windows hard links: same size as jpm.exe means an older or current copy of it
         try {
             return Files.isSameFile(link, target) || Files.size(link) > 10_000_000;
         } catch (IOException e) {

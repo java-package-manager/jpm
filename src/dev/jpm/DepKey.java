@@ -15,10 +15,10 @@ import java.util.Locale;
  *   <li>{@code gradle:api} — the Gradle API, from a Gradle distribution, for Gradle plugins</li>
  *   <li>{@code ext:extension/name} — provided by the extension {@code jpm-extension}, such as {@code ext:paperweight/server}</li>
  * </ul>
+ *
+ * @param module the Git module, or the Maven classifier
  */
 public record DepKey(Kind kind, String host, String group, String artifact, String module) implements Comparable<DepKey> {
-    // `module` is the Git module, or the Maven classifier.
-
     public enum Kind { MAVEN, GIT, WORKSPACE, GRADLE, EXTENSION }
 
     public static DepKey parse(String s) {
@@ -44,7 +44,6 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
                 return new DepKey(Kind.GRADLE, null, null, "api", null);
             }
             case "ext" -> {
-                // without a slash, ext:artifact is a Maven package of the group "ext"
                 if (!rest.contains("/")) return maven(s);
                 String[] parts = rest.split("/", -1);
                 if (parts.length != 2 || !parts[0].matches("[A-Za-z0-9][A-Za-z0-9_-]*") || !parts[1].matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
@@ -108,7 +107,6 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
             case "codeberg" -> "https://codeberg.org/";
             default -> throw new IllegalStateException(host);
         };
-        // Allow tests and mirrors to redirect hosts: JPM_GIT_BASE_GITHUB=file:///path/
         String override = System.getenv("JPM_GIT_BASE_" + host.toUpperCase(Locale.ROOT));
         if (override != null && !override.isBlank()) base = override.endsWith("/") ? override : override + "/";
         return base + group + "/" + artifact + (base.startsWith("http") ? ".git" : "");

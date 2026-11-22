@@ -103,7 +103,6 @@ class FlatBundleTest {
                 "META-INF/services/x.Api")), names.toString());
         assertFalse(names.contains("org/server/Api.class"), "dev dependencies are provided by the platform");
 
-        // nothing changed: the jar is left alone
         long before = Files.getLastModifiedTime(jar).toMillis();
         b.flatBundle(p.modules.get(0));
         assertEquals(before, Files.getLastModifiedTime(jar).toMillis());

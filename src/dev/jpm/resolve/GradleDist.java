@@ -70,7 +70,7 @@ public final class GradleDist {
         Path archive = Fs.home().resolve("gradle").resolve(name);
         String sha;
         if (Files.isRegularFile(archive)) {
-            sha = Hash.sha256(archive); // placed there by hand, or left over from an interrupted install
+            sha = Hash.sha256(archive);
         } else {
             Log.step("Downloading", "Gradle " + version + Log.dim(" (" + base() + "/" + name + ")"));
             sha = Http.download(base() + "/" + name, archive, "Gradle " + version);

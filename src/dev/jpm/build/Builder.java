@@ -65,7 +65,7 @@ public final class Builder {
     public Builder forModule(Project.Module m) {
         if (!m.manifest.isolated) return this;
         Graph iso = graph.isolated.get(m.name());
-        if (iso == null) return this; // already an isolated module's builder, or a project that is not a workspace
+        if (iso == null) return this;
         return isolatedBuilders.computeIfAbsent(m.name(), n -> new Builder(project.isolatedView(m), iso, repo, mode));
     }
 
@@ -135,8 +135,6 @@ public final class Builder {
         return built;
     }
 
-    // ---------------------------------------------------------------- classpaths
-
     public List<Path> classpath(Project.Module m, Cp kind) {
         List<Path> out = new ArrayList<>();
         for (String id : classpathIds(m, kind)) out.addAll(paths(id, m));
@@ -150,8 +148,6 @@ public final class Builder {
         List<Graph.Edge> test = Resolver.rootEdges(m, Manifest.Scope.TEST);
         List<String> ids = new ArrayList<>();
         switch (kind) {
-            // dev dependencies and processors go on a compile classpath whole: their compile-only
-            // dependencies (compileOnlyApi) are needed as much as the rest
             case COMPILE -> {
                 ids.addAll(graph.closure(runtime, Graph.Walk.COMPILE));
                 ids.addAll(graph.closure(dev, Graph.Walk.ALL));
@@ -214,8 +210,6 @@ public final class Builder {
         return out;
     }
 
-    // ---------------------------------------------------------------- the project's modules
-
     public static Path classesDir(Project.Module m) {
         return m.cacheDir().resolve("classes");
     }
@@ -250,13 +244,12 @@ public final class Builder {
             if (Files.isDirectory(kotlinOut)) {
                 javaCp = new ArrayList<>(cp);
                 javaCp.add(0, kotlinOut);
-                key += treeKey(List.of(kotlinOut)); // Java that uses Kotlin recompiles when the Kotlin does
+                key += treeKey(List.of(kotlinOut));
             }
             boolean ran = Compiler.compile(new Compiler.Request(m.name(), jdk, release, roots, javaCp, proc,
                     classesDir(m), m.cacheDir().resolve("classes.state.json"), m.manifest.javacArgs, key,
                     m.assetsDirs()));
             ran |= kotlinRan;
-            // Kotlin's classes join javac's in the classes folder, so it is everything the jar and classpaths need
             Resources.sync(Files.isDirectory(kotlinOut) ? List.of(kotlinOut) : List.of(), classesDir(m),
                     m.cacheDir().resolve("kotlin-classes.list"));
             Resources.sync(m.assetsDirs(), classesDir(m), m.cacheDir().resolve("resources.list"),
@@ -429,7 +422,6 @@ public final class Builder {
         } catch (IOException e) {
             throw new JpmException(e.getMessage());
         }
-        // no timestamp comment, so the file only changes when the classpath does
         String text = w.toString().lines().filter(l -> !l.startsWith("#")).collect(java.util.stream.Collectors.joining("\n")) + "\n";
         Fs.writeIfChanged(dir.resolve("plugin-under-test-metadata.properties"), text);
         return dir;
@@ -482,8 +474,6 @@ public final class Builder {
         }
         return h.hex();
     }
-
-    // ---------------------------------------------------------------- bundles (jar-in-jar)
 
     /** True for internal implementation modules, which a bundle loads in their own isolated class loader. */
     private boolean isolatedPkg(Graph.Pkg p) {
@@ -579,7 +569,6 @@ public final class Builder {
             for (String x : graph.closure(List.of(new Graph.Edge(iso, false, Set.of())), Graph.Walk.RUNTIME, otherIsolated)) {
                 if (!sharedSet.contains(x)) own.add(x);
             }
-            // the API it implements: packages of the modules that pull it in, loaded from the shared loader
             Set<String> api = new java.util.TreeSet<>();
             for (Graph.Pkg p : graph.pkgs.values()) {
                 if (p.deps.containsKey(iso) && !isolated.contains(p.id)) {
@@ -606,7 +595,6 @@ public final class Builder {
         for (String k : new java.util.TreeSet<>(props.stringPropertyNames())) text.append(k).append('=').append(props.getProperty(k)).append('\n');
         Fs.write(stage.resolve("META-INF/jpm/bundle.properties"), text.toString());
 
-        // The launcher, compiled for the module's target (at least Java 8).
         Jdk jdk = jdk(m.manifest);
         int release = Math.max(8, release(m.manifest, jdk));
         Path launcherSrc = m.cacheDir().resolve("bundle-launcher/src");
@@ -652,8 +640,6 @@ public final class Builder {
         return out;
     }
 
-    // ---------------------------------------------------------------- Maven jars and patches
-
     private Path mavenJar(Graph.Pkg p, Project.Module consumer) {
         Path jar = p.artifact != null ? p.artifact : repo.require(p.group(), p.name(), p.version, p.classifier(), "jar");
         Manifest owner = patchOwner(p.id);
@@ -661,7 +647,6 @@ public final class Builder {
         Path patch = owner.dir().resolve(owner.patches.get(p.id));
         if (!Files.exists(patch)) throw new JpmException(owner.file + ": patch file " + owner.patches.get(p.id) + " for " + p.id + " does not exist");
         Manifest.PatchOptions options = owner.patchOptions.get(p.id);
-        // the patch's own compile-only dependencies, from the project's graph
         List<Path> patchDeps = new ArrayList<>();
         if (options != null && !options.dependencies().isEmpty()) {
             List<Graph.Edge> roots = new ArrayList<>();
@@ -707,10 +692,8 @@ public final class Builder {
             }
         }
         if (!javaFiles.isEmpty()) {
-            // Recompile only the changed classes against the original jar and its dependencies.
             List<Graph.Edge> self = List.of(new Graph.Edge(p.id, false, Set.of()));
             List<Path> deps = new ArrayList<>();
-            // compiling: everything the patched package was compiled against, and what the patch adds
             for (String id : graph.closure(self, Graph.Walk.ALL)) if (!id.equals(p.id)) deps.addAll(paths(id, consumer));
             deps.addAll(patchDeps);
             deps = Compiler.distinct(deps);
@@ -740,9 +723,6 @@ public final class Builder {
                     throw new JpmException(e.getMessage());
                 }
             }
-            // A modular jar: compile the changes as part of its module (--patch-module), so a changed
-            // module-info.java sees the module's packages and changed classes see their module's other
-            // classes, package-private ones included.
             String module = jdk.major() >= 9 ? Modules.descriptorName(jar) : null;
             List<Path> cp = new ArrayList<>();
             List<String> extra = new ArrayList<>(List.of("-nowarn"));
@@ -750,7 +730,7 @@ public final class Builder {
                 extra.add("--patch-module");
                 extra.add(module + "=" + srcRoot + java.io.File.pathSeparator + jar);
                 if (Files.exists(srcRoot.resolve("module-info.java"))) {
-                    cp.addAll(deps); // the compiler places them from the patched module-info's requires
+                    cp.addAll(deps);
                 } else {
                     List<Path> mp = new ArrayList<>();
                     mp.add(jar);
@@ -809,8 +789,6 @@ public final class Builder {
         return null;
     }
 
-    // ---------------------------------------------------------------- Git dependencies
-
     private Path buildGit(Graph.Pkg p) {
         if (!building.add(p.id)) throw new JpmException("Dependency cycle through " + p.id);
         try {
@@ -832,7 +810,6 @@ public final class Builder {
                 src = patched;
             }
 
-            // Compile classpath from this project's graph, so versions agree with ours.
             List<Graph.Edge> edges = new ArrayList<>(p.deps.values());
             List<Path> cp = new ArrayList<>();
             for (String id : graph.closure(edges, Graph.Walk.COMPILE)) cp.addAll(paths(id, null));
@@ -927,7 +904,6 @@ public final class Builder {
                 Log.debug("ignoring lockfile of " + p.id + ": " + e.getMessage());
             }
         }
-        // a Git package's dev dependencies are its compile classpath, with their compile-only dependencies
         return resolveTool(roots, prev, Graph.Walk.ALL);
     }
 
