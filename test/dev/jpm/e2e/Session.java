@@ -202,11 +202,12 @@ final class Session {
         for (Path p : List.of(project, repo.root(), home, tmp, Path.of(System.getProperty("java.home")))) {
             String label = p.equals(project) ? "<project>" : p.equals(home) ? "<home>" : p.equals(tmp) ? "<tmp>"
                     : p.equals(repo.root()) ? "<repo>" : "<java-home>";
-            s = s.replace(p.toUri().toString(), label + "/").replace(p.toString(), label);
             try {
-                s = s.replace(p.toRealPath().toString(), label);
+                Path real = p.toRealPath();
+                s = s.replace(real.toUri().toString(), label + "/").replace(real.toString(), label);
             } catch (IOException ignored) {
             }
+            s = s.replace(p.toUri().toString(), label + "/").replace(p.toString(), label);
         }
         s = s.replace(dev.jpm.BuildConfig.VERSION, "<jpm-version>");
         s = COMMIT.matcher(s).replaceAll("<commit>");
