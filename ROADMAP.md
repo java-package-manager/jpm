@@ -59,12 +59,12 @@ Small, independent items that make the rest of the work easier.
 
 ### Contributor docs (all jpm projects)
 
-- [ ] `CONTRIBUTING.md` in every repository: how to build, test, run against a local checkout,
+- [x] `CONTRIBUTING.md` in every repository: how to build, test, run against a local checkout,
       release, and the code style and layering rules from Phase 0.
-- [ ] `AGENTS.md` in every repository: the same facts in a form for AI agents: commands to build and
+- [x] `AGENTS.md` in every repository: the same facts in a form for AI agents: commands to build and
       test, where things live, rules that must not be broken (layering, no source parsing, no
       dependencies in jpm), and what "done" means for a change.
-- [ ] Keep both short and link to each other instead of repeating content.
+- [x] Keep both short and link to each other instead of repeating content.
 
 ### Comments (all jpm projects)
 
