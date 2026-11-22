@@ -422,8 +422,9 @@ release. Inside a milestone, items with no **Needs:** can be done in parallel.
   - This covers the CLI, `project.jsonc`, `project.lock`, the protocol and the client jar.
   - Old forms are removed in the same change that replaces them. There are no warnings and no
     converters.
-  - The protocol handshake still carries a version number. A client that does not match the
-    installed jpm gets a clear error that names both versions, not undefined behavior.
+  - The protocol is the exception: its version is `<major>(.<minor>)`. A new major is incompatible, a
+    new minor only adds features or fixes bugs, so clients keep working with every jpm of their major.
+    A client of another major gets a clear error that names both versions (`docs/protocol.md`).
   - A stability policy is decided before jpm 1.0. That release has no date and is not part of this
     plan.
 - **Layering.** As proposed in Phase 0. `module-info.java` in the `api` module exports only
@@ -539,7 +540,7 @@ Builds the test and tooling base that the restructure depends on.
 
 **Needs:** Milestone 2.
 
-1. **Protocol spec** in `docs/protocol.md` (drafted; waiting for review).
+1. **Protocol spec** in `docs/protocol.md`. Done and reviewed.
    - Handshake with version negotiation.
    - Methods: project model, modules, folders, scripts, dependencies with scopes and sources, every
      classpath, defines, manifest schema, extension commands, and check results.

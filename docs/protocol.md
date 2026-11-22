@@ -1,6 +1,6 @@
 # jpm protocol
 
-Status: **draft for review** (roadmap Milestone 4, item 1). Nothing here is implemented yet.
+Status: **accepted** (roadmap Milestone 4, item 1). Section 8 records the decisions.
 
 The protocol is how other programs (jpm-intellij, jpm-publish, extensions, editors) ask jpm about a project.
 It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which are removed in the release that
@@ -24,20 +24,25 @@ and talks to it. No program bundles its own jpm.
 
 ```
 client                                  jpm api
-  ── initialize {protocolVersion: 1, client: {name, version}, logLevel?} ──▶
-  ◀── {protocolVersion: 1, jpmVersion, methods: [...]} ─────────
+  ── initialize {protocolVersion: "1.0", client: {name, version}, logLevel?} ──▶
+  ◀── {protocolVersion: "1.2", jpmVersion, methods: [...]} ─────────
   ── project/load {dir} ──▶ … any requests …
   ── shutdown ──▶   ◀── null
   ── exit (notification) ──▶   (process ends, exit code 0)
 ```
 
 - `initialize` must come first. Any other request before it fails with `NotInitialized`.
-- **Versions must match exactly.** Until jpm 1.0 there is no compatibility between protocol versions
-  (roadmap decision "Stability: none while jpm is in development"). The protocol version is an integer that
-  goes up with every change, however small; each jpm and each client jar supports exactly one.
-- On a mismatch, `initialize` fails with `ProtocolMismatch`, and the error names both sides, for example:
-  `jpm 0.12.0 speaks protocol 1, this client (jpm-intellij 0.8.0) speaks protocol 2: upgrade jpm with
-  `jpm upgrade``. The client jar turns this into an exception with the same text.
+- **Versions are `<major>` or `<major>.<minor>`** (`"1"` is `"1.0"`). A new major is incompatible: it may
+  change or remove anything. A new minor is compatible: it only adds methods, optional params, result fields
+  or notifications, or fixes bugs. A client must ignore result fields it does not know.
+- jpm accepts a client whose major is the same as its own, whatever the minors. When the client's minor is
+  higher than jpm's, the client may use features jpm does not have; it finds out from `methods` (and from the
+  minor in the result) and must not call what is not listed.
+- On a different major, `initialize` fails with `ProtocolMismatch`, and the error names both sides, for
+  example: `jpm 0.12.0 speaks protocol 2.1, this client (jpm-intellij 0.8.0) speaks protocol 1.3: upgrade
+  jpm-intellij`. The client jar turns this into an exception with the same text.
+- jpm-publish and jpm-intellij keep working with a newer jpm of the same major, so they do not have to be
+  released with every jpm release, only with every major.
 - `methods` lists the methods this jpm serves, so a client can tell, for example, whether checks are
   available without calling them.
 
@@ -48,7 +53,7 @@ result type is defined in section 5.
 
 | Method | Params | Result | Replaces |
 |---|---|---|---|
-| `initialize` | `protocolVersion`, `client`, `logLevel?` | `protocolVersion`, `jpmVersion`, `methods` | |
+| `initialize` | `protocolVersion` (string), `client`, `logLevel?` | `protocolVersion` (string), `jpmVersion`, `methods` | |
 | `shutdown` | none | `null` | |
 | `exit` (notification) | none | | |
 | `project/load` | `dir`, `frozen?`, `sources?` | `Project` | `jpm info --json --ide` |
@@ -216,7 +221,7 @@ Errors are JSON-RPC errors. `data` is a `Problem` whenever jpm can say where and
 | Code | Name | When |
 |---|---|---|
 | -32700, -32600, -32601, -32602 | JSON-RPC's own | unreadable JSON, not a request, unknown method, wrong params |
-| -32001 | `ProtocolMismatch` | `initialize` with another protocol version; `message` names both versions |
+| -32001 | `ProtocolMismatch` | `initialize` with another major protocol version; `message` names both versions |
 | -32002 | `NotInitialized` | a request before `initialize` |
 | -32003 | `ProjectError` | what jpm reports as an error on the command line: a bad manifest, an out-of-date lock with `frozen`, a dependency that cannot be resolved; `data` is the Problem |
 | -32800 | `Cancelled` | the client sent `$/cancelRequest` for it |
@@ -242,22 +247,16 @@ try (JpmClient jpm = JpmClient.start()) {            // finds the global jpm, st
 - Each method is a blocking call; `log` and `progress` go to listeners the caller can register.
 - The jar has no dependencies and targets the Java of the oldest IDE jpm-intellij supports (Java 21 today).
 
-## 8. Questions for review
+## 8. Decisions
 
-These are decisions I would like you to make before any code is written.
+Reviewed and accepted:
 
-1. **One `jpm api` per client, or a long-lived daemon?** The draft has one process per client (jpm-intellij
-   keeps one per IDE window, jpm-publish starts one per run). A daemon shared by all clients would save
-   start-up time, but brings locking and lifetime questions. Recommendation: one per client.
-2. **Push notifications on change.** The draft has none: clients watch files and call `project/load` again,
-   as jpm-intellij does today. jpm could instead watch `project.jsonc` and `project.lock` and notify.
-   Recommendation: none in the first release (scope).
-3. **Exact protocol version match.** The draft requires an exact match until 1.0, as the stability
-   decision says. This means every jpm release that changes the protocol needs a jpm-intellij release at
-   the same time. Recommendation: keep it, and release jpm, jpm-publish and jpm-intellij together (as
-   item 9 already plans).
-4. **`schema/manifest` without a file.** jpm-intellij today asks for a path (`jpm schema --path`). With the
-   protocol it would get the schema itself and write it where IntelliJ wants it. Recommendation: yes.
-5. **Names.** `packages` replaces `ideDependencies`, `folders` groups the folder fields and `jdk` the JDK
-   fields; everything else keeps its `jpm info` name. Recommendation: accept, since consumers change their
-   code for the transport anyway.
+1. **One `jpm api` process per client**, not a shared daemon: jpm-intellij keeps one per IDE window,
+   jpm-publish starts one per run. A daemon would bring locking and lifetime questions.
+2. **No push notifications on change** in the first release: clients watch files and call `project/load`
+   again; `lockfileChanged` tells a client's own reload from a user's edit.
+3. **`<major>.<minor>` versions** (section 2): the same major is compatible, a minor only adds or fixes.
+   This is the one exception to "no compatibility before 1.0": the protocol is what other programs build on.
+4. **`schema/manifest` returns the schema itself**; jpm-intellij writes it where IntelliJ wants it.
+5. **Names follow `jpm info`**, except `packages` (was `ideDependencies`), `folders` and `jdk`, which group
+   fields.
