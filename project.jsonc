@@ -16,6 +16,8 @@
     "-O2",
     "-H:+ReportExceptionStackTraces",
     "--enable-url-protocols=https,http",
+    // As the java shim, jpm passes -X, -XX and -D arguments to the JDK instead of reading them itself.
+    "-H:-ParseRuntimeOptions",
     // The JDK's XML parser (used for POMs) loads its messages from resource bundles at run time.
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.XMLMessages",
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.DOMMessages",
