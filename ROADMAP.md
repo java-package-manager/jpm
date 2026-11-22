@@ -246,8 +246,9 @@ An extension that works like [changesets](https://github.com/changesets/changese
 - [x] `jpm changeset status`: list pending changesets. It is also a check in `jpm check`, which fails
       when a changed module has no changeset.
 - [x] `jpm changeset publish`: publish bumped modules through jpm-publish and tag them.
-- [ ] Prerelease mode (`pre enter/exit`), and linked/fixed version groups.
-- [ ] A GitHub Action that opens and updates a "Version packages" pull request.
+- [x] Prerelease mode (`pre enter/exit`), and linked/fixed version groups.
+- [x] A GitHub Action that opens and updates a "Version packages" pull request:
+      java-package-manager/changeset-action@v1.
 
 ### jpm-format
 
