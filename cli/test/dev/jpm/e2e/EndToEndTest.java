@@ -73,6 +73,8 @@ class EndToEndTest {
         s.show("core/project.jsonc");
         s.jpm("why", "org.example:nothing");
         s.jpm("frobnicate");
+        s.jpm("test", "shop.core.CartTest");
+        s.jpm("test", "shop.core.Missing");
         s.verify("workspace");
     }
 

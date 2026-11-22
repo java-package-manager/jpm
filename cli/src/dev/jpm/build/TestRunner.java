@@ -32,11 +32,12 @@ public final class TestRunner {
 
     /** Runs a module's tests. Returns the exit code (0 when no tests exist). */
     public static int run(Builder b, Project.Module m, Selection selection) {
-        List<String> filters = selection.filters();
         if (!b.compileTests(m)) {
             Log.info(m.name() + ": no tests");
-            return 0;
+            return selection.filters().isEmpty() ? 0 : NO_MATCH;
         }
+        List<String> filters = selection.filters().stream().filter(f -> selects(m, f)).toList();
+        if (!selection.filters().isEmpty() && filters.isEmpty()) return NO_MATCH;
         List<Path> cp = b.testRuntimeClasspath(m);
         String platform = platformVersion(b.graph, m);
         if (platform == null) {
@@ -74,6 +75,19 @@ public final class TestRunner {
         for (String t : selection.excludedTags()) cmd.add("--exclude-tag=" + t);
         Log.step("Testing", m.name());
         return Exec.inherit(m.dir, cmd, Env.forChild(b.project.dir, Env.Mode.DEVELOPMENT));
+    }
+
+    /** What {@link #run} returns when the module has none of the test classes the filters name. */
+    public static final int NO_MATCH = -1;
+
+    /**
+     * Whether a filter can select tests of this module: a pattern always can; a class, or a method of one,
+     * only when the module's compiled tests have that class.
+     */
+    static boolean selects(Project.Module m, String filter) {
+        if (filter.contains("*")) return true;
+        String cls = filter.contains("#") ? filter.substring(0, filter.indexOf('#')) : filter;
+        return java.nio.file.Files.exists(Builder.testClassesDir(m).resolve(cls.replace('.', '/') + ".class"));
     }
 
     /** JVM options from {@code JPM_TEST_JVM_ARGS}, separated by spaces, for example a coverage agent. */

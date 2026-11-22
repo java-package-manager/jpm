@@ -331,7 +331,8 @@ own bytecode level. Modular jars are patched as their module (`--patch-module`),
 **Tests** run on the JUnit Platform console launcher matching the resolved platform version; any
 platform engine works. `jpm test com.example.FooTest`, `jpm test 'com.example.*'` or
 `jpm test 'com.example.FooTest#bar'` select tests; `--tag <expr>` and `--exclude-tag <expr>` select
-by JUnit tag (`jpm test --exclude-tag live`). `JPM_TEST_JVM_ARGS` adds options to the JVM running the
+by JUnit tag (`jpm test --exclude-tag live`). In a workspace, a class runs in the modules whose tests have
+it; naming a class no module has is an error. `JPM_TEST_JVM_ARGS` adds options to the JVM running the
 tests, for example a coverage agent (`-javaagent:jacocoagent.jar=destfile=jacoco.exec`).
 
 **Scripts** run with `jpm run <name>`. `.java` scripts run on the source launcher with the runtime

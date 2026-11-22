@@ -683,12 +683,19 @@ final class Commands {
         Builder b = c.builder(Env.Mode.DEVELOPMENT);
         List<Project.Module> mods = module != null ? targets(c.project, List.of(module)) : targets(c.project, List.of());
         int worst = 0;
+        boolean matched = false;
         for (Project.Module m : mods) {
             Builder mb = b.forModule(m);
             Scripts.hooks(mb, m, m.manifest, "pre", "test", null, Env.Mode.DEVELOPMENT);
             int code = TestRunner.run(mb, m, selection);
+            if (code == TestRunner.NO_MATCH) continue;
+            matched = true;
             if (code != 0) worst = code;
             else Scripts.hooks(mb, m, m.manifest, "post", "test", null, Env.Mode.DEVELOPMENT);
+        }
+        if (!matched && !args.isEmpty()) {
+            throw new JpmException("No test class " + String.join(", ", args) + " in " + (mods.size() == 1 ? mods.get(0).name()
+                    : "any module")).withHint("name a class of the module's tests, such as com.example.FooTest, or a pattern such as 'com.example.*'");
         }
         return worst;
     }

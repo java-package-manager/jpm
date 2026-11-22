@@ -144,3 +144,34 @@ error: Unknown command "frobnicate"
   hint: run `jpm help`, or install an extension that provides it with `jpm add -g <dependency>` (it runs as jpm-frobnicate)
 [exit 1]
 
+$ jpm test shop.core.CartTest
+    Compiled core 1.0.0 (<jdk>, release 21)
+    Compiled core tests
+     Testing core
+╷
+└─ JUnit Jupiter ✔
+   └─ CartTest ✔
+      └─ addsPrices() ✔
+
+Test run finished after <n> ms
+[         2 containers found      ]
+[         0 containers skipped    ]
+[         2 containers started    ]
+[         0 containers aborted    ]
+[         2 containers successful ]
+[         0 containers failed     ]
+[         1 tests found           ]
+[         0 tests skipped         ]
+[         1 tests started         ]
+[         0 tests aborted         ]
+[         1 tests successful      ]
+[         0 tests failed          ]
+
+app: no tests
+
+$ jpm test shop.core.Missing
+app: no tests
+error: No test class shop.core.Missing in any module
+  hint: name a class of the module's tests, such as com.example.FooTest, or a pattern such as 'com.example.*'
+[exit 1]
+
