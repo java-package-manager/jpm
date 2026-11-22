@@ -14,15 +14,45 @@ import java.util.stream.Stream;
  *       it belongs to, for categorizing.</li>
  *   <li>{@code java checks/Comments.java strip <dir or file>...} removes them: a comment on a line of its
  *       own goes with its line, a trailing one with the space before it.</li>
+ *   <li>{@code java checks/Comments.java check <dir or file>...} fails when there are more comments than
+ *       the baseline in {@code checks/comments-baseline.txt}, or fewer (the baseline must come down with
+ *       them); {@code update} lowers the baseline. Repositories without other ratchets use this as their
+ *       comment lint.</li>
  * </ul>
  */
 public final class Comments {
     record Found(int start, int end, int line) {}
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 2 || !(args[0].equals("list") || args[0].equals("strip"))) {
-            System.err.println("Usage: java checks/Comments.java list|strip <dir or file>...");
+        if (args.length < 2 || !List.of("list", "strip", "check", "update").contains(args[0])) {
+            System.err.println("Usage: java checks/Comments.java list|strip|check|update <dir or file>...");
             System.exit(2);
+        }
+        if (args[0].equals("check") || args[0].equals("update")) {
+            int count = 0;
+            for (Path p : javaFiles(List.of(args).subList(1, args.length))) count += find(Files.readString(p)).size();
+            Path baseline = Path.of("checks/comments-baseline.txt");
+            int was = Files.exists(baseline) ? Integer.parseInt(Files.readString(baseline).strip()) : Integer.MAX_VALUE;
+            if (args[0].equals("update")) {
+                Files.writeString(baseline, Math.min(count, was) + "\n");
+                System.out.println("comments: " + count + "; baseline " + Math.min(count, was));
+                return;
+            }
+            if (was == Integer.MAX_VALUE) {
+                System.err.println("comments: " + count + ", and no " + baseline + ": add it with `java checks/Comments.java update`.");
+                System.exit(1);
+            }
+            if (count > was) {
+                System.err.println("comments: " + count + ", above the baseline " + was + ". `java checks/Comments.java list` shows them;"
+                        + " decisions belong in docs/adr (see the /delete-comment skill).");
+                System.exit(1);
+            }
+            if (count < was) {
+                System.err.println("comments: " + count + ", below the baseline " + was + ": lower it with `java checks/Comments.java update`.");
+                System.exit(1);
+            }
+            System.out.println("comments: " + count + " (baseline " + was + ")");
+            return;
         }
         int files = 0, comments = 0, lines = 0;
         for (Path p : javaFiles(List.of(args).subList(1, args.length))) {
