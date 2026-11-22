@@ -158,6 +158,46 @@ public final class ManifestReader {
         return (String) n.value;
     }
 
+    public record Scripts(Map<String, String> commands, Map<String, Map<String, String>> dependencies) {}
+
+    public Scripts scripts() {
+        Map<String, String> commands = new LinkedHashMap<>();
+        Map<String, Map<String, String>> deps = new LinkedHashMap<>();
+        Jsonc.Node n = root.get("scripts");
+        if (n == null) return new Scripts(commands, deps);
+        if (!n.isObject()) throw err(n, "scripts must be an object");
+        for (Jsonc.Member e : n.members.values()) {
+            if (e.value.isString()) {
+                commands.put(e.key, (String) e.value.value);
+                continue;
+            }
+            if (!e.value.isObject()) throw err(e.value, "scripts." + e.key + " must be a command or {\"run\": ..., \"dependencies\": {...}}");
+            for (String k : e.value.members.keySet()) {
+                if (!Set.of("run", "dependencies").contains(k)) throw err(e.value.get(k), "unknown script option \"" + k + "\"");
+            }
+            Jsonc.Node run = e.value.get("run");
+            if (run == null || !run.isString()) throw err(e.value, "scripts." + e.key + " needs \"run\": the command or file to run");
+            commands.put(e.key, (String) run.value);
+            Jsonc.Node dn = e.value.get("dependencies");
+            if (dn == null) continue;
+            if (!dn.isObject()) throw err(dn, "scripts." + e.key + ".dependencies must be an object of dependency to version");
+            Map<String, String> d = new LinkedHashMap<>();
+            for (Jsonc.Member dm : dn.members.values()) {
+                if (!dm.value.isString()) throw err(dm.value, "scripts." + e.key + ".dependencies." + dm.key + " must be a version");
+                DepKey key;
+                try {
+                    key = DepKey.parse(dm.key);
+                } catch (JpmException ex) {
+                    throw err(dm.value, ex.getMessage());
+                }
+                if (!key.isMaven()) throw err(dm.value, "script dependencies are Maven packages, not " + dm.key);
+                d.put(key.toString(), (String) dm.value.value);
+            }
+            deps.put(e.key, d);
+        }
+        return new Scripts(commands, deps);
+    }
+
     public Map<String, String> stringMap(String key) {
         Map<String, String> out = new LinkedHashMap<>();
         Jsonc.Node n = root.get(key);

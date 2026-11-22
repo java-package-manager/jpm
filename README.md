@@ -350,8 +350,9 @@ it; naming a class no module has is an error. `JPM_TEST_JVM_ARGS` adds options t
 tests, for example a coverage agent (`-javaagent:jacocoagent.jar=destfile=jacoco.exec`).
 
 **Scripts** run with `jpm run <name>`. `.java` scripts run on the source launcher with the runtime
-classpath, plus the dependencies they declare JBang-style before their first declaration
-(`//DEPS com.google.code.gson:gson:2.11.0`), which are resolved on their own and never move the project's; `.sh` scripts with `sh`; anything else as a shell command. Scripts and extensions get
+classpath. A script that needs libraries of its own lists them with it:
+`"generate": { "run": "scripts/Generate.java", "dependencies": { "com.google.code.gson:gson": "2.11.0" } }`;
+they are resolved on their own, come first on the script's classpath and never move the project's versions. `.sh` scripts with `sh`; anything else as a shell command. Scripts and extensions get
 `JPM_PROJECT_DIR`, `JPM_MODULE_DIR`, `JPM_NAME`, `JPM_VERSION`, `JPM_MANIFEST`, `JPM_CLASSES_DIR`,
 `JPM_CLASSPATH`, `JPM_JAR` (after a build), `JPM_JAVA_HOME`, and `JPM_EXE` and `JPM_VERSION_OF_JPM` to
 call back into the jpm running them; extensions also get `JPM_CONFIG`.

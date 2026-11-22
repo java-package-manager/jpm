@@ -154,7 +154,7 @@ compiled classes or from the manifest.
 
 - [ ] `build/Modules.java` reads `module-info.java` with regular expressions. Read the compiled
       `module-info.class` instead, or let the compiler resolve modules (`--module-source-path`).
-- [ ] `build/Scripts.java` reads `//DEPS` lines from script sources. Move script dependencies into the
+- [x] `build/Scripts.java` reads `//DEPS` lines from script sources. Move script dependencies into the
       manifest (`scripts` entries with their own dependencies) and drop `//DEPS`, or keep it only as an
       import format.
 - [ ] `build/Compiler.java` matches javac's error text (`"not allowed with --release"`). Decide such

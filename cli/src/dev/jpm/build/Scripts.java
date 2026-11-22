@@ -25,8 +25,8 @@ import java.util.Set;
  * Custom commands from the manifest's {@code scripts}, run with {@code jpm run <name>}, and hooks around
  * built-in steps.
  *
- * <p>A {@code .java} script runs directly on the source launcher (JBang-style) with the project's runtime
- * classpath, the dependencies it declares in {@code //DEPS} lines, and build information in {@code JPM_*}
+ * <p>A {@code .java} script runs directly on the source launcher with the project's runtime
+ * classpath, the dependencies listed with it in the manifest, and build information in {@code JPM_*}
  * environment variables. A {@code .sh} script runs with
  * {@code sh}; anything else is a shell command line. Shell scripts are not guaranteed to work on every
  * platform.
@@ -58,7 +58,7 @@ public final class Scripts {
             Jdk jdk = b.jdk(m.manifest);
             if (jdk.major() < 11) throw new JpmException("Java scripts need JDK 11 or newer");
             cmd.add(jdk.java());
-            List<Path> own = scriptClasspath(b, file);
+            List<Path> own = scriptClasspath(b, m, name);
             String cp = env.get("JPM_CLASSPATH");
             String all = own.isEmpty() ? cp : Compiler.join(own) + (cp == null || cp.isEmpty() ? "" : java.io.File.pathSeparator + cp);
             if (all != null && !all.isEmpty()) {
@@ -85,48 +85,15 @@ public final class Scripts {
     }
 
     /**
-     * The dependencies a {@code .java} script declares itself, JBang-style, in {@code //DEPS} lines before
-     * its first declaration: {@code //DEPS group:artifact:version} (several per line, separated by spaces or
-     * commas; {@code group:artifact@version} works too).
-     */
-    static List<String> declaredDeps(String source) {
-        List<String> out = new ArrayList<>();
-        for (String line : source.split("\r?\n")) {
-            String t = line.strip();
-            if (t.startsWith("//DEPS")) {
-                for (String d : t.substring(6).split("[\\s,]+")) if (!d.isBlank()) out.add(d);
-                continue;
-            }
-            if (t.startsWith("package ") || t.startsWith("import ") || t.matches("(public |final |abstract )*(class|interface|record|enum|void) .*")) break;
-        }
-        return out;
-    }
-
-    /**
-     * The jars of a script's {@code //DEPS}: resolved in a graph of their own, so a script's tools never
+     * The jars of a script's {@code "dependencies"}: resolved in a graph of their own, so a script's tools never
      * change the versions the project gets.
      */
-    static List<Path> scriptClasspath(Builder b, Path script) {
-        List<String> deps = declaredDeps(dev.jpm.util.Fs.read(script));
+    static List<Path> scriptClasspath(Builder b, Project.Module m, String name) {
+        Map<String, String> deps = m.manifest.scriptDependencies.getOrDefault(name, Map.of());
         if (deps.isEmpty()) return List.of();
         List<Resolver.Root> roots = new ArrayList<>();
-        for (String d : deps) {
-            int at = d.lastIndexOf('@');
-            String key, version;
-            if (at > 0) {
-                key = d.substring(0, at);
-                version = d.substring(at + 1);
-            } else {
-                int c = d.lastIndexOf(':');
-                if (c <= 0 || d.indexOf(':') == c) {
-                    throw new JpmException(script.getFileName() + ": //DEPS " + d + " needs a version: group:artifact:version");
-                }
-                key = d.substring(0, c);
-                version = d.substring(c + 1);
-            }
-            DepKey k = DepKey.parse(key);
-            if (!k.isMaven()) throw new JpmException(script.getFileName() + ": //DEPS takes Maven dependencies, not " + d);
-            roots.add(new Resolver.Root("script " + script.getFileName(), k, version));
+        for (Map.Entry<String, String> d : deps.entrySet()) {
+            roots.add(new Resolver.Root("script " + name, DepKey.parse(d.getKey()), d.getValue()));
         }
         Graph g = new Resolver(roots, b.repo, null).resolve();
         Install.fetch(g, b.repo);

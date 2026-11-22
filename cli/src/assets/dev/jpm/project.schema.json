@@ -142,14 +142,46 @@
     },
     "scripts": {
       "type": "object",
-      "description": "Commands run with `jpm run <name>`: a .java file (run with the project's classpath), a .sh file, or any shell command.",
+      "description": "Commands run with `jpm run <name>`: a .java file (run with the project's classpath), a .sh file, or any shell command. An object gives a .java script dependencies of its own, resolved apart from the project's.",
       "additionalProperties": {
-        "type": "string"
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "object",
+            "required": [
+              "run"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "run": {
+                "type": "string",
+                "description": "The .java file, .sh file or shell command."
+              },
+              "dependencies": {
+                "type": "object",
+                "description": "Maven dependencies of a .java script, on its classpath before the module's. They are resolved on their own and never change the project's versions.",
+                "propertyNames": {
+                  "$ref": "#/definitions/dependencyKey"
+                },
+                "additionalProperties": {
+                  "$ref": "#/definitions/versionSpec"
+                }
+              }
+            }
+          }
+        ]
       },
       "examples": [
         {
           "format": "scripts/format.sh",
-          "generate": "scripts/Generate.java"
+          "generate": {
+            "run": "scripts/Generate.java",
+            "dependencies": {
+              "com.google.code.gson:gson": "2.11.0"
+            }
+          }
         }
       ]
     },

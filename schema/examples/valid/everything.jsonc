@@ -31,7 +31,7 @@
     "github:user/repo/api": { "API_KEY": "..." }
   },
   "defineClass": "com.example.generated.Build",
-  "scripts": { "format": "scripts/format.sh", "upload-mappings": "scripts/UploadMappings.java" },
+  "scripts": { "format": "scripts/format.sh", "upload-mappings": { "run": "scripts/UploadMappings.java", "dependencies": { "com.google.code.gson:gson": "2.11.0" } } },
   "hooks": { "prebuild": "format", "postbuild:release": "upload-mappings" },
   "patches": {
     "com.example:old-lib": "patches/old-lib.patch",

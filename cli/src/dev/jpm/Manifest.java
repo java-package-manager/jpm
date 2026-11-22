@@ -116,6 +116,8 @@ public final class Manifest {
     /** Values this project provides for defines declared by its dependencies: dep key to (name to value). */
     public final Map<String, Map<String, Object>> libraryDefines;
     public final Map<String, String> scripts;
+    /** Dependencies of {@code .java} scripts, by script name: dependency key to version, resolved apart from the project. */
+    public final Map<String, Map<String, String>> scriptDependencies;
     public final Map<String, String> hooks;
     /** Patched dependency to its patch file. */
     public final Map<String, String> patches;
@@ -259,7 +261,9 @@ public final class Manifest {
         this.defines = defs;
         this.libraryDefines = libDefs;
 
-        this.scripts = reader.stringMap("scripts");
+        ManifestReader.Scripts sc = reader.scripts();
+        this.scripts = sc.commands();
+        this.scriptDependencies = sc.dependencies();
         this.hooks = reader.stringMap("hooks");
         Map<String, String> pf = new LinkedHashMap<>();
         Map<String, PatchOptions> po = new LinkedHashMap<>();
