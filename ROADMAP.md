@@ -204,9 +204,29 @@ can build, and the IDE toolbar only knows the extensions written into the plugin
       names the extension and the command that fixes it (`jpm add <extension>`).
 - [ ] A declared extension takes precedence over a global one of the same name inside the project.
 - [ ] Every extension exposes a small public API that lists its commands with a description (and
-      their options), so IDEs can show them without knowing the extension in advance.
+      their options), so IDEs can show them without knowing the extension in advance, and the checks it
+      adds to `jpm check`.
 - [ ] **jpm-intellij:** the jpm toolbar lists the commands of every installed and declared extension
       from that API instead of a built-in list.
+
+### jpm check
+
+One command for CI, like `./gradlew check`: every check jpm and the project's extensions know, then
+the tests.
+
+**Needs:** the extension API above.
+
+- [ ] `jpm check` runs jpm's own project checks first (manifest, paths that do not exist, license,
+      unused dependencies, duplicate classes), then the checks of the extensions declared in the project
+      (for example `changeset status`, `format --check`), then the tests.
+- [ ] It runs every check even when one fails and reports all problems before it exits, so failing
+      tests never hide other problems.
+- [ ] A check reports problems with a severity (error or warning), a message and a location (file and
+      line where there is one), so CI, jpm-intellij and the language server can all show them.
+- [ ] Only extensions declared in the project add checks, so CI and every developer run the same ones.
+- [ ] `--no-test` for the quick checks only; `--fail-on-warning` for CI.
+- [ ] A machine-readable report (SARIF or JUnit XML), so GitHub shows problems as annotations.
+- [ ] Output grouped by check, using the logger's colors.
 
 ---
 
@@ -221,7 +241,8 @@ An extension that works like [changesets](https://github.com/changesets/changese
       (major/minor/patch) and a summary; write a Markdown file to `.changeset/`.
 - [ ] `jpm changeset version`: apply pending changesets: bump `version` in each `project.jsonc`, bump
       dependents inside the workspace, write `CHANGELOG.md` per module, delete the applied files.
-- [ ] `jpm changeset status`: list pending changesets; fail in CI when a changed module has none.
+- [ ] `jpm changeset status`: list pending changesets. It is also a check in `jpm check`, which fails
+      when a changed module has no changeset.
 - [ ] `jpm changeset publish`: publish bumped modules through jpm-publish and tag them.
 - [ ] Prerelease mode (`pre enter/exit`), and linked/fixed version groups.
 - [ ] A GitHub Action that opens and updates a "Version packages" pull request.
@@ -233,7 +254,7 @@ An extension that works like [changesets](https://github.com/changesets/changese
         `jpm format` gives the same result;
   - [ ] linting rules with parity to IntelliJ IDEA's inspections;
   - [ ] a language server (LSP) for formatting and lint diagnostics in VS Code and other editors.
-- [ ] Run `jpm format --check` in CI for all jpm projects.
+- [ ] jpm-format adds `format --check` to `jpm check`, and all jpm projects run `jpm check` in CI.
 
 ### jpm-intellij: migration UI
 
@@ -294,7 +315,7 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
       license list (https://spdx.org/licenses/, machine-readable at
       https://spdx.org/licenses/licenses.json) and linking to it. It still accepts SPDX expressions such
       as `MIT OR Apache-2.0`.
-- [ ] `jpm doctor`: when the project has a license file but no `license`, suggest the SPDX id, detected
+- [ ] `jpm check`: when the project has a license file but no `license`, suggest the SPDX id, detected
       from the file's text where possible; warn when `license` and the license file do not match.
 - [ ] `jpm import` fills in `license` the same way.
 - [ ] Creating a license: when `license` is set and no license file exists, create one from the SPDX
@@ -335,9 +356,11 @@ Items that are not in the original list but would pay off.
 
 - [ ] **Shell completions** for bash, zsh, fish and PowerShell, generated from the command registry
       (`jpm completions <shell>`).
-- [ ] **`jpm doctor`:** check PATH order, shims, installed JDKs, cache health, network access to
-      configured repositories, the license (see Licenses), unused dependencies and duplicate classes on
-      the classpath (both read from compiled classes, not sources), and print what to fix.
+- [ ] **`jpm doctor`:** check the machine, not the project: PATH order, shims, installed JDKs, cache
+      health and network access to configured repositories, and print what to fix. Project checks
+      belong in `jpm check`, so a CI result never depends on the runner.
+- [ ] **More project checks for `jpm check`:** unused dependencies and duplicate classes on the
+      classpath, both read from compiled classes, not sources.
 - [ ] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
       resolving again, instead of failing.
 - [ ] **Private repositories:** credentials for downloading from Maven repositories that need them,
