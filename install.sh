@@ -3,7 +3,7 @@
 #
 #   curl -fsSL https://github.com/java-package-manager/jpm/releases/latest/download/install.sh | sh
 #
-# JPM_VERSION=0.3.0 picks a version (JPM_VERSION=canary the newest build of the main branch), JPM_HOME changes the install root, and JPM_INSTALL_BASE replaces the
+# JPM_VERSION=0.3.0 picks a version (JPM_VERSION=canary the newest prerelease or release), JPM_HOME changes the install root, and JPM_INSTALL_BASE replaces the
 # download URL (a mirror, or file:///path for testing). The install folder is added to PATH in your shell's
 # startup file (one marked line, added once); JPM_NO_MODIFY_PATH=1 skips that.
 set -eu
@@ -12,7 +12,7 @@ repo="${JPM_REPO:-java-package-manager/jpm}"
 if [ -n "${JPM_INSTALL_BASE:-}" ]; then
   base="$JPM_INSTALL_BASE"
 elif [ "${JPM_VERSION:-}" = canary ]; then
-  # the release tagged canary names the newest canary build
+  # the release tagged canary names the newest release or prerelease
   canary="$(curl -fsSL "https://github.com/$repo/releases/download/canary/VERSION")"
   base="https://github.com/$repo/releases/download/$canary"
 elif [ -n "${JPM_VERSION:-}" ]; then
