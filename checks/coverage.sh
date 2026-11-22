@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs the unit and end-to-end tests with JaCoCo and writes a report to .cache/coverage/
 # (index.html, coverage.xml, and summary.md with the coverage of each package).
-# Usage: checks/coverage.sh
+# Usage: checks/coverage.sh  (JPM=<jpm executable> runs the tests with that jpm instead of bin/jpm)
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -21,7 +21,7 @@ exec_file="$(pwd)/$out/jacoco.exec"
 agent="$(pwd)/$tools/org.jacoco.agent-$JACOCO-runtime.jar"
 status=0
 JPM_TEST_JVM_ARGS="-javaagent:$agent=destfile=$exec_file,append=true,includes=dev.jpm.*,excludes=dev.jpm.e2e.*:dev.jpm.testing.*" \
-  bin/jpm test --frozen --exclude-tag live || status=$?
+  "${JPM:-bin/jpm}" test --frozen --exclude-tag live || status=$?
 
 "$JAVA" -jar "$tools/org.jacoco.cli-$JACOCO-nodeps.jar" report "$out/jacoco.exec" \
   --classfiles .cache/build/jpm/classes --classfiles .cache/build/jpm-api/classes \
