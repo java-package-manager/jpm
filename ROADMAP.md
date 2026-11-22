@@ -106,7 +106,7 @@ The goal is code that a new contributor can read top to bottom.
 
 - [x] `cli/Commands.java` (≈1,300 lines): one class per command, plus a command registry that is the
       single source for `jpm help`, the README command table and shell completions.
-- [ ] `importer/GradleImport.java` (≈900 lines), `resolve/Resolver.java` (≈670 lines) and
+- [x] `importer/GradleImport.java` (≈900 lines), `resolve/Resolver.java` (≈670 lines) and
       `Manifest.java` (≈650 lines): split by responsibility (parsing, validation, inheritance, model).
 
 ### Remove duplication and unnecessary abstractions
