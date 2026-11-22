@@ -6,11 +6,10 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.net.URI;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,38 +70,20 @@ class KotlinTest {
 
     @Test
     void kotlinSourcesNeedAKotlinVersion(@TempDir Path dir) {
-        String oldHome = System.getProperty("jpm.home");
-        System.setProperty("jpm.home", dir.resolve("home").toString());
-        try {
-            Path p = dir.resolve("p");
-            Fs.write(p.resolve("project.jsonc"), "{ \"name\": \"p\", \"version\": \"1.0.0\" }");
-            Fs.write(p.resolve("src/app/Main.kt"), "package app\nfun main() {}\n");
-            Project project = Project.load(p);
-            MavenRepo r = new MavenRepo(List.of());
-            Builder b = new Builder(project, Install.run(project, r, new Install.Options(false, true, Set.of(), true)), r, Env.Mode.PRODUCTION);
-            JpmException e = assertThrows(JpmException.class, () -> b.compileMain(project.modules.get(0)));
-            assertTrue(e.getMessage().contains("\"kotlin\""), e.getMessage());
-        } finally {
-            if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-        }
+        Path p = dir.resolve("p");
+        Fs.write(p.resolve("project.jsonc"), "{ \"name\": \"p\", \"version\": \"1.0.0\" }");
+        Fs.write(p.resolve("src/app/Main.kt"), "package app\nfun main() {}\n");
+        Project project = Project.load(p);
+        MavenRepo r = new MavenRepo(List.of());
+        Builder b = new Builder(project, Install.run(project, r, new Install.Options(false, true, Set.of(), true)), r, Env.Mode.PRODUCTION);
+        JpmException e = assertThrows(JpmException.class, () -> b.compileMain(project.modules.get(0)));
+        assertTrue(e.getMessage().contains("\"kotlin\""), e.getMessage());
     }
 
-    private static boolean mavenCentralReachable() {
-        try {
-            var c = (java.net.HttpURLConnection) URI.create("https://repo.maven.apache.org/maven2/").toURL().openConnection();
-            c.setConnectTimeout(5000);
-            c.setReadTimeout(5000);
-            c.setRequestMethod("HEAD");
-            return c.getResponseCode() < 500;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /** Needs kotlinc from Maven Central (kept in the usual ~/.jpm cache). */
+    /** Needs kotlinc and the Kotlin standard library from Maven Central. */
     @Test
+    @Tag("live")
     void compilesKotlinAndJavaTogether(@TempDir Path dir) throws Exception {
-        Assumptions.assumeTrue(mavenCentralReachable(), "Maven Central is not reachable");
         Path p = dir.resolve("p");
         Fs.write(p.resolve("project.jsonc"), """
                 { "name": "mixed", "version": "1.0.0", "java": "21", "layout": "maven",

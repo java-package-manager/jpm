@@ -2,7 +2,6 @@ package dev.jpm.cli;
 
 import dev.jpm.json.Jsonc;
 import dev.jpm.util.Fs;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,13 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** {@code jpm info --json --classpath}: every classpath as packages with coordinates, jars and edges. */
 class InfoClasspathTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     private static void publish(Path repo, String a, String deps) throws Exception {
         Path dir = repo.resolve("g/" + a + "/1.0");
         Fs.write(dir.resolve(a + "-1.0.pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>" + a

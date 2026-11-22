@@ -21,8 +21,18 @@ import java.util.List;
 public final class TestRunner {
     private TestRunner() {}
 
+    /**
+     * Which tests to run.
+     *
+     * @param filters      class names, {@code Class#method} or class name patterns with {@code *}; empty runs all tests
+     * @param tags         JUnit tag expressions a test must match, all tests when empty
+     * @param excludedTags JUnit tag expressions of tests to leave out
+     */
+    public record Selection(List<String> filters, List<String> tags, List<String> excludedTags) {}
+
     /** Runs a module's tests. Returns the exit code (0 when no tests exist). */
-    public static int run(Builder b, Project.Module m, List<String> filters) {
+    public static int run(Builder b, Project.Module m, Selection selection) {
+        List<String> filters = selection.filters();
         if (!b.compileTests(m)) {
             Log.info(m.name() + ": no tests");
             return 0;
@@ -63,6 +73,8 @@ public final class TestRunner {
                 } else cmd.add("--select-class=" + f);
             }
         }
+        for (String t : selection.tags()) cmd.add("--include-tag=" + t);
+        for (String t : selection.excludedTags()) cmd.add("--exclude-tag=" + t);
         Log.step("Testing", m.name());
         return Exec.inherit(m.dir, cmd, Env.forChild(b.project.dir, Env.Mode.DEVELOPMENT));
     }

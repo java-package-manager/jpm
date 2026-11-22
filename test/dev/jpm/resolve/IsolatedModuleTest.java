@@ -6,7 +6,6 @@ import dev.jpm.build.Env;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,13 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * does not move the version the product gets.
  */
 class IsolatedModuleTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     private static void publish(Path repo, String a, String v, String deps) {
         Path dir = repo.resolve("g/" + a + "/" + v);
         Fs.write(dir.resolve(a + "-" + v + ".pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>g</groupId><artifactId>" + a

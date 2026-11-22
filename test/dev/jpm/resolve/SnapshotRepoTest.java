@@ -2,7 +2,6 @@ package dev.jpm.resolve;
 
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -14,13 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /** Snapshot repositories name files with timestamps; jpm finds them through maven-metadata.xml. */
 class SnapshotRepoTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     @Test
     void fetchesTimestampedSnapshots(@TempDir Path tmp) {
         System.setProperty("jpm.home", tmp.resolve("home").toString());

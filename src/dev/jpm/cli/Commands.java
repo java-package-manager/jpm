@@ -691,7 +691,12 @@ final class Commands {
     int test(List<String> args) {
         boolean frozen = flag(args, "--frozen");
         String module = option(args, "--module");
+        List<String> tags = new ArrayList<>();
+        for (String t; (t = option(args, "--tag")) != null; ) tags.add(t);
+        List<String> excludedTags = new ArrayList<>();
+        for (String t; (t = option(args, "--exclude-tag")) != null; ) excludedTags.add(t);
         noMoreFlags(args);
+        TestRunner.Selection selection = new TestRunner.Selection(args, tags, excludedTags);
         Ctx c = open(frozen);
         Builder b = c.builder(Env.Mode.DEVELOPMENT);
         List<Project.Module> mods = module != null ? targets(c.project, List.of(module)) : targets(c.project, List.of());
@@ -699,7 +704,7 @@ final class Commands {
         for (Project.Module m : mods) {
             Builder mb = b.forModule(m);
             Scripts.hooks(mb, m, m.manifest, "pre", "test", null, Env.Mode.DEVELOPMENT);
-            int code = TestRunner.run(mb, m, args);
+            int code = TestRunner.run(mb, m, selection);
             if (code != 0) worst = code;
             else Scripts.hooks(mb, m, m.manifest, "post", "test", null, Env.Mode.DEVELOPMENT);
         }

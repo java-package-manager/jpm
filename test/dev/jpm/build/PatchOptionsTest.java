@@ -10,7 +10,6 @@ import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -33,13 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Patches as objects: compile-only dependencies, a release, and patching modular jars. */
 class PatchOptionsTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     /** Compiles {@code sources} (relative path to text) and publishes them as g:name:1.0 with a sources jar. */
     private static void publish(Path repo, Path work, String name, Map<String, String> sources, int release, List<Path> cp) throws Exception {
         Path src = work.resolve(name + "-src"), classes = work.resolve(name + "-classes");

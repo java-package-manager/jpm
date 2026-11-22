@@ -6,7 +6,6 @@ import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,13 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * module-wide "exclude" (packages the platform provides, left out of everything the runtime and dev dependencies bring).
  */
 class TestFixturesTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     private static void publish(Path repo, String group, String artifact, String version, String deps, Path dir) {
         Path v = repo.resolve(group.replace('.', '/') + "/" + artifact + "/" + version);
         Fs.write(v.resolve(artifact + "-" + version + ".pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>" + group

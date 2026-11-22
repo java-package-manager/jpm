@@ -5,7 +5,6 @@ import dev.jpm.util.JpmException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** A rate limit, a server error or a refusal is not "not found": it is reported, never retried, never cached as missing. */
 class TransientFailureTest {
-    private final String oldHome = System.getProperty("jpm.home");
     private HttpServer server;
     private String base;
 
@@ -36,8 +34,7 @@ class TransientFailureTest {
     private final AtomicInteger requests = new AtomicInteger();
 
     @BeforeEach
-    void start(@TempDir Path tmp) throws IOException {
-        System.setProperty("jpm.home", tmp.resolve("home").toString());
+    void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         server.createContext("/", ex -> {
             int i = requests.getAndIncrement();
@@ -55,7 +52,6 @@ class TransientFailureTest {
     @AfterEach
     void stop() {
         server.stop(0);
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
     }
 
     private MavenRepo repo() {

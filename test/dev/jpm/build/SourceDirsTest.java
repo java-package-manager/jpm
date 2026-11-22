@@ -5,7 +5,6 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -21,13 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** "sources" and "resources": several folders per module, such as committed generated sources beside the rest. */
 class SourceDirsTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     @Test
     void compilesEverySourceFolder(@TempDir Path dir) throws Exception {
         System.setProperty("jpm.home", dir.resolve("home").toString());

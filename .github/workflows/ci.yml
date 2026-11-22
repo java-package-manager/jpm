@@ -97,7 +97,7 @@ jobs:
         run: ./bootstrap.sh
 
       - name: Test
-        run: bin/jpm test --frozen
+        run: bin/jpm test --frozen --exclude-tag live
 
       - name: Native image
         run: bin/jpm build --native
@@ -298,6 +298,25 @@ jobs:
           name: jpm-${{ matrix.name }}
           path: dist/jpm${{ matrix.exe }}
           if-no-files-found: error
+
+  # Tests tagged "live" reach Maven Central; every other test is hermetic and runs in the build job.
+  live-tests:
+    name: live tests
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      JPM_HOME: ${{ github.workspace }}/../jpm-home
+      JPM_NO_UPDATE_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+      - name: Bootstrap
+        run: ./bootstrap.sh
+      - name: Live tests
+        run: bin/jpm test --frozen --tag live
 
   release:
     name: release

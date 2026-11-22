@@ -5,7 +5,6 @@ import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -17,13 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /** Scripts and hooks can call back into the jpm that runs them. */
 class ScriptEnvTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     @Test
     void scriptsGetJpmExe(@TempDir Path dir) {
         System.setProperty("jpm.home", dir.resolve("home").toString());

@@ -5,7 +5,6 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,13 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** A .java script declares its own dependencies in //DEPS lines, resolved apart from the project. */
 class ScriptDepsTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     @Test
     void readsDepsLines() {
         assertEquals(List.of("a:b:1.0", "c:d@2.0", "e:f:3"), Scripts.declaredDeps("""

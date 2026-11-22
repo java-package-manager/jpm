@@ -9,7 +9,6 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,13 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** gradle:api: the jars of a Gradle distribution, for Gradle plugins. */
 class GradleApiTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     /** A distribution as services.gradle.org has it, put where jpm downloads it to. */
     private static Path fakeDistribution(Path home, String version) throws IOException {
         Path zip = home.resolve("gradle/gradle-" + version + "-bin.zip");

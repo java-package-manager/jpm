@@ -38,7 +38,7 @@ public final class Main {
               build                       Compile and package into dist/ (--release, --profile <name>)
               start [entry] [-- args]     Build, then run main with production env variables
               dev [entry] [-- args]       Run main with development env variables, restarting on changes
-              test [filter...]            Run tests on the JUnit Platform
+              test [filter...]            Run tests on the JUnit Platform (--tag, --exclude-tag select by JUnit tag)
               run <script> [args]         Run a script from the manifest; <module>:<script> for another module's
               clean                       Delete build output
 

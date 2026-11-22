@@ -5,7 +5,6 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -29,13 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** jpm build --bundle for modules without a main: one flat jar with the runtime dependencies merged in. */
 class FlatBundleTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     private static void zip(Path jar, Map<String, String> entries) throws IOException {
         Files.createDirectories(jar.getParent());
         try (OutputStream out = Files.newOutputStream(jar); ZipOutputStream z = new ZipOutputStream(out)) {

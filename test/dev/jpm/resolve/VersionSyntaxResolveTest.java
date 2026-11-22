@@ -3,7 +3,6 @@ package dev.jpm.resolve;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,13 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Resolves a project that uses every version syntax against a local Maven repository. */
 class VersionSyntaxResolveTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     private static void publish(Path repo, String artifact, List<String> versions) throws IOException {
         Path dir = repo.resolve("org/example/" + artifact);
         StringBuilder meta = new StringBuilder("<metadata><groupId>org.example</groupId><artifactId>" + artifact + "</artifactId><versioning><versions>");

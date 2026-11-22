@@ -8,7 +8,6 @@ import dev.jpm.toolchain.Jdk;
 import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,13 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** "relocate": a flat bundle with a dependency moved to another package, which still runs. */
 class RelocateTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     @Test
     void rewritesNames() {
         Relocator r = new Relocator(Map.of("org.yaml.snakeyaml", "x.shaded.snakeyaml"));

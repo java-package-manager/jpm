@@ -10,7 +10,6 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,13 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** ext:<extension>/<name>: dependencies an extension provides, such as jpm-paperweight's Paper server. */
 class ExtensionDepsTest {
-    private final String oldHome = System.getProperty("jpm.home");
-
-    @AfterEach
-    void restore() {
-        if (oldHome == null) System.clearProperty("jpm.home"); else System.setProperty("jpm.home", oldHome);
-    }
-
     @Test
     void keys() {
         DepKey k = DepKey.parse("ext:paperweight/server");
