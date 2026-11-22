@@ -386,6 +386,42 @@ jobs:
             .cache/coverage/coverage.xml
             .cache/coverage/summary.md
 
+  # dev.jpm:jpm-api to https://repo.thenextlvl.net: a release's version to /releases, every other commit on
+  # main as <version>-SNAPSHOT to /snapshots. Credentials: the JPM_PUBLISH_THENEXTLVL_* secrets.
+  publish-api:
+    name: publish api
+    if: needs.version.outputs.kind != 'none'
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    env:
+      JPM_HOME: ${{ github.workspace }}/../jpm-home
+      JPM_NO_UPDATE_CHECK: "1"
+      JPM_PUBLISH_THENEXTLVL_USERNAME: ${{ secrets.JPM_PUBLISH_THENEXTLVL_USERNAME }}
+      JPM_PUBLISH_THENEXTLVL_PASSWORD: ${{ secrets.JPM_PUBLISH_THENEXTLVL_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v6
+        with:
+          java-version: "21"
+          distribution: temurin
+      - name: Snapshot version
+        if: needs.version.outputs.kind == 'canary'
+        run: |
+          v='${{ needs.version.outputs.version }}'
+          perl -pi -e 'if (!$done && s/"version": "\Q'"$v"'\E"/"version": "'"$v-SNAPSHOT"'"/) { $done = 1 }' project.jsonc
+          grep -q "\"version\": \"$v-SNAPSHOT\"" project.jsonc
+      - name: Bootstrap
+        run: ./bootstrap.sh
+      - name: Install jpm-publish
+        run: bin/jpm add -g github:java-package-manager/jpm-publish
+      - name: Publish dev.jpm:jpm-api
+        run: |
+          if [ -z "$JPM_PUBLISH_THENEXTLVL_USERNAME" ] || [ -z "$JPM_PUBLISH_THENEXTLVL_PASSWORD" ]; then
+            echo "::error::the JPM_PUBLISH_THENEXTLVL_USERNAME and JPM_PUBLISH_THENEXTLVL_PASSWORD secrets are not set"
+            exit 1
+          fi
+          bin/jpm publish thenextlvl --module jpm-api
+
   release:
     name: release
     if: needs.version.outputs.kind == 'release'

@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The client in the api module (github:java-package-manager/jpm/api), against a real jpm api. */
+/** The client, dev.jpm:jpm-api, against a real jpm api. */
 @DisabledOnOs(value = OS.WINDOWS, disabledReason = "the e2e sessions are not run on Windows yet")
 class ClientTest {
     private static JpmClient connect(Session s) {

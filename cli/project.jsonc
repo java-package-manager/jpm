@@ -5,11 +5,13 @@
   // generated with NAME and VERSION from this manifest; Main reads the version from it
   "defineClass": "dev.jpm.BuildConfig",
   "runtime": {
-    "workspace:api": "*"
+    "workspace:jpm-api": "*"
   },
   "test": {
     "org.junit.jupiter:junit-jupiter": "[6.0.0,)"
   },
+  // jpm itself is released as native binaries, not to Maven repositories
+  "extensions": { "publish": { "skip": true } },
   "nativeArgs": [
     "-O2",
     "-H:+ReportExceptionStackTraces",

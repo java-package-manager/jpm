@@ -6,6 +6,19 @@
   "group": "dev.jpm",
   "license": "MIT",
   "java": "21",
-  // api: the public API, used as the dependency github:java-package-manager/jpm/api; cli: jpm itself
-  "workspace": ["api", "cli"]
+  // api: the public API, published as dev.jpm:jpm-api; cli: jpm itself
+  "workspace": ["api", "cli"],
+  "url": "https://github.com/java-package-manager/jpm",
+  "extensions": {
+    "publish": {
+      "repositories": {
+        // CI publishes releases and snapshots of main here: `jpm publish thenextlvl`
+        "thenextlvl": {
+          "url": "https://repo.thenextlvl.net/releases",
+          "snapshots": "https://repo.thenextlvl.net/snapshots"
+        }
+      },
+      "javadoc": true
+    }
+  }
 }

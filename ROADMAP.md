@@ -184,8 +184,8 @@ compiled classes or from the manifest.
 - [ ] Public API covering what `jpm info --json/--ide/--classpath` and `jpm schema` give today:
       project model, modules, folders, scripts, dependencies with scopes and sources, every classpath,
       resolved defines, and the manifest schema.
-- [x] ~~Publish the API to Maven Central with Javadoc and sources.~~ Not wanted: programs depend on
-      `github:java-package-manager/jpm/api`, which jpm builds from source.
+- [x] Publish the API with Javadoc and sources: as `dev.jpm:jpm-api` to
+      `https://repo.thenextlvl.net/releases` (and `/snapshots`), not Maven Central.
 - [ ] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output.
 - [ ] **jpm-publish:** use the public API instead of `jpm info --json`.
 - [ ] Extensions get a documented way to use the API (for example a template project).
@@ -404,10 +404,10 @@ release. Inside a milestone, items with no **Needs:** can be done in parallel.
   installed one. Nothing ships its own copy: not jpm-intellij, not extensions, not the client jar.
   - The `jpm` binary serves a versioned protocol: JSON-RPC over stdin/stdout from `jpm api`, framed
     like LSP.
-  - jpm's `api` module holds the model records, the shared JSON/JSONC reader and writer, and a
-    client that starts the global `jpm api`. It holds no resolution logic. Programs use it as the
-    dependency `github:java-package-manager/jpm/api`; it is not published to Maven repositories,
-    because it is meant for programs jpm builds, not for Maven or Gradle builds.
+  - `dev.jpm:jpm-api` (jpm's `api` module) holds the model records, the shared JSON/JSONC reader and
+    writer, and a client that starts the global `jpm api`. It holds no resolution logic. CI publishes
+    it to `https://repo.thenextlvl.net/releases` with every release and to `/snapshots` with every
+    other commit on main; it is not on Maven Central.
   - When no jpm is installed, jpm-intellij offers to install one globally, using the same steps as
     `install.sh`/`install.ps1`. It never bundles one.
 - **Java targets.**
@@ -491,7 +491,7 @@ Builds the test and tooling base that the restructure depends on.
 
 1. **Workspace layout.** Done.
    - The jpm repository is a workspace with an `api` module (`dev.jpm.api`, published as
-     `github:java-package-manager/jpm/api`) and a `cli` module (the CLI and everything else). A workspace root lists modules
+     `dev.jpm:jpm-api`) and a `cli` module (the CLI and everything else). A workspace root lists modules
      only, so the CLI moved into `cli/` rather than staying in the root.
    - Both modules have a `module-info.java`; `cli` exports nothing. The `api` module is compiled with
      `-Xdoclint:all/protected -Werror`, so missing Javadoc fails the build.
@@ -553,10 +553,9 @@ Builds the test and tooling base that the restructure depends on.
    `project/load`, `project/classpaths` and `schema/manifest`; `extensions/list` and `check/run` come with
    items 7 and 8.
 3. **Client** in the `api` module (`dev.jpm.api.client.JpmClient`, the model records in
-   `dev.jpm.api.model`). Done. Consumers depend on `github:java-package-manager/jpm/api`; nothing is
-   published to Maven Central.
+   `dev.jpm.api.model`). Done. Published as `dev.jpm:jpm-api` to `https://repo.thenextlvl.net` by CI.
    - Finds the global jpm, starts it and checks the version.
-4. **jpm-publish** moves to the client (`github:java-package-manager/jpm/api`) and drops its own
+4. **jpm-publish** moves to the client (`dev.jpm:jpm-api`) and drops its own
    `Json.java`.
 5. **jpm-intellij** moves to the client.
    - Replace `Jpm.run(... "info", "--json", "--ide")` in `JpmSync` and in the tests.

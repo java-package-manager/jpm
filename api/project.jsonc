@@ -1,7 +1,8 @@
-// The public API of jpm: dev.jpm.api only, with full Javadoc. Tools depend on it as
-// "github:java-package-manager/jpm/api"; it is not published to Maven repositories.
+// The public API of jpm: dev.jpm.api only, with full Javadoc. Published as dev.jpm:jpm-api to
+// https://repo.thenextlvl.net/releases (and /snapshots for the main branch).
 {
-  "name": "api",
+  "name": "jpm-api",
+  "description": "The client of the jpm protocol and its model: what IDEs and tools use to work with jpm projects",
   "visibility": "public",
   // the build fails on missing or broken Javadoc of anything public
   "javacArgs": ["-Xdoclint:all/protected", "-Werror"],

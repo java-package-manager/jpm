@@ -5,8 +5,7 @@ Status: **accepted** (roadmap Milestone 4, item 1); `jpm api` serves protocol 1.
 
 The protocol is how other programs (jpm-intellij, jpm-publish, extensions, editors) ask jpm about a project.
 It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which are removed in the release that
-ships it. There is exactly one jpm on a machine, the global one; the client in jpm's `api` module, a dependency
-`github:java-package-manager/jpm/api`, starts it
+ships it. There is exactly one jpm on a machine, the global one; the client `dev.jpm:jpm-api` starts it
 and talks to it. No program bundles its own jpm.
 
 ## 1. Transport
@@ -237,13 +236,13 @@ trace as a `log` at level `debug`.
 The `api` module of jpm's repository, `dev.jpm.api`, holds the types above as records, the JSON reader and
 writer (`dev.jpm.api.json.Jsonc`) and a client:
 
-Programs built with jpm depend on it straight from jpm's repository, pinned to a jpm release:
+It is published as `dev.jpm:jpm-api` to `https://repo.thenextlvl.net/releases` with every jpm release, and
+to `https://repo.thenextlvl.net/snapshots` as `<version>-SNAPSHOT` with every other commit on main:
 
 ```jsonc
-"runtime": { "github:java-package-manager/jpm/api": "^0.12.0" }
+"repositories": ["https://repo.thenextlvl.net/releases"],
+"runtime": { "dev.jpm:jpm-api": "^0.12.0" }
 ```
-
-It is not published to Maven repositories: it is meant for programs that jpm builds.
 
 ```java
 try (JpmClient jpm = JpmClient.start()) {            // finds the global jpm, starts `jpm api`, initializes

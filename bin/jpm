@@ -3,7 +3,7 @@
 set -eu
 here="$(cd "$(dirname "$0")/.." && pwd)"
 cli="$(ls -t "$here"/cli/dist/jpm-[0-9]*.jar 2>/dev/null | head -n 1 || true)"
-api="$(ls -t "$here"/api/dist/api-[0-9]*.jar 2>/dev/null | head -n 1 || true)"
+api="$(ls -t "$here"/api/dist/jpm-api-[0-9]*.jar 2>/dev/null | head -n 1 || true)"
 if [ -n "$cli" ] && [ -n "$api" ]; then cp="$cli:$api"; else cp="$here/.cache/bootstrap/jpm.jar"; fi
 [ -f "${cp%%:*}" ] || { echo "jpm is not built yet; run $here/bootstrap.sh" >&2; exit 1; }
 # scripts, hooks and extensions call back into jpm through JPM_EXE

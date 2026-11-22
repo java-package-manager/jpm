@@ -189,7 +189,7 @@ public final class Ratchets {
      * ({@code bin/jpm build} first). Empty when the classes are not built.
      */
     static List<String> implAcrossAreas() {
-        Path classes = Path.of(".cache/build/jpm/classes"), api = Path.of(".cache/build/api/classes");
+        Path classes = Path.of(".cache/build/jpm/classes"), api = Path.of(".cache/build/jpm-api/classes");
         if (!Files.isDirectory(classes)) return List.of();
         var jdeps = java.util.spi.ToolProvider.findFirst("jdeps").orElseThrow();
         var out = new java.io.StringWriter();

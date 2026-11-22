@@ -24,7 +24,7 @@ JPM_TEST_JVM_ARGS="-javaagent:$agent=destfile=$exec_file,append=true,includes=de
   bin/jpm test --frozen --exclude-tag live || status=$?
 
 "$JAVA" -jar "$tools/org.jacoco.cli-$JACOCO-nodeps.jar" report "$out/jacoco.exec" \
-  --classfiles .cache/build/jpm/classes --classfiles .cache/build/api/classes \
+  --classfiles .cache/build/jpm/classes --classfiles .cache/build/jpm-api/classes \
   --sourcefiles cli/src --sourcefiles api/src --sourcefiles .cache/build/jpm/generated \
   --html "$out/html" --xml "$out/coverage.xml" --name "jpm" >/dev/null
 

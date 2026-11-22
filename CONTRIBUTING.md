@@ -15,7 +15,7 @@ bin/jpm build --native         # cli/dist/jpm, the native binary (GraalVM, insta
 ```
 
 The repository is a workspace of two modules: `api` (`dev.jpm.api`, the public API, which tools use as
-the dependency `github:java-package-manager/jpm/api`, never published to Maven repositories) and `cli` (jpm itself, which exports nothing). Each has a `module-info.java`.
+published as `dev.jpm:jpm-api` to `https://repo.thenextlvl.net/releases`, and `/snapshots` for main) and `cli` (jpm itself, which exports nothing). Each has a `module-info.java`.
 
 To try a change on another project, run `bin/jpm` (or `cli/dist/jpm`) there. To keep your own `~/.jpm`
 out of it, give it an empty home: `JPM_HOME=$(mktemp -d) bin/jpm build`.
