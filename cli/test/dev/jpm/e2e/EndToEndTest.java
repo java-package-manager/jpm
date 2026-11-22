@@ -209,6 +209,27 @@ class EndToEndTest {
     }
 
     @Test
+    void addsAnExtensionInAWorkspaceRoot(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        Path ext = tmp.resolve("git/me/jpm-hello");
+        Fs.write(ext.resolve("src/hello/Main.java"), "package hello; public class Main { public static void main(String[] a) {} }");
+        Fs.write(ext.resolve("project.jsonc"), "{ \"name\": \"jpm-hello\", \"version\": \"1.0.0\", \"main\": \"hello.Main\", \"extension\": {} }");
+        git(ext, "init", "-q", "-b", "main");
+        git(ext, "add", "-A");
+        git(ext, "commit", "-qm", "1.0.0");
+        git(ext, "tag", "1.0.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"ws\",\n  \"version\": \"1.0.0\",\n  \"workspace\": [\"a\", \"b\"]\n}\n");
+        Fs.write(s.project.resolve("a/project.jsonc"), "{ \"name\": \"a\" }\n");
+        Fs.write(s.project.resolve("b/project.jsonc"), "{ \"name\": \"b\" }\n");
+        s.jpm("add", "github:me/jpm-hello");
+        s.show("project.jsonc");
+        s.jpm("add", "org.example:money");
+        s.verify("add-extension-in-workspace");
+    }
+
+    @Test
     void checkReportsEveryProblem(@TempDir Path tmp) {
         Session s = new Session(tmp);
         money(s.repo);
@@ -262,6 +283,7 @@ class EndToEndTest {
         s.jpm("check", "--sarif", "check.sarif", "--junit", "check.xml");
         s.show("check.xml");
         s.jpm("check", "--no-test", "paths", "license");
+        s.jpm("check", "--no-test", "pahts");
         Fs.write(s.project.resolve("project.jsonc"), Fs.read(s.project.resolve("project.jsonc")).replace("\"sources\": [\"src\", \"generated\"],", "")
                 .replace("\"scripts\": { \"gen\": \"gen.java\" },", "\"license\": \"MIT\","));
         Fs.write(s.project.resolve("test/app/MainTest.java"), "package app; class MainTest { @org.junit.jupiter.api.Test void adds() {"

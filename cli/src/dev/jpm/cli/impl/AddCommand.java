@@ -56,7 +56,8 @@ final class AddCommand extends Command {
         if (global) return GlobalExtensions.add(args);
         Manifest.Scope scope = dev ? Manifest.Scope.DEV : test ? Manifest.Scope.TEST : Manifest.Scope.RUNTIME;
         Project p = Project.find(cwd);
-        Project.Module m = single(p, "add");
+        Project.Module m = scope == Manifest.Scope.RUNTIME && p.root.isWorkspaceRoot() && p.moduleAt(cwd) == null && allExtensions(p, args)
+                ? p.rootModule() : single(p, "add");
         Path rootFile = p.root.file, moduleFile = m.manifest.file;
         String rootOriginal = Fs.read(rootFile);
         String moduleOriginal = Fs.read(moduleFile);
@@ -114,6 +115,16 @@ final class AddCommand extends Command {
             throw new JpmException(msg + "\n" + Manifest.FILE + " was left unchanged.", e);
         }
         return 0;
+    }
+
+    private static boolean allExtensions(Project p, List<String> args) {
+        MavenRepo repo = new MavenRepo(p.root.repositories);
+        for (String a : args) {
+            DepArgs.DepArg d = DepArgs.parse(a);
+            if (!d.key().isGit()) return false;
+            if (!isExtension(p, d.key(), d.spec() != null ? d.spec() : DepArgs.latestSpec(repo, d.key()), repo)) return false;
+        }
+        return true;
     }
 
     private static boolean isExtension(Project p, DepKey key, String spec, MavenRepo repo) {

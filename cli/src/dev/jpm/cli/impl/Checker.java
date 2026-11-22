@@ -36,6 +36,8 @@ final class Checker {
     private final Path cwd;
     private final Options o;
     private final List<CheckResult> results = new ArrayList<>();
+    private final Set<String> known = new LinkedHashSet<>();
+    private boolean listedExtensions;
     private Path root;
 
     Checker(Path cwd, Options o) {
@@ -44,6 +46,17 @@ final class Checker {
     }
 
     List<CheckResult> run() {
+        List<CheckResult> out = checks();
+        known.addAll(OWN);
+        known.add("tests");
+        List<String> unknown = o.only().stream().filter(id -> !known.contains(id)).toList();
+        if (!unknown.isEmpty() && listedExtensions) {
+            throw new JpmException("No check named " + String.join(", ", unknown), 2).withHint("the checks are " + String.join(", ", known));
+        }
+        return out;
+    }
+
+    private List<CheckResult> checks() {
         Project p = step("manifest", "project.jsonc loads", () -> Project.find(cwd));
         if (p == null) return skipRest("the project does not load");
         root = p.dir;
@@ -80,6 +93,7 @@ final class Checker {
             return out;
         } : null);
         extensionChecks(p, g);
+        listedExtensions = true;
         if (o.tests()) {
             list("tests", "the tests pass", compiled.size() == p.modules.size() ? () -> tests(p, b) : null);
         }
@@ -189,6 +203,7 @@ final class Checker {
     }
 
     private boolean skipped(String id) {
+        known.add(id);
         return !o.only().isEmpty() && !o.only().contains(id);
     }
 
