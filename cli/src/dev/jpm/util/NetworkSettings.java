@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Network settings for every HTTP client jpm makes, so the native binary behaves like the JVM tools around it:
+ * Network settings for every HTTP client jpm makes (through {@link Http}), so the native binary behaves like the JVM tools around it:
  *
  * <ul>
  *   <li>proxies from {@code HTTPS_PROXY}, {@code HTTP_PROXY} and {@code NO_PROXY} (any case), unless the
@@ -39,13 +39,13 @@ import java.util.Map;
  *       network with its own CA then works without rebuilding jpm.</li>
  * </ul>
  */
-public final class Net {
-    private Net() {}
+final class NetworkSettings {
+    private NetworkSettings() {}
 
     private static volatile SSLContext ssl;
 
     /** A client builder with jpm's proxy and trust settings. */
-    public static HttpClient.Builder client(Duration connectTimeout) {
+    static HttpClient.Builder client(Duration connectTimeout) {
         return client(connectTimeout, System.getenv());
     }
 
@@ -132,7 +132,7 @@ public final class Net {
     /** The built-in trust plus the system's certificates, or null for the default when there are none to add. */
     static SSLContext sslContext() {
         if (ssl != null) return ssl;
-        synchronized (Net.class) {
+        synchronized (NetworkSettings.class) {
             if (ssl != null) return ssl;
             try {
                 List<X509Certificate> extra = systemCertificates(System.getenv());

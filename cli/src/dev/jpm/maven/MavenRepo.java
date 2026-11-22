@@ -44,7 +44,7 @@ public final class MavenRepo {
         this.repos = r;
         this.cache = Fs.home().resolve("repository");
         this.offline = Fs.offline();
-        this.http = dev.jpm.util.Net.client(Duration.ofSeconds(20)).build();
+        this.http = dev.jpm.util.Http.client();
     }
 
     private static List<String> withCentral(List<String> extra) {

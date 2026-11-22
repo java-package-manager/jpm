@@ -16,17 +16,26 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.HexFormat;
 
-/** HTTP downloads through the proxy and trust settings of {@link Net}. */
+/**
+ * jpm's one way to make HTTP requests: clients with the proxy and trust settings of
+ * {@link NetworkSettings}, plain GETs and downloads with progress.
+ */
 public final class Http {
     private Http() {}
 
     private static HttpClient client;
 
+    /** The shared client, with a 20 second connect timeout. */
     public static synchronized HttpClient client() {
         if (client == null) {
-            client = Net.client(Duration.ofSeconds(20)).build();
+            client = client(Duration.ofSeconds(20));
         }
         return client;
+    }
+
+    /** A new client with another connect timeout, for requests that must give up quickly. */
+    public static HttpClient client(Duration connectTimeout) {
+        return NetworkSettings.client(connectTimeout).build();
     }
 
     private static HttpRequest get(String url, Duration timeout) {

@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Proxies from the environment and certificates from the system, for the native binary. */
-class NetTest {
+class NetworkSettingsTest {
     private static String hostPort(List<Proxy> l) {
         Proxy p = l.get(0);
         if (p.type() == Proxy.Type.DIRECT) return "direct";
@@ -31,7 +31,7 @@ class NetTest {
     void proxiesFromTheEnvironment() {
         Assumptions.assumeTrue(System.getProperty("https.proxyHost") == null && System.getProperty("http.proxyHost") == null,
                 "system properties take precedence");
-        ProxySelector s = Net.proxySelector(Map.of(
+        ProxySelector s = NetworkSettings.proxySelector(Map.of(
                 "HTTPS_PROXY", "http://proxy.corp:3128",
                 "http_proxy", "plain.corp:8080",
                 "NO_PROXY", "localhost, .internal.corp,example.org"));
@@ -61,7 +61,7 @@ class NetTest {
         proxy.start();
         try {
             String addr = "http://127.0.0.1:" + proxy.getAddress().getPort();
-            java.net.http.HttpClient c = Net.client(java.time.Duration.ofSeconds(5), Map.of("HTTP_PROXY", addr)).build();
+            java.net.http.HttpClient c = NetworkSettings.client(java.time.Duration.ofSeconds(5), Map.of("HTTP_PROXY", addr)).build();
             java.net.http.HttpResponse<String> r = c.send(java.net.http.HttpRequest.newBuilder(URI.create("http://repo.invalid/g/a/1.0/a-1.0.pom")).build(),
                     java.net.http.HttpResponse.BodyHandlers.ofString());
             assertEquals("via proxy", r.body());
@@ -73,11 +73,11 @@ class NetTest {
 
     @Test
     void parsesProxySettings() {
-        assertEquals(new InetSocketAddress("h", 80).getPort(), ((InetSocketAddress) Net.proxy("h").address()).getPort());
-        assertEquals(3128, ((InetSocketAddress) Net.proxy("http://u:p@h:3128/").address()).getPort());
-        assertNull(Net.proxy(null));
-        assertTrue(Net.bypass("anything", List.of("*")));
-        assertFalse(Net.bypass("corp.com", List.of(".internal.corp.com")));
+        assertEquals(new InetSocketAddress("h", 80).getPort(), ((InetSocketAddress) NetworkSettings.proxy("h").address()).getPort());
+        assertEquals(3128, ((InetSocketAddress) NetworkSettings.proxy("http://u:p@h:3128/").address()).getPort());
+        assertNull(NetworkSettings.proxy(null));
+        assertTrue(NetworkSettings.bypass("anything", List.of("*")));
+        assertFalse(NetworkSettings.bypass("corp.com", List.of(".internal.corp.com")));
     }
 
     @Test
@@ -94,12 +94,12 @@ class NetTest {
         }
         Path bundle = dir.resolve("bundle.pem");
         Files.writeString(bundle, pem);
-        assertEquals(2, Net.systemCertificates(Map.of("SSL_CERT_FILE", bundle.toString())).size());
+        assertEquals(2, NetworkSettings.systemCertificates(Map.of("SSL_CERT_FILE", bundle.toString())).size());
         Path certDir = dir.resolve("certs");
         Files.createDirectories(certDir);
         Files.copy(bundle, certDir.resolve("one.pem"));
         Files.writeString(certDir.resolve("README"), "not a certificate");
-        assertEquals(2, Net.systemCertificates(Map.of("SSL_CERT_DIR", certDir.toString())).size());
-        assertTrue(Net.readCertificates(dir.resolve("missing.pem")).isEmpty());
+        assertEquals(2, NetworkSettings.systemCertificates(Map.of("SSL_CERT_DIR", certDir.toString())).size());
+        assertTrue(NetworkSettings.readCertificates(dir.resolve("missing.pem")).isEmpty());
     }
 }
