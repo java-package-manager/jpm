@@ -73,8 +73,22 @@ public final class TestRepo {
             Path versionDir = jar.getParent(), artifactDir = versionDir.getParent();
             Path rel = cache.relativize(artifactDir);
             String group = rel.getParent().toString().replace(java.io.File.separatorChar, '.');
-            copied.put(group + ":" + artifactDir.getFileName(), versionDir.getFileName().toString());
-            copyVersion(versionDir, root.resolve(cache.relativize(versionDir).toString()));
+            String ga = group + ":" + artifactDir.getFileName(), version = versionDir.getFileName().toString();
+            copied.put(ga, version);
+            Path target = root.resolve(cache.relativize(versionDir).toString());
+            copyVersion(versionDir, target);
+            Map<String, String> deps = LOCKED.get(ga);
+            if (deps != null) {
+                StringBuilder pom = new StringBuilder("<project><modelVersion>4.0.0</modelVersion><groupId>" + group + "</groupId><artifactId>"
+                        + artifactDir.getFileName() + "</artifactId><version>" + version + "</version><dependencies>");
+                deps.forEach((dep, scope) -> {
+                    String[] d = dep.split(":");
+                    pom.append("<dependency><groupId>").append(d[0]).append("</groupId><artifactId>").append(d[1])
+                            .append("</artifactId><version>").append(LOCKED_VERSIONS.get(dep)).append("</version><scope>")
+                            .append(scope).append("</scope></dependency>");
+                });
+                Fs.write(target.resolve(artifactDir.getFileName() + "-" + version + ".pom"), pom.append("</dependencies></project>").toString());
+            }
             if (group.startsWith("org.junit")) {
                 Path bom = cache.resolve("org/junit/junit-bom").resolve(versionDir.getFileName().toString());
                 if (Files.isDirectory(bom)) copyVersion(bom, root.resolve(cache.relativize(bom).toString()));
@@ -92,6 +106,30 @@ public final class TestRepo {
         return copied;
     }
 
+    /**
+     * The packages in jpm's own {@code project.lock}, with their dependencies and scopes. A fresh cache holds
+     * only the jars of locked packages (jpm reads their dependencies from the lockfile, not from POMs), so
+     * their POMs are written from it.
+     */
+    private static final Map<String, Map<String, String>> LOCKED = new java.util.HashMap<>();
+    private static final Map<String, String> LOCKED_VERSIONS = new java.util.HashMap<>();
+
+    static {
+        Path lock = Path.of("project.lock");
+        if (Files.exists(lock)) {
+            Object parsed = dev.jpm.json.Jsonc.parse(Fs.read(lock));
+            if (parsed instanceof Map<?, ?> m && m.get("packages") instanceof Map<?, ?> packages) {
+                for (Map.Entry<?, ?> e : packages.entrySet()) {
+                    if (!(e.getValue() instanceof Map<?, ?> pkg)) continue;
+                    Map<String, String> deps = new java.util.TreeMap<>();
+                    if (pkg.get("dependencies") instanceof Map<?, ?> d) d.forEach((k, v) -> deps.put(k.toString(), v.toString()));
+                    LOCKED.put(e.getKey().toString(), deps);
+                    LOCKED_VERSIONS.put(e.getKey().toString(), String.valueOf(pkg.get("version")));
+                }
+            }
+        }
+    }
+
     private static boolean hasVersionDirs(Path dir) {
         try (Stream<Path> s = Files.list(dir)) {
             return s.anyMatch(v -> Files.isDirectory(v) && Files.exists(v.resolve(dir.getFileName() + "-" + v.getFileName() + ".pom")));
@@ -105,7 +143,7 @@ public final class TestRepo {
             Files.createDirectories(to);
             for (Path f : (Iterable<Path>) s::iterator) {
                 String n = f.getFileName().toString();
-                if (Files.isRegularFile(f) && !n.startsWith(".") && (n.endsWith(".jar") || n.endsWith(".pom") || n.endsWith(".module"))) {
+                if (Files.isRegularFile(f) && !n.startsWith(".") && (n.endsWith(".jar") || n.endsWith(".pom"))) {
                     Files.copy(f, to.resolve(n), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
             }
