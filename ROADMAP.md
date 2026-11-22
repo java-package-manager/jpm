@@ -1,0 +1,366 @@
+# Roadmap
+
+What comes next for jpm and the projects around it (jpm-intellij, jpm-publish, extensions).
+Items are grouped into phases; a phase can start before the previous one is finished, but the order
+matters where one item depends on another (noted as **Needs:**).
+
+Status: `[ ]` open, `[~]` in progress, `[x]` done.
+
+---
+
+## Phase 0: Decisions to make first
+
+These shape everything below, so they are settled before the restructure starts.
+
+- [ ] **Shape of the public API.** jpm ships as a native binary, which other JVM programs cannot load.
+      Choose one:
+  - a library jar (`dev.jpm:jpm-api` on Maven Central) that reads `project.jsonc` and `project.lock` and
+    runs resolution in-process, used by jpm itself, jpm-intellij and extensions; or
+  - a versioned machine protocol (for example JSON over stdin/stdout, like LSP/BSP) with a small client
+    library on top.
+
+  The library is simpler for consumers; the protocol keeps one implementation and works from any
+  language. Whichever is chosen, `jpm info --json/--ide/--classpath` and `jpm schema` go away (Phase 4).
+- [ ] **API stability policy.** What semver means for the public API, how long deprecated parts stay,
+      and which Java version the API jar targets (it must load in IntelliJ's runtime and in extensions).
+- [ ] **Layering rules.** Proposed:
+  - `dev.jpm.api…`: public API, exported, full Javadoc, stable.
+  - `dev.jpm.<area>` (for example `resolve`, `build`, `toolchain`): internal API, the interfaces and
+    records that areas use to talk to each other, with Javadoc, not exported.
+  - `dev.jpm.<area>.impl`: implementations, no Javadoc, never referenced across areas.
+
+  A `module-info.java` that exports only `dev.jpm.api` enforces this at compile time.
+- [ ] **Java support matrix.** "Still officially supported" means every Java version that has public
+      updates from at least one major vendor (today 8, 11, 17, 21, 25 and the current feature release).
+      Decide whether this is a target for *projects jpm builds*, for *the API jar*, or both.
+- [x] **Comment policy.** Comments (`//`, `/* */`) are removed and banned by a lint rule; see Phase 1.
+      Javadoc is not a comment: it is required on public and internal API and unwanted on
+      implementations.
+
+---
+
+## Phase 1: Foundations
+
+Small, independent items that make the rest of the work easier.
+
+### Logger
+
+- [ ] Replace `dev.jpm.util.Log` with a proper logger: levels (`error`, `warn`, `info`, `debug`,
+      `trace`), one place that decides on color, and no `System.out`/`System.err` calls elsewhere
+      (there are about 40 today).
+- [ ] Colors:
+  - errors are always red;
+  - warnings are orange (256-color `38;5;208`, yellow as fallback on 16-color terminals);
+  - debug messages are yellow.
+- [ ] `--color=auto|always|never`, respecting `NO_COLOR`, `FORCE_COLOR` and `JPM_COLOR`.
+- [ ] `--quiet` and `--verbose` flags next to `JPM_VERBOSE`.
+- [ ] Progress output (downloads, compilation) goes through the logger, so it is suppressed when
+      output is not a terminal.
+
+### Contributor docs (all jpm projects)
+
+- [ ] `CONTRIBUTING.md` in every repository: how to build, test, run against a local checkout,
+      release, and the code style and layering rules from Phase 0.
+- [ ] `AGENTS.md` in every repository: the same facts in a form for AI agents: commands to build and
+      test, where things live, rules that must not be broken (layering, no source parsing, no
+      dependencies in jpm), and what "done" means for a change.
+- [ ] Keep both short and link to each other instead of repeating content.
+
+### Comments (all jpm projects)
+
+- [ ] Remove comments across the codebases, following the task below. Comments are `//` and `/* */`;
+      Javadoc (`/** */`) is not in scope here. Javadoc on implementations, which is most of it today,
+      is removed by the layering work in Phase 2.
+
+```text
+Take a look at every code comment in <my codebase | this section of the code>.
+
+Categorise each comment as:
+
+- Tautology: simply repeats what is already visible from the code
+- Excuse: many comments allow the agent to get away with a hacky implementation, which then gets propagated through the code
+- Stale: references code or implementation information that is no longer relevant
+- Decision Record: documents an important, non-obvious decision about the code
+
+For each comment, take this action:
+
+- Tautology/Stale: delete the comment
+- Excuse: delete the comment and file an issue to fix the hacky implementation
+- Decision Record: move it into an ADR
+
+Once this is done:
+
+- Create a lint rule banning comments for <my codebase | this section of the code>
+- Take a ratchet approach, assuming not all comments will be deleted this PR
+- Create a /delete-comment skill in this repository so we can repeat this process later
+- Estimate for me how many lines of code we'll shed by deleting all comments
+```
+
+---
+
+## Phase 2: Restructure jpm
+
+The goal is code that a new contributor can read top to bottom.
+
+### Split the large classes
+
+- [ ] `cli/Commands.java` (≈1,300 lines): one class per command, plus a command registry that is the
+      single source for `jpm help`, the README command table and shell completions.
+- [ ] `importer/GradleImport.java` (≈900 lines), `resolve/Resolver.java` (≈670 lines) and
+      `Manifest.java` (≈650 lines): split by responsibility (parsing, validation, inheritance, model).
+
+### Remove duplication and unnecessary abstractions
+
+- [ ] Audit every class and interface with a single implementation or a single caller and inline it
+      where it adds nothing.
+- [ ] One JSON/JSONC reader and writer, shared by jpm, jpm-publish and jpm-intellij (jpm-publish has
+      its own `Json.java` today).
+- [ ] One HTTP stack (`util/Http.java` and `util/Net.java` overlap).
+- [ ] One place for version parsing and comparison (Maven, Gradle, npm syntaxes) with one entry point.
+- [ ] The help text in `cli/Main.java` and the README table are generated from the command registry
+      instead of being written twice.
+
+### Public API, internal API, implementations
+
+**Needs:** layering rules from Phase 0.
+
+- [ ] Move code into the three layers.
+- [ ] Javadoc on every public and internal API type and member; none on implementations.
+- [ ] Build fails on missing Javadoc in `dev.jpm.api` and on exported packages outside it.
+
+### Tests
+
+- [ ] Reorganize tests to mirror the new package layout: unit tests per area, plus one set of
+      end-to-end tests that run the `jpm` binary on the projects in `fixtures/`.
+- [ ] Remove tests that only check implementation details, repeat other tests, or exist for a bug in
+      code that no longer exists. Merge grab-bag tests (for example `SmallGapsTest`) into the tests of
+      the feature they cover.
+- [ ] Make tests hermetic: serve Maven and Git fixtures from a local server or directory instead of
+      the network (about 10 test classes reach out today). Keep a small, separately run set of live
+      tests against Maven Central.
+- [ ] Shared test helpers (temporary projects, fake repositories) in one place.
+- [ ] Coverage report in CI, to find dead code during the restructure.
+
+---
+
+## Phase 3: Compiler agnostic, every supported Java version
+
+### No manual reading of Java source
+
+jpm must not parse `.java` (or `.kt`) files itself; whatever it needs comes from the compiler, from
+compiled classes or from the manifest.
+
+- [ ] `build/Modules.java` reads `module-info.java` with regular expressions. Read the compiled
+      `module-info.class` instead, or let the compiler resolve modules (`--module-source-path`).
+- [ ] `build/Scripts.java` reads `//DEPS` lines from script sources. Move script dependencies into the
+      manifest (`scripts` entries with their own dependencies) and drop `//DEPS`, or keep it only as an
+      import format.
+- [ ] `build/Compiler.java` matches javac's error text (`"not allowed with --release"`). Decide such
+      cases from the arguments before compiling instead.
+- [ ] Generated sources (`Defines`, the bundle launcher) are generated per language or as class files,
+      so a Kotlin-only module does not need Java source generation.
+- [ ] A check in CI that fails when `src/` gains new code that opens `.java` files for reading.
+
+### Every supported Java version
+
+**Needs:** Java support matrix from Phase 0.
+
+- [ ] Build projects targeting each supported version (`"target": "8"` through the newest), including
+      the differences around `--release`, modules (none on 8), and `-source/-target` on Java 8.
+- [ ] Test matrix in CI: build and test the fixtures with each supported JDK as `"java"` and each
+      supported `"target"`.
+- [ ] Clear error when a combination cannot work (for example a module project targeting 8).
+- [ ] Follow vendor end-of-life dates: dropping a version is an announced, deliberate change.
+
+---
+
+## Phase 4: Public API replaces machine-readable commands
+
+**Needs:** API shape (Phase 0), layering (Phase 2).
+
+- [ ] Public API covering what `jpm info --json/--ide/--classpath` and `jpm schema` give today:
+      project model, modules, folders, scripts, dependencies with scopes and sources, every classpath,
+      resolved defines, and the manifest schema.
+- [ ] Publish the API to Maven Central with Javadoc and sources.
+- [ ] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output.
+- [ ] **jpm-publish:** use the public API instead of `jpm info --json`.
+- [ ] Extensions get a documented way to use the API (for example a template project).
+- [ ] Deprecate `jpm info --json/--ide/--classpath` and `jpm schema` for one minor release (with a
+      warning that points to the API), then remove them. Plain `jpm info` stays as a human-readable
+      summary.
+
+### Project-level extensions
+
+Extensions are only installed globally today (`jpm add -g`), so CI has to install each one before it
+can build, and the IDE toolbar only knows the extensions written into the plugin.
+
+- [ ] Declare extensions in the root `project.jsonc`, with a version, next to their settings in the
+      existing `"extensions"` field. Pin them in `project.lock`.
+- [ ] `jpm add` without `-g` adds an extension to the root `project.jsonc` (and `jpm remove` takes it
+      out); `-g` keeps installing it globally. jpm detects extensions automatically from a marker
+      the extension declares in its own manifest, so no extra flag is needed.
+- [ ] `jpm install` installs the declared extensions, so CI needs no `jpm add -g` steps.
+- [ ] Settings for an extension that is not declared in the root `project.jsonc` give a warning that
+      names the extension and the command that fixes it (`jpm add <extension>`).
+- [ ] A declared extension takes precedence over a global one of the same name inside the project.
+- [ ] Every extension exposes a small public API that lists its commands with a description (and
+      their options), so IDEs can show them without knowing the extension in advance.
+- [ ] **jpm-intellij:** the jpm toolbar lists the commands of every installed and declared extension
+      from that API instead of a built-in list.
+
+---
+
+## Phase 5: Ecosystem
+
+### jpm-changeset
+
+An extension that works like [changesets](https://github.com/changesets/changesets) for npm.
+`.changeset/` is already reserved by jpm.
+
+- [ ] `jpm changeset` (or `jpm changeset add`): ask which workspace modules changed, the bump
+      (major/minor/patch) and a summary; write a Markdown file to `.changeset/`.
+- [ ] `jpm changeset version`: apply pending changesets: bump `version` in each `project.jsonc`, bump
+      dependents inside the workspace, write `CHANGELOG.md` per module, delete the applied files.
+- [ ] `jpm changeset status`: list pending changesets; fail in CI when a changed module has none.
+- [ ] `jpm changeset publish`: publish bumped modules through jpm-publish and tag them.
+- [ ] Prerelease mode (`pre enter/exit`), and linked/fixed version groups.
+- [ ] A GitHub Action that opens and updates a "Version packages" pull request.
+
+### jpm-format
+
+- [ ] Get jpm-format into a usable state:
+  - [ ] formatting with parity to IntelliJ IDEA's formatter, so formatting in the IDE and with
+        `jpm format` gives the same result;
+  - [ ] linting rules with parity to IntelliJ IDEA's inspections;
+  - [ ] a language server (LSP) for formatting and lint diagnostics in VS Code and other editors.
+- [ ] Run `jpm format --check` in CI for all jpm projects.
+
+### jpm-intellij: migration UI
+
+Migrating a project today only shows the output of `jpm import` in a plain text box.
+
+- [ ] Show the generated `project.jsonc` in an editor with syntax highlighting, and let the user edit
+      it before it is written.
+- [ ] Show warnings prominently, above or next to the manifest rather than at the bottom of the
+      output, so they are reviewed before migrating.
+- [ ] Offer to switch from the Maven layout to the jpm layout: move the source, resource and test
+      folders, and drop `"layout": "maven"` from the manifest.
+- [ ] Offer to delete what is left of the old build: Gradle files and folders (`build.gradle(.kts)`,
+      `settings.gradle(.kts)`, `gradle/`, `gradlew`, `gradlew.bat`, `gradle.properties`), and `pom.xml`
+      and the Maven wrapper for Maven projects.
+- [ ] Scan the whole project and flag everything that still uses Gradle or Maven, for example CI
+      workflows, Dockerfiles, scripts that call `./gradlew` or `mvn`, Renovate or Dependabot settings,
+      `.gitignore` entries and IDE run configurations.
+
+### Editing project.jsonc
+
+- [ ] **jpm-intellij:** ctrl+click on values in `project.jsonc` goes to what they name:
+  - `main`, `defineClass` and `scripts`: the class (or the script file);
+  - dependencies and `exclude`: the library under External Libraries in the project view;
+  - `relocate`: the package in the project view;
+  - `license`: the license file (`LICENSE`, `LICENSE.md`, `LICENSE.txt`, `LICENCE`, `COPYING` and the
+    other common spellings);
+  - `filter`: the file;
+  - `workspace`, `sources` and `resources`: the folder in the project view;
+  - `patches`: the patch file;
+  - `hooks`: the script the hook runs;
+  - `java`: the JDK;
+  - values in `define` for a dependency: the define where that dependency declares it.
+- [ ] Every value that names a file or folder (`filter`, `patches`, `scripts`, `sources`, `resources`,
+      workspace modules, env files) gives a warning when it does not exist. One shared check, not one
+      per field.
+- [ ] **jpm-intellij:** renames update the manifest: renaming a class updates `main` and
+      `defineClass`, moving a package updates `relocate`, renaming a script updates the `hooks` that run
+      it, moving a file or folder updates the paths that name it.
+- [ ] Completion of dependency coordinates and versions, and the resolved version from `project.lock`
+      shown next to each dependency (inlay hint).
+- [ ] An inspection for dependencies with a newer version, with a quick fix that runs `jpm update`.
+- [ ] Documentation from the schema on hover, for every field.
+- [ ] jpm-intellij and the language server (see jpm-format) highlight jpm's warnings and errors in
+      `project.jsonc`, at the value they are about.
+
+### jpm-intellij: more
+
+- [ ] Run configurations generated from `main` entries and `scripts`.
+- [ ] A dependency graph view, using what `jpm why` knows.
+- [ ] New projects ignore jpm's folders (`dist/`, `.cache/`, `.env.local`) in Git. The wizard runs
+      `jpm init`, which only writes `.gitignore` when there is none, so a `.gitignore` that exists
+      already (for example one IntelliJ created) is left without them. `jpm init` and `jpm import`
+      add the missing entries to an existing `.gitignore` instead of skipping it.
+
+### Licenses
+
+- [ ] The schema offers every SPDX license id as a value for `license`, generated from the SPDX
+      license list (https://spdx.org/licenses/, machine-readable at
+      https://spdx.org/licenses/licenses.json) and linking to it. It still accepts SPDX expressions such
+      as `MIT OR Apache-2.0`.
+- [ ] `jpm doctor`: when the project has a license file but no `license`, suggest the SPDX id, detected
+      from the file's text where possible; warn when `license` and the license file do not match.
+- [ ] `jpm import` fills in `license` the same way.
+- [ ] Creating a license: when `license` is set and no license file exists, create one from the SPDX
+      text (with the year and the author filled in). `jpm init` asks for (or takes) a license and does
+      the same.
+
+### Renovate
+
+- [ ] A Renovate manager for `project.jsonc` (Maven coordinates, `github:` dependencies, Gradle
+      plugins) that keeps comments and formatting, and updates `project.lock` with
+      `jpm install`. Start with a shareable preset using Renovate's regex manager, then contribute a
+      native manager upstream.
+- [ ] Renovate updates the `"java"` field and the version pins in the install scripts.
+- [ ] Use it on the jpm repositories themselves.
+
+### More
+
+- [ ] Dependabot support, or document that Renovate is the supported option.
+
+---
+
+## Phase 6: User-facing documentation
+
+- [ ] Rewrite the README for users, not contributors: what jpm is, install, a five-minute start, the
+      everyday commands, and links to the rest. The README is about 600 lines today and mixes release
+      engineering, internals and reference.
+- [ ] Move reference material (manifest fields, version syntax, environment variables, how resolution
+      works) into `docs/`, generated from the schema and command registry where possible.
+- [ ] Move release and CI details into `CONTRIBUTING.md`.
+- [ ] Keep `MIGRATION.md`, linked from the README.
+- [ ] A docs site built from `docs/` (optional, once the content has settled).
+
+---
+
+## Suggested additions
+
+Items that are not in the original list but would pay off.
+
+- [ ] **Shell completions** for bash, zsh, fish and PowerShell, generated from the command registry
+      (`jpm completions <shell>`).
+- [ ] **`jpm doctor`:** check PATH order, shims, installed JDKs, cache health, network access to
+      configured repositories, the license (see Licenses), unused dependencies and duplicate classes on
+      the classpath (both read from compiled classes, not sources), and print what to fix.
+- [ ] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
+      resolving again, instead of failing.
+- [ ] **Private repositories:** credentials for downloading from Maven repositories that need them,
+      from environment variables like jpm-publish's (`JPM_REPO_<NAME>_USERNAME` / `_PASSWORD`), never
+      from `project.jsonc`.
+- [ ] **Cache commands:** `jpm cache size` and `jpm cache clean`.
+- [ ] **Workspace-wide commands:** run a script or command in every workspace module, with a
+      `--filter` like pnpm's.
+- [ ] **Testing:** `jpm test --watch`, and JUnit XML reports for CI.
+- [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest
+      errors), and what to do next; no stack traces unless `--verbose`.
+- [ ] **Supply-chain checks:** verify checksums (and signatures where published) of every downloaded
+      artifact, store hashes in `project.lock`, and fail `--frozen` installs on a mismatch.
+- [ ] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
+- [ ] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension.
+- [ ] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
+      give byte-identical output; checked in CI.
+- [ ] **Performance budget:** measure `jpm install` and no-op `jpm build` on the fixtures in CI and fail
+      on large regressions.
+- [ ] **Windows parity:** run the full test suite on Windows in CI, not only the native smoke test.
+- [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …) and a template
+      repository for writing new ones.
+- [ ] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists.
+- [ ] **Document the versioned schema URL:** every release already ships `project.schema.json`, so
+      `releases/download/<version>/project.schema.json` is a stable URL per version. The README only
+      mentions `releases/latest/…`; document the pinned form as the replacement for `jpm schema`.
