@@ -14,6 +14,7 @@ import java.util.stream.Stream;
  *       it belongs to, for categorizing.</li>
  *   <li>{@code java checks/Comments.java strip <dir or file>...} removes them: a comment on a line of its
  *       own goes with its line, a trailing one with the space before it.</li>
+ *   <li>A path starting with {@code !} is left out, for example vendored code: {@code src '!src/vendor'}.</li>
  *   <li>{@code java checks/Comments.java check <dir or file>...} fails when there are more comments than
  *       the baseline in {@code checks/comments-baseline.txt}, or fewer (the baseline must come down with
  *       them); {@code update} lowers the baseline. Repositories without other ratchets use this as their
@@ -139,7 +140,9 @@ public final class Comments {
 
     static List<Path> javaFiles(List<String> roots) throws IOException {
         List<Path> out = new ArrayList<>();
+        List<Path> excluded = roots.stream().filter(r -> r.startsWith("!")).map(r -> Path.of(r.substring(1)).normalize()).toList();
         for (String r : roots) {
+            if (r.startsWith("!")) continue;
             Path root = Path.of(r);
             if (Files.isRegularFile(root)) {
                 out.add(root);
@@ -149,6 +152,7 @@ public final class Comments {
                 s.filter(p -> p.toString().endsWith(".java") && Files.isRegularFile(p)).sorted().forEach(out::add);
             }
         }
+        out.removeIf(p -> excluded.stream().anyMatch(x -> p.normalize().startsWith(x)));
         return out;
     }
 }
