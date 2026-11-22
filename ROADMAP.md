@@ -549,7 +549,8 @@ Builds the test and tooling base that the restructure depends on.
 2. **`jpm api` server** in jpm, with protocol tests in the end-to-end set. Done: protocol 1.0 with
    `project/load`, `project/classpaths` and `schema/manifest`; `extensions/list` and `check/run` come with
    items 7 and 8.
-3. **Client jar** `dev.jpm:jpm-api`.
+3. **Client jar** `dev.jpm:jpm-api`. The client is done (`dev.jpm.api.client.JpmClient`, the model
+   records in `dev.jpm.api.model`); publishing to Maven Central is not set up yet.
    - Finds the global jpm, starts it and checks the version.
    - Published to Maven Central with Javadoc and sources. Release automation lives in CI next to the
      binary release.
