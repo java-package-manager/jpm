@@ -20,6 +20,7 @@
         }
       },
       "javadoc": true
-    }
+    },
+    "github:java-package-manager/jpm-changeset": "^0.2.0"
   }
 }

@@ -84,4 +84,11 @@ checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/p
   and `project.schema.json`. A version with a `-` (such as `1.0.0-rc1`) is a prerelease.
 - Every other commit on `main` is a canary prerelease named `<version>-<commit>`, which
   `jpm upgrade --canary` installs. CI keeps the newest ten.
-- So releasing is a commit that changes `"version"`; nothing is tagged by hand.
+- A change users notice comes with a changeset: `jpm changeset add --module jpm --patch -m "..."` (or
+  `--minor`, `--major`) writes one to `.changeset/`; commit it with the change. Pull requests are checked
+  for one (`jpm changeset status --check`).
+- The Release workflow keeps a "Version packages" pull request with what `jpm changeset version` makes of
+  the pending changesets: the new `"version"` and `cli/CHANGELOG.md`. Merging it is the release; the
+  version's changelog entry becomes the GitHub release's notes.
+- So releasing is merging that pull request (or any commit that changes `"version"`); nothing is tagged by
+  hand.

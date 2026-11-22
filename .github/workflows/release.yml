@@ -1,0 +1,27 @@
+# Keeps a "Version packages" pull request with what `jpm changeset version` makes of the pending changesets
+# (.changeset/). Merging it bumps the version in project.jsonc, and CI (ci.yml) then releases that version as
+# it always has: tag, binaries, GitHub release (with the CHANGELOG.md entry as notes) and dev.jpm:jpm-api.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: version pull request
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: java-package-manager/setup-jpm@v1
+      - uses: java-package-manager/changeset-action@v1
