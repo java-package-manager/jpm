@@ -22,7 +22,7 @@ jobs:
       kind: ${{ steps.decide.outputs.kind }}
       version: ${{ steps.decide.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Decide between a release and a canary build
         id: decide
@@ -62,7 +62,7 @@ jobs:
       # smoke tests run jpm --version a lot; they should not ask GitHub for newer versions each time
       JPM_NO_UPDATE_CHECK: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Every commit on the main branch is released as a canary build, versioned <version>-<commit>.
       - name: Stamp the canary version
@@ -82,7 +82,7 @@ jobs:
           cache: ""
 
       - name: Cache jpm downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/../jpm-home/repository
           key: jpm-${{ matrix.name }}-${{ hashFiles('project.lock') }}
@@ -91,7 +91,7 @@ jobs:
       - name: Bootstrap
         run: ./bootstrap.sh
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         id: python
         with:
           python-version: "3.12"
@@ -306,7 +306,7 @@ jobs:
           Pop-Location
           if ($v -notmatch 'version "17') { throw "the java shim broke after jpm upgrade" }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: jpm-${{ matrix.name }}
           path: cli/dist/jpm${{ matrix.exe }}
@@ -322,8 +322,8 @@ jobs:
       JPM_NO_UPDATE_CHECK: "1"
       JPM_E2E_BINARY: ${{ github.workspace }}/.cache/native/jpm
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: jpm-linux-x64
           path: .cache/native
@@ -340,8 +340,8 @@ jobs:
       JPM_NO_UPDATE_CHECK: "1"
       JPM_E2E_BINARY: ${{ github.workspace }}/.cache/native/jpm
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: jpm-linux-x64
           path: .cache/native
@@ -370,8 +370,8 @@ jobs:
       JPM_HOME: ${{ github.workspace }}/../jpm-home
       JPM_NO_UPDATE_CHECK: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: jpm-linux-x64
           path: .cache/native
@@ -381,7 +381,7 @@ jobs:
       - name: Summary
         if: always()
         run: cat .cache/coverage/summary.md >> "$GITHUB_STEP_SUMMARY" || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage
@@ -399,8 +399,8 @@ jobs:
       JPM_PUBLISH_THENEXTLVL_USERNAME: ${{ secrets.JPM_PUBLISH_THENEXTLVL_USERNAME }}
       JPM_PUBLISH_THENEXTLVL_PASSWORD: ${{ secrets.JPM_PUBLISH_THENEXTLVL_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: jpm-linux-x64
       - name: Publish
@@ -425,9 +425,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ needs.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -469,9 +469,9 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 

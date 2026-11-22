@@ -249,7 +249,7 @@ jpm installs a missing JDK automatically, and inside the project your shell's `j
 Replace the Maven or Gradle setup with jpm. A GitHub Actions example:
 
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v7
 - name: Install jpm
   run: |
     curl -fsSL https://github.com/java-package-manager/jpm/releases/latest/download/install.sh | sh
