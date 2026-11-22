@@ -113,9 +113,8 @@ The goal is code that a new contributor can read top to bottom.
 
 - [x] Audit every class and interface with a single implementation or a single caller and inline it
       where it adds nothing.
-- [~] One JSON/JSONC reader and writer, shared by jpm, jpm-publish and jpm-intellij (jpm-publish has
-      its own `Json.java` today). Done in jpm: `dev.jpm.api.json.Jsonc` in the api module. jpm-publish
-      and jpm-intellij switch to it with the client jar (Milestone 4).
+- [x] One JSON/JSONC reader and writer, shared by jpm, jpm-publish and jpm-intellij:
+      `dev.jpm.api.json.Jsonc` in `dev.jpm:jpm-api`. jpm-publish dropped its `Json.java`, jpm-intellij Gson.
 - [x] One HTTP stack (`util/Http.java` and `util/Net.java` overlap).
 - [x] One place for version parsing and comparison (Maven, Gradle, npm syntaxes) with one entry point.
 - [x] The help text in `cli/Main.java` and the README table are generated from the command registry
@@ -556,10 +555,11 @@ Builds the test and tooling base that the restructure depends on.
    `dev.jpm.api.model`). Done. Published as `dev.jpm:jpm-api` to `https://repo.thenextlvl.net` by CI.
    - Finds the global jpm, starts it and checks the version.
 4. **jpm-publish** moves to the client (`dev.jpm:jpm-api`) and drops its own
-   `Json.java`.
+   `Json.java`. Done.
 5. **jpm-intellij** moves to the client.
    - Replace `Jpm.run(... "info", "--json", "--ide")` in `JpmSync` and in the tests.
    - When no global jpm is installed, offer to install one.
+   - Done; it also offers `jpm upgrade` for a jpm without the protocol, and gets the schema over it.
 6. **Project-level extensions.**
    - Extensions are declared in the root `project.jsonc` and pinned in `project.lock`.
    - `jpm add`/`jpm remove` without `-g`, with the extension marker for detection.
