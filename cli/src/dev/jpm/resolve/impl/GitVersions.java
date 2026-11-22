@@ -160,12 +160,11 @@ public final class GitVersions {
 
     Selected commitSelection(DepKey key, String commit, String tag) {
         Map<String, String> tags = tags(key);
-        for (Map.Entry<String, String> t : tags.entrySet()) {
-            if (t.getValue().equals(commit) && Tags.version(key.module(), t.getKey(), tags.keySet()) != null) {
-                return tagSelection(key, t.getKey(), commit);
-            }
-        }
         GitModule mod = GitModule.locate(key, commit);
+        for (Map.Entry<String, String> t : tags.entrySet()) {
+            String fromTag = t.getValue().equals(commit) ? Tags.version(key.module(), t.getKey(), tags.keySet()) : null;
+            if (fromTag != null && Version.of(fromTag).equals(Version.of(mod.version()))) return new Selected(fromTag, commit, t.getKey());
+        }
         return new Selected(mod.version() + "+" + commit.substring(0, 7), commit, tag);
     }
 }

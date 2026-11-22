@@ -161,6 +161,7 @@ class EndToEndTest {
         Fs.write(lib.resolve("src/lib/Lib.java"), "package lib; public class Lib { public static String v() { return \"two\"; } }");
         Fs.write(lib.resolve("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"1.1.0\" }");
         git(lib, "commit", "-qam", "1.1.0");
+        git(lib, "tag", "1.1.0-canary1");
         s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
         Fs.write(s.project.resolve("src/app/Main.java"),
                 "package app; public class Main { public static void main(String[] a) { System.out.println(lib.Lib.v()); } }");
