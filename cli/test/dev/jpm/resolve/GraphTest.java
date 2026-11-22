@@ -1,5 +1,6 @@
 package dev.jpm.resolve;
 
+import dev.jpm.version.Tags;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.util.JpmException;
@@ -80,12 +81,12 @@ class GraphTest {
         DepKey api = DepKey.parse("github:u/r/api");
         DepKey plain = DepKey.parse("github:u/r");
         List<String> lockstep = List.of("v1.0.0", "v1.1.0", "nightly");
-        assertEquals("1.1.0", GitVersions.tagVersion(api, "v1.1.0", lockstep));
-        assertNull(GitVersions.tagVersion(plain, "nightly", lockstep));
+        assertEquals("1.1.0", Tags.version(api.module(), "v1.1.0", lockstep));
+        assertNull(Tags.version(plain.module(), "nightly", lockstep));
         List<String> prefixed = List.of("api/v1.2.0", "impl/v0.3.0", "v9.0.0");
-        assertEquals("1.2.0", GitVersions.tagVersion(api, "api/v1.2.0", prefixed));
-        assertNull(GitVersions.tagVersion(api, "v9.0.0", prefixed));
-        assertNull(GitVersions.tagVersion(api, "impl/v0.3.0", prefixed));
+        assertEquals("1.2.0", Tags.version(api.module(), "api/v1.2.0", prefixed));
+        assertNull(Tags.version(api.module(), "v9.0.0", prefixed));
+        assertNull(Tags.version(api.module(), "impl/v0.3.0", prefixed));
     }
 
     @Test

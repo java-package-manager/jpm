@@ -1,5 +1,6 @@
 package dev.jpm.cli;
 
+import dev.jpm.version.Tags;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.git.GitRepo;
@@ -59,7 +60,7 @@ final class OutdatedCommand extends Command {
                         List<Version> vs = new ArrayList<>();
                         Map<String, String> tags = GitRepo.of(d.key()).tags();
                         for (String t : tags.keySet()) {
-                            String v = DepArgs.tagVersion(d.key(), t, tags.keySet());
+                            String v = Tags.version(d.key().module(), t, tags.keySet());
                             if (v != null) vs.add(Version.of(v));
                         }
                         VersionSpec spec = VersionSpecs.parse(d.spec(), true);

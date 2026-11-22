@@ -113,10 +113,11 @@ The goal is code that a new contributor can read top to bottom.
 
 - [ ] Audit every class and interface with a single implementation or a single caller and inline it
       where it adds nothing.
-- [ ] One JSON/JSONC reader and writer, shared by jpm, jpm-publish and jpm-intellij (jpm-publish has
-      its own `Json.java` today).
-- [ ] One HTTP stack (`util/Http.java` and `util/Net.java` overlap).
-- [ ] One place for version parsing and comparison (Maven, Gradle, npm syntaxes) with one entry point.
+- [~] One JSON/JSONC reader and writer, shared by jpm, jpm-publish and jpm-intellij (jpm-publish has
+      its own `Json.java` today). Done in jpm: `dev.jpm.api.json.Jsonc` in the api module. jpm-publish
+      and jpm-intellij switch to it with the client jar (Milestone 4).
+- [x] One HTTP stack (`util/Http.java` and `util/Net.java` overlap).
+- [x] One place for version parsing and comparison (Maven, Gradle, npm syntaxes) with one entry point.
 - [x] The help text in `cli/Main.java` and the README table are generated from the command registry
       instead of being written twice.
 

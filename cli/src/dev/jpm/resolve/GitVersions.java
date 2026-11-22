@@ -1,5 +1,6 @@
 package dev.jpm.resolve;
 
+import dev.jpm.version.Tags;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.git.GitRepo;
@@ -12,7 +13,6 @@ import dev.jpm.version.VersionSpec;
 import dev.jpm.version.VersionSpecs;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -106,7 +106,7 @@ final class GitVersions {
         Map<String, String> tags = tags(key);
         Map<Version, String> byVersion = new LinkedHashMap<>();
         for (String tag : tags.keySet()) {
-            String v = tagVersion(key, tag, tags.keySet());
+            String v = Tags.version(key.module(), tag, tags.keySet());
             if (v != null) byVersion.putIfAbsent(Version.of(v), tag);
         }
         if (locked.test(id)) {
@@ -145,31 +145,11 @@ final class GitVersions {
     Map<String, String> tags(DepKey key) {
         return tagMemo.computeIfAbsent(key.repoKey().toString(), k -> GitRepo.of(key).tags());
     }
-
-    /**
-     * Version a tag stands for, for this module. Prefixed tags ({@code api/v1.2.0}) are used for a module
-     * when the repository has any; otherwise plain tags ({@code v1.2.0}) version the whole workspace.
-     */
-    static String tagVersion(DepKey key, String tag, Collection<String> allTags) {
-        String module = key.module();
-        boolean prefixed = module != null && allTags.stream().anyMatch(t -> t.startsWith(module + "/"));
-        String v;
-        if (prefixed) {
-            if (!tag.startsWith(module + "/")) return null;
-            v = tag.substring(module.length() + 1);
-        } else {
-            if (tag.contains("/")) return null;
-            v = tag;
-        }
-        if (v.startsWith("v")) v = v.substring(1);
-        return v.matches("\\d+(\\.\\d+){0,2}(-[0-9A-Za-z.-]+)?") ? v : null;
-    }
-
     /** Intersection of several specs. */
     Selected tagSelection(DepKey key, String tag, String commit) {
         GitModule mod = GitModule.locate(key, commit);
         String declared = mod.version();
-        String fromTag = tagVersion(key, tag, tags(key).keySet());
+        String fromTag = Tags.version(key.module(), tag, tags(key).keySet());
         if (fromTag != null && !Version.of(fromTag).equals(Version.of(declared))) {
             throw new JpmException(key + ": tag " + tag + " points to a commit whose " + Manifest.FILE
                     + " says version " + declared + ". Tags must match the manifest version.");
@@ -180,7 +160,7 @@ final class GitVersions {
     Selected commitSelection(DepKey key, String commit, String tag) {
         Map<String, String> tags = tags(key);
         for (Map.Entry<String, String> t : tags.entrySet()) {
-            if (t.getValue().equals(commit) && tagVersion(key, t.getKey(), tags.keySet()) != null) {
+            if (t.getValue().equals(commit) && Tags.version(key.module(), t.getKey(), tags.keySet()) != null) {
                 return tagSelection(key, t.getKey(), commit);
             }
         }
