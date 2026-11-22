@@ -18,13 +18,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Protocol results, as JSON values ({@link dev.jpm.api.json.Jsonc#parse(String)}), turned into the model records:
+ * what {@link JpmClient} does with jpm's answers, for programs that have the JSON from elsewhere.
+ */
 @SuppressWarnings("unchecked")
-final class Decode {
-    private Decode() {}
+public final class Results {
+    private Results() {}
 
-    static Project project(Map<String, Object> m) {
+    /**
+     * A {@code project/load} result.
+     *
+     * @param m the result object
+     * @return the project
+     */
+    public static Project project(Map<String, Object> m) {
         return new Project(path(m, "dir"), str(m, "name"), str(m, "version"), bool(m, "workspace"), strings(m, "repositories"),
-                map(m, "extensions"), list(m, "scripts", Decode::script), list(m, "modules", Decode::module), bool(m, "lockfileChanged"));
+                map(m, "extensions"), list(m, "scripts", Results::script), list(m, "modules", Results::module), bool(m, "lockfileChanged"));
     }
 
     static Module module(Map<String, Object> m) {
@@ -36,8 +46,8 @@ final class Decode {
         Jdk jdk = new Jdk(str(j, "spec"), path(j, "home"), integer(j, "release"), str(j, "error"));
         return new Module(str(m, "name"), str(m, "group"), str(m, "version"), str(m, "description"), str(m, "license"), str(m, "url"),
                 path(m, "dir"), str(m, "relativeDir"), str(m, "visibility"), str(m, "package"), str(m, "layout"), main, folders,
-                path(m, "jar"), jdk, list(m, "dependencies", Decode::dependency), list(m, "packages", Decode::pkg),
-                list(m, "defines", Decode::define), list(m, "scripts", Decode::script), map(m, "extensions"), split(m.get("modulePath")));
+                path(m, "jar"), jdk, list(m, "dependencies", Results::dependency), list(m, "packages", Results::pkg),
+                list(m, "defines", Results::define), list(m, "scripts", Results::script), map(m, "extensions"), split(m.get("modulePath")));
     }
 
     static Dependency dependency(Map<String, Object> m) {
@@ -63,9 +73,15 @@ final class Decode {
         return new Script(str(m, "name"), str(m, "run"), str(m, "kind"), deps);
     }
 
-    static Classpaths classpaths(Map<String, Object> m) {
-        return new Classpaths(list(m, "compile", Decode::pkg), list(m, "processor", Decode::pkg), list(m, "runtime", Decode::pkg),
-                list(m, "testCompile", Decode::pkg), list(m, "testRuntime", Decode::pkg), split(m.get("modulePath")));
+    /**
+     * One module's entry of a {@code project/classpaths} result.
+     *
+     * @param m the module's classpaths object
+     * @return its classpaths
+     */
+    public static Classpaths classpaths(Map<String, Object> m) {
+        return new Classpaths(list(m, "compile", Results::pkg), list(m, "processor", Results::pkg), list(m, "runtime", Results::pkg),
+                list(m, "testCompile", Results::pkg), list(m, "testRuntime", Results::pkg), split(m.get("modulePath")));
     }
 
     static ModuleSplit split(Object o) {
@@ -74,7 +90,13 @@ final class Decode {
         return new ModuleSplit(str(m, "name"), paths(m, "modulePath"), paths(m, "classPath"), strings(m, "options"));
     }
 
-    static Problem problem(Object o) {
+    /**
+     * A problem, such as the {@code data} of an error.
+     *
+     * @param o the problem object
+     * @return the problem, or null when {@code o} is not an object
+     */
+    public static Problem problem(Object o) {
         if (!(o instanceof Map<?, ?> raw)) return null;
         Map<String, Object> m = (Map<String, Object>) raw;
         Map<String, Object> loc = map(m, "location");

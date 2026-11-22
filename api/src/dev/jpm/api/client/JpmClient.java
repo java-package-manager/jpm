@@ -171,7 +171,7 @@ public final class JpmClient implements AutoCloseable {
         params.put("dir", dir.toAbsolutePath().toString());
         params.put("frozen", options.frozen());
         params.put("sources", options.sources());
-        return Decode.project(call("project/load", params));
+        return Results.project(call("project/load", params));
     }
 
     /**
@@ -186,7 +186,7 @@ public final class JpmClient implements AutoCloseable {
     public Map<String, Classpaths> classpaths(Path dir, List<String> modules) {
         Map<String, Object> r = call("project/classpaths", Map.of("dir", dir.toAbsolutePath().toString(), "modules", modules));
         Map<String, Classpaths> out = new LinkedHashMap<>();
-        if (r.get("modules") instanceof Map<?, ?> m) m.forEach((k, v) -> out.put(k.toString(), Decode.classpaths((Map<String, Object>) v)));
+        if (r.get("modules") instanceof Map<?, ?> m) m.forEach((k, v) -> out.put(k.toString(), Results.classpaths((Map<String, Object>) v)));
         return out;
     }
 
@@ -225,7 +225,7 @@ public final class JpmClient implements AutoCloseable {
                 int code = e.get("code") instanceof Number n ? n.intValue() : -32603;
                 String message = String.valueOf(e.get("message"));
                 if (code == Protocol.PROTOCOL_MISMATCH) throw new ProtocolMismatch(message);
-                throw new JpmError(code, message, Decode.problem(e.get("data")));
+                throw new JpmError(code, message, Results.problem(e.get("data")));
             }
             return response.get("result") instanceof Map<?, ?> r ? (Map<String, Object>) r : Map.of();
         } catch (IOException e) {
