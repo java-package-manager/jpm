@@ -31,6 +31,7 @@ bin/jpm test --exclude-tag live # unit and end-to-end tests, no network
 bin/jpm test --tag live         # the few tests that need Maven Central
 bin/jpm test dev.jpm.e2e.EndToEndTest
 checks/coverage.sh              # tests with JaCoCo; report in .cache/coverage/
+checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/perf-budget.properties
 ```
 
 - Unit tests live next to the area they test (`cli/test/dev/jpm/<area>`, `api/test/...`). Every test gets an empty jpm home

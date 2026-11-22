@@ -378,9 +378,9 @@ Items that are not in the original list but would pay off.
       artifact, store hashes in `project.lock`, and fail `--frozen` installs on a mismatch.
 - [ ] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
 - [ ] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension.
-- [ ] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
+- [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
       give byte-identical output; checked in CI.
-- [ ] **Performance budget:** measure `jpm install` and no-op `jpm build` on the fixtures in CI and fail
+- [x] **Performance budget:** measure `jpm install` and no-op `jpm build` on the fixtures in CI and fail
       on large regressions.
 - [ ] **Windows parity:** run the full test suite on Windows in CI, not only the native smoke test.
 - [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …) and a template

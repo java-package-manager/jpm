@@ -107,6 +107,10 @@ jobs:
       - name: Native image
         run: bin/jpm build --native
 
+      - name: Performance budget
+        if: matrix.name == 'linux-x64'
+        run: checks/perf.sh cli/dist/jpm
+
       - name: End-to-end tests on the native binary
         if: runner.os != 'Windows'
         run: JPM_E2E_BINARY="$PWD/cli/dist/jpm" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest
