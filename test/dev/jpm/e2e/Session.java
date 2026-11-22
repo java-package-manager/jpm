@@ -23,7 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * transcript, which {@link #verify(String)} compares with {@code fixtures/expected/<name>.txt}.
  *
  * <p>The binary is {@code $JPM_E2E_BINARY} (CI points it at the native image), otherwise jpm's classes on
- * a JVM. {@code JPM_UPDATE_EXPECTED=1} writes the transcripts instead of comparing them.
+ * a JVM with the options in {@code JPM_TEST_JVM_ARGS} (so a coverage agent sees the end-to-end runs too).
+ * {@code JPM_UPDATE_EXPECTED=1} writes the transcripts instead of comparing them.
  */
 final class Session {
     static final Path FIXTURES = Path.of("fixtures").toAbsolutePath();
@@ -181,8 +182,12 @@ final class Session {
     private static List<String> binary() {
         String bin = System.getenv("JPM_E2E_BINARY");
         if (bin != null && !bin.isBlank()) return List.of(Path.of(bin).toAbsolutePath().toString());
-        return List.of(Path.of(System.getProperty("java.home"), "bin", "java").toString(), "-XX:+UseSerialGC",
-                "-XX:TieredStopAtLevel=1", "-cp", System.getProperty("java.class.path"), "dev.jpm.cli.Main");
+        List<String> cmd = new ArrayList<>(List.of(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1"));
+        String extra = System.getenv("JPM_TEST_JVM_ARGS");
+        if (extra != null && !extra.isBlank()) cmd.addAll(List.of(extra.strip().split("\\s+")));
+        cmd.addAll(List.of("-cp", System.getProperty("java.class.path"), "dev.jpm.cli.Main"));
+        return cmd;
     }
 
     private static final Pattern JDK_ID = Pattern.compile("\\b[a-z_]+-\\d+(\\.\\d+)*(\\+\\d+)?(-[\\w.]+)?(?=, release)");

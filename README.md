@@ -331,7 +331,8 @@ own bytecode level. Modular jars are patched as their module (`--patch-module`),
 **Tests** run on the JUnit Platform console launcher matching the resolved platform version; any
 platform engine works. `jpm test com.example.FooTest`, `jpm test 'com.example.*'` or
 `jpm test 'com.example.FooTest#bar'` select tests; `--tag <expr>` and `--exclude-tag <expr>` select
-by JUnit tag (`jpm test --exclude-tag live`).
+by JUnit tag (`jpm test --exclude-tag live`). `JPM_TEST_JVM_ARGS` adds options to the JVM running the
+tests, for example a coverage agent (`-javaagent:jacocoagent.jar=destfile=jacoco.exec`).
 
 **Scripts** run with `jpm run <name>`. `.java` scripts run on the source launcher with the runtime
 classpath, plus the dependencies they declare JBang-style before their first declaration
@@ -570,6 +571,7 @@ jar and is picked up by native-image automatically.
 | `JPM_NO_UPDATE_CHECK` | `jpm version` does not look for a newer jpm |
 | `JPM_JAVA` | JDK for the `java` shims in this shell, e.g. `21` |
 | `JPM_JVM_ARGS` | JVM options for `jpm start` and `jpm dev` |
+| `JPM_TEST_JVM_ARGS` | JVM options for the JVM running the tests (`jpm test`), after `testJvmArgs` |
 | `JPM_BUNDLE_CACHE` | Where bundles unpack their nested jars (default: the temp directory) |
 | `JPM_MAVEN_CENTRAL`, `JPM_FOOJAY_URL` | Mirrors for Maven Central and the JDK index |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Proxy for downloads (any case), unless the `https.proxyHost` / `http.proxyHost` system properties set one |

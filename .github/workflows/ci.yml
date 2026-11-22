@@ -327,6 +327,37 @@ jobs:
       - name: Live tests
         run: bin/jpm test --frozen --tag live
 
+  # Line coverage of the unit and end-to-end tests, to find dead code: the report is an artifact, the
+  # summary is shown on the run's page.
+  coverage:
+    name: coverage
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      JPM_HOME: ${{ github.workspace }}/../jpm-home
+      JPM_NO_UPDATE_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+      - name: Bootstrap
+        run: ./bootstrap.sh
+      - name: Tests with coverage
+        run: checks/coverage.sh
+      - name: Summary
+        if: always()
+        run: cat .cache/coverage/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: |
+            .cache/coverage/html
+            .cache/coverage/coverage.xml
+            .cache/coverage/summary.md
+
   release:
     name: release
     if: needs.version.outputs.kind == 'release'

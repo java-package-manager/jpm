@@ -56,6 +56,7 @@ public final class TestRunner {
         // get these options, so tests of Gradle plugins do too
         if (m.manifest.dependencies.stream().anyMatch(d -> d.key().isGradle())) cmd.addAll(GRADLE_JVM_ARGS);
         cmd.addAll(m.manifest.testJvmArgs);
+        cmd.addAll(extraJvmArgs(System.getenv("JPM_TEST_JVM_ARGS")));
         cmd.add("-cp");
         cmd.add(Compiler.join(Compiler.distinct(full)));
         cmd.add("org.junit.platform.console.ConsoleLauncher");
@@ -77,6 +78,12 @@ public final class TestRunner {
         for (String t : selection.excludedTags()) cmd.add("--exclude-tag=" + t);
         Log.step("Testing", m.name());
         return Exec.inherit(m.dir, cmd, Env.forChild(b.project.dir, Env.Mode.DEVELOPMENT));
+    }
+
+    /** JVM options from {@code JPM_TEST_JVM_ARGS}, separated by spaces, for example a coverage agent. */
+    static List<String> extraJvmArgs(String value) {
+        if (value == null || value.isBlank()) return List.of();
+        return List.of(value.strip().split("\\s+"));
     }
 
     /** What Gradle opens in the JDK for its daemon and workers (JpmsConfiguration in Gradle's sources). */

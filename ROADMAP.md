@@ -139,7 +139,7 @@ The goal is code that a new contributor can read top to bottom.
       the network (about 10 test classes reach out today). Keep a small, separately run set of live
       tests against Maven Central.
 - [ ] Shared test helpers (temporary projects, fake repositories) in one place.
-- [ ] Coverage report in CI, to find dead code during the restructure.
+- [x] Coverage report in CI, to find dead code during the restructure.
 
 ---
 
