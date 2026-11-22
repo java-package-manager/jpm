@@ -213,9 +213,9 @@ final class Session {
             }
             s = s.replace(p.toUri().toString(), label + "/").replace(p.toString(), label);
         }
+        s = JDK_ID.matcher(s).replaceAll("<jdk>");
         s = s.replace(dev.jpm.BuildConfig.VERSION, "<jpm-version>");
         s = COMMIT.matcher(s).replaceAll("<commit>");
-        s = JDK_ID.matcher(s).replaceAll("<jdk>");
         s = MILLIS.matcher(s).replaceAll("after <n> ms");
         s = SHA256.matcher(s).replaceAll("\"sha256\": \"<sha256>\"");
         s = INPUTS.matcher(s).replaceAll("\"inputs\": \"<inputs>\"");
