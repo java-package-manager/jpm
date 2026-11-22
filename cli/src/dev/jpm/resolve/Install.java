@@ -28,6 +28,7 @@ public final class Install {
 
     /** Brings {@code project.lock} up to date (resolving when it is not) and downloads every package; returns the graph. */
     public static Graph run(Project project, MavenRepo repo, Options o) {
+        warnUndeclared(project);
         Path lockPath = project.lockFile();
         Lockfile lock = Lockfile.read(lockPath);
         String inputs = ResolveInputs.inputs(project);
@@ -44,6 +45,11 @@ public final class Install {
                 ResolveInputs.addLocal(iso, project.isolatedView(m));
             }
             graph.isolated.keySet().retainAll(project.isolatedModules().stream().map(Project.Module::name).toList());
+            for (Manifest.ExtensionDecl d : project.root.declaredExtensions) {
+                Graph ext = graph.extensions.get(d.name());
+                if (ext == null) throw new JpmException(Manifest.LOCK + " has no section for the extension " + d.name() + ". Run `jpm install`.");
+                ResolveInputs.addLocal(ext, Extensions.project(project, d));
+            }
         } else {
             if (o.frozen()) {
                 throw new JpmException(lock == null ? Manifest.LOCK + " is missing and --frozen was given"
@@ -57,9 +63,14 @@ public final class Install {
                 Graph before = prev == null ? null : prev.isolated.get(m.name());
                 graph.isolated.put(m.name(), new Resolver(project.isolatedView(m), repo, before, o.update(), o.updateAll()).resolve());
             }
+            for (Manifest.ExtensionDecl d : project.root.declaredExtensions) {
+                Graph before = prev == null ? null : prev.extensions.get(d.name());
+                graph.extensions.put(d.name(), new Resolver(Extensions.project(project, d), repo, before, o.update(), o.updateAll()).resolve());
+            }
         }
         fetch(graph, repo);
         for (Graph iso : graph.isolated.values()) fetch(iso, repo);
+        for (Graph ext : graph.extensions.values()) fetch(ext, repo);
         Lockfile out = new Lockfile(inputs, graph);
         if (!fresh || !out.render().equals(lock == null ? null : lock.render())) {
             out.write(lockPath);
@@ -70,9 +81,44 @@ public final class Install {
                     Log.info(Log.dim("  isolated " + e.getKey() + ":"));
                     report(before, e.getValue());
                 }
+                for (Map.Entry<String, Graph> e : graph.extensions.entrySet()) {
+                    Graph before = lock == null ? null : lock.graph.extensions.get(e.getKey());
+                    Log.info(Log.dim("  extension " + e.getKey() + ":"));
+                    report(before, e.getValue());
+                }
             }
         }
         return graph;
+    }
+
+    private static final Set<String> WARNED = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** Warns, once per process, about settings for extensions that the root manifest does not declare. */
+    static void warnUndeclared(Project project) {
+        Set<String> declared = new java.util.HashSet<>();
+        for (Manifest.ExtensionDecl d : project.root.declaredExtensions) declared.add(d.name());
+        for (Project.Module m : project.modules) {
+            for (String name : m.manifest.extensions.keySet()) {
+                if (name.contains(":") || declared.contains(name) || !WARNED.add(project.dir + " " + name)) continue;
+                String key = globalKey(name);
+                Path rel = project.dir.relativize(m.manifest.file);
+                Log.warn(rel + " has settings for the extension \"" + name + "\", but "
+                        + (m.manifest.file.equals(project.root.file) ? "does not declare it" : project.dir.relativize(project.root.file) + " does not declare it")
+                        + "; declare it with `jpm add "
+                        + (key == null ? "<its dependency, such as github:<owner>/jpm-" + name + ">" : key) + "`");
+            }
+        }
+    }
+
+    private static String globalKey(String name) {
+        Path file = dev.jpm.util.Fs.home().resolve("global").resolve(name).resolve(Manifest.FILE);
+        if (!java.nio.file.Files.isRegularFile(file)) return null;
+        try {
+            Manifest m = Manifest.load(file.getParent());
+            return m.dependencies.size() == 1 ? m.dependencies.get(0).key().toString() : null;
+        } catch (JpmException e) {
+            return null;
+        }
     }
 
     /** Downloads Maven jars in parallel, recording or verifying their checksums. */

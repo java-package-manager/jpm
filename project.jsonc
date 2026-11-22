@@ -10,6 +10,7 @@
   "workspace": ["api", "cli"],
   "url": "https://github.com/java-package-manager/jpm",
   "extensions": {
+    "github:java-package-manager/jpm-publish": "^0.2",
     "publish": {
       "repositories": {
         // CI publishes releases and snapshots of main here: `jpm publish thenextlvl`

@@ -393,15 +393,33 @@
     },
     "extensions": {
       "type": "object",
-      "description": "Settings for jpm extensions (jpm-<name> commands), by extension name. jpm passes them through untouched.",
+      "description": "The extensions this project uses and their settings. A dependency key (with a colon) declares an extension with its version, in the workspace root only; jpm pins it in project.lock and runs it as `jpm <name>`, where <name> is its artifact without the jpm- prefix. A plain name holds that extension's settings, which jpm passes through untouched.",
+      "examples": [
+        {
+          "github:java-package-manager/jpm-publish": "^0.2",
+          "publish": {
+            "javadoc": true
+          }
+        }
+      ],
       "properties": {
         "publish": {
           "$ref": "#/definitions/publish"
         }
       },
+      "patternProperties": {
+        ":": {
+          "type": "string",
+          "description": "The extension's version: a range or tag for Git (^1.0, #main), a range or version for Maven."
+        }
+      },
       "additionalProperties": {
         "type": "object"
       }
+    },
+    "extension": {
+      "type": "object",
+      "description": "Marks this project as a jpm extension, so `jpm add` declares it in \"extensions\" instead of adding it as a dependency."
     }
   },
   "definitions": {

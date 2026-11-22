@@ -98,6 +98,9 @@ public final class Graph {
     /** The graphs of isolated workspace modules, by module name; each is resolved on its own. */
     public final Map<String, Graph> isolated = new TreeMap<>();
 
+    /** The graphs of the extensions declared in the root manifest, by extension name; each is resolved on its own. */
+    public final Map<String, Graph> extensions = new TreeMap<>();
+
     /** The package with this id, or null. */
     public Pkg get(String id) {
         return pkgs.get(id);

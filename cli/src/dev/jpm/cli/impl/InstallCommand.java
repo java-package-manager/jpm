@@ -33,7 +33,7 @@ final class InstallCommand extends Command {
     List<Usage> usages() {
         return List.of(
                 new Usage(Group.PROJECT, "install", "Resolve dependencies and write project.lock (--frozen in CI)",
-                        "Resolve and write `project.lock`; `--frozen` fails if the lock is stale (CI)"));
+                        "Resolve dependencies and declared extensions and write `project.lock`; `--frozen` fails if the lock is stale (CI)"));
     }
 
     @Override
@@ -50,7 +50,9 @@ final class InstallCommand extends Command {
         Graph g = Install.run(p, new MavenRepo(p.root.repositories), new Install.Options(frozen, false, Set.of(), false));
         if (before != null && before.equals(Fs.read(p.lockFile()))) {
             long n = g.pkgs.values().stream().filter(x -> x.kind != Graph.Kind.LOCAL).count();
-            Log.step("Up to date", n + " package" + (n == 1 ? "" : "s") + " in " + Manifest.LOCK);
+            int e = g.extensions.size();
+            Log.step("Up to date", n + " package" + (n == 1 ? "" : "s") + (e == 0 ? "" : " and " + e + " extension" + (e == 1 ? "" : "s"))
+                    + " in " + Manifest.LOCK);
         }
         return 0;
     }

@@ -51,7 +51,7 @@ final class GlobalExtensions {
     }
 
     private static String globalName(DepKey key) {
-        return key.mavenArtifact().replaceFirst("^jpm-", "");
+        return Manifest.nameOf(key);
     }
 
     private static String describe(Graph.Pkg pkg) {
@@ -69,6 +69,27 @@ final class GlobalExtensions {
                 + "  \"runtime\": { " + Jsonc.quote(key.toString()) + ": " + Jsonc.quote(spec) + " }\n}\n");
         Project p = Project.load(dir);
         Graph g = Install.run(p, repo, new Install.Options(false, true, Set.of(), true));
+        Launch l = launch(p, g, key, repo);
+        Graph.Pkg pkg = g.get(key.toString());
+        Fs.mkdirs(globalBin());
+        boolean win = System.getProperty("os.name").toLowerCase().contains("win");
+        Path launcher = globalBin().resolve("jpm-" + name + (win ? ".cmd" : ""));
+        String classpath = Compiler.join(l.classpath());
+        if (win) {
+            Fs.write(launcher, "@echo off\r\n\"" + l.java() + "\" -cp \"" + classpath + "\" " + l.main() + " %*\r\n");
+        } else {
+            Fs.write(launcher, "#!/bin/sh\nexec \"" + l.java() + "\" -cp \"" + classpath + "\" " + l.main() + " \"$@\"\n");
+            try {
+                launcher.toFile().setExecutable(true);
+            } catch (SecurityException ignored) {
+            }
+        }
+        return pkg;
+    }
+
+    record Launch(String java, List<Path> classpath, String main) {}
+
+    static Launch launch(Project p, Graph g, DepKey key, MavenRepo repo) {
         Builder b = new Builder(p, g, repo, Env.Mode.PRODUCTION);
         List<Path> cp = b.classpath(p.modules.get(0), Builder.Cp.RUNTIME);
         Graph.Pkg pkg = g.get(key.toString());
@@ -81,20 +102,7 @@ final class GlobalExtensions {
         }
         if (main == null) throw new JpmException(key + " has no main class, so it cannot run as an extension");
         Jdk jdk = Toolchain.require(JavaSpec.any());
-        Fs.mkdirs(globalBin());
-        boolean win = System.getProperty("os.name").toLowerCase().contains("win");
-        Path launcher = globalBin().resolve("jpm-" + name + (win ? ".cmd" : ""));
-        String classpath = Compiler.join(cp);
-        if (win) {
-            Fs.write(launcher, "@echo off\r\n\"" + jdk.java() + "\" -cp \"" + classpath + "\" " + main + " %*\r\n");
-        } else {
-            Fs.write(launcher, "#!/bin/sh\nexec \"" + jdk.java() + "\" -cp \"" + classpath + "\" " + main + " \"$@\"\n");
-            try {
-                launcher.toFile().setExecutable(true);
-            } catch (SecurityException ignored) {
-            }
-        }
-        return pkg;
+        return new Launch(jdk.java(), cp, main);
     }
 
     static int update(List<String> names, boolean latest) {

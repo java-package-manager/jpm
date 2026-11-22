@@ -45,4 +45,10 @@ class JsoncEditTest {
         String empty = JsoncEdit.set("{\n  \"runtime\": {}\n}", List.of("runtime"), "a:b", "\"1\"");
         assertEquals(Map.of("a:b", "1"), ((Map<?, ?>) Jsonc.parse(empty)).get("runtime"));
     }
+
+    @Test
+    void removesTheLastMemberOfAnInlineObject() {
+        String out = JsoncEdit.remove("{ \"e\": { \"a\": {}, \"b:c\": \"1\" } }", List.of("e"), "b:c");
+        assertEquals("{ \"e\": { \"a\": {} } }", out);
+    }
 }

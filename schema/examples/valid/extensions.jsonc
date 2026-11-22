@@ -1,0 +1,10 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "extensions": {
+    "github:java-package-manager/jpm-publish": "^0.2",
+    "com.example:jpm-lint": "1.4.0",
+    "publish": { "javadoc": true },
+    "lint": { "strict": true }
+  }
+}

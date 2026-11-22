@@ -49,6 +49,12 @@ public final class Lockfile {
                 g.isolated.put((String) e.getKey(), readPackages(pk));
             }
         }
+        if (root.get("extensions") instanceof Map<?, ?> ext) {
+            for (Map.Entry<?, ?> e : ext.entrySet()) {
+                Object pk = e.getValue() instanceof Map<?, ?> em ? em.get("packages") : null;
+                g.extensions.put((String) e.getKey(), readPackages(pk));
+            }
+        }
         return new Lockfile((String) root.get("inputs"), g);
     }
 
@@ -87,20 +93,24 @@ public final class Lockfile {
         sb.append("  \"inputs\": ").append(Jsonc.quote(inputs)).append(",\n");
         sb.append("  \"packages\": ");
         packages(sb, graph, "  ");
-        if (!graph.isolated.isEmpty()) {
-            sb.append(",\n  \"isolated\": {");
-            int n = 0;
-            for (Map.Entry<String, Graph> e : graph.isolated.entrySet()) {
-                sb.append(n++ == 0 ? "\n" : ",\n");
-                sb.append("    ").append(Jsonc.quote(e.getKey())).append(": { \"packages\": ");
-                packages(sb, e.getValue(), "    ");
-                sb.append(" }");
-            }
-            sb.append("\n  }");
-        }
+        section(sb, "isolated", graph.isolated);
+        section(sb, "extensions", graph.extensions);
         sb.append("\n");
         sb.append("}\n");
         return sb.toString();
+    }
+
+    private static void section(StringBuilder sb, String name, Map<String, Graph> graphs) {
+        if (graphs.isEmpty()) return;
+        sb.append(",\n  ").append(Jsonc.quote(name)).append(": {");
+        int n = 0;
+        for (Map.Entry<String, Graph> e : graphs.entrySet()) {
+            sb.append(n++ == 0 ? "\n" : ",\n");
+            sb.append("    ").append(Jsonc.quote(e.getKey())).append(": { \"packages\": ");
+            packages(sb, e.getValue(), "    ");
+            sb.append(" }");
+        }
+        sb.append("\n  }");
     }
 
     private static void packages(StringBuilder sb, Graph graph, String indent) {

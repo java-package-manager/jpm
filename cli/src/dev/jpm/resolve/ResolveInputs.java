@@ -53,6 +53,7 @@ public final class ResolveInputs {
                 h.add(d.scope().key + " " + d.key() + " " + d.spec() + " " + d.exclusions() + (d.runtimeOnly() ? " rt" : ""));
             }
         }
+        for (Manifest.ExtensionDecl d : project.root.declaredExtensions) h.add("extension " + d.key() + " " + d.spec());
         for (Map.Entry<String, Manifest> e : patchManifests(project).entrySet()) {
             for (Map.Entry<String, Manifest.PatchOptions> po : e.getValue().patchOptions.entrySet()) {
                 for (Manifest.Dependency d : po.getValue().dependencies()) {

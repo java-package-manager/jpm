@@ -141,7 +141,7 @@ org.example:nothing is not in the dependency graph.
 
 $ jpm frobnicate
 error: Unknown command "frobnicate"
-  hint: run `jpm help`, or install an extension that provides it with `jpm add -g <dependency>` (it runs as jpm-frobnicate)
+  hint: run `jpm help`, or add an extension that provides it with `jpm add <dependency>` (for this project) or `jpm add -g <dependency>` (it runs as jpm-frobnicate)
 [exit 1]
 
 $ jpm test shop.core.CartTest

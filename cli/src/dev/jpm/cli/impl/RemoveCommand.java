@@ -33,8 +33,8 @@ final class RemoveCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(
-                new Usage(Group.PROJECT, "remove <dep>", "Remove dependencies (-g removes an extension)",
-                        "Remove dependencies (`-g` removes an extension)"));
+                new Usage(Group.PROJECT, "remove <dep>", "Remove dependencies or extensions (-g removes a global extension)",
+                        "Remove dependencies, or a declared extension by name or key (`-g` removes a global extension)"));
     }
 
     @Override
@@ -49,9 +49,28 @@ final class RemoveCommand extends Command {
         if (args.isEmpty()) throw new JpmException("Usage: jpm remove <dependency>");
         if (global) return GlobalExtensions.remove(args);
         Project p = Project.find(cwd);
-        Project.Module m = single(p, "remove");
-        String src = Fs.read(m.manifest.file);
+        List<String> deps = new java.util.ArrayList<>();
+        String rootSrc = Fs.read(p.root.file);
         for (String a : args) {
+            Manifest.ExtensionDecl ext = p.root.declaredExtensions.stream()
+                    .filter(d -> d.name().equals(a) || d.key().toString().equals(a) || ("jpm-" + d.name()).equals(a)).findFirst().orElse(null);
+            if (ext == null) {
+                deps.add(a);
+                continue;
+            }
+            rootSrc = JsoncEdit.remove(rootSrc, List.of("extensions"), ext.key().toString());
+            Log.step("Removing", "extension " + ext.key());
+        }
+        if (deps.isEmpty()) {
+            Fs.write(p.root.file, rootSrc);
+            Project fresh = Project.find(cwd);
+            Install.run(fresh, new MavenRepo(fresh.root.repositories), new Install.Options(false, false, Set.of(), false));
+            return 0;
+        }
+        Project.Module m = single(p, "remove");
+        if (!m.manifest.file.equals(p.root.file)) Fs.write(p.root.file, rootSrc);
+        String src = m.manifest.file.equals(p.root.file) ? rootSrc : Fs.read(m.manifest.file);
+        for (String a : deps) {
             DepKey key = DepArgs.parse(a).key();
             boolean found = false;
             for (Manifest.Scope s : Manifest.Scope.values()) {

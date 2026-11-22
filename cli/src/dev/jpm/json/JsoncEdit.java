@@ -62,7 +62,8 @@ public final class JsoncEdit {
             int k = start - 1;
             while (k > obj.start && Character.isWhitespace(src.charAt(k))) k--;
             if (src.charAt(k) == ',') {
-                String result = src.substring(0, k) + src.substring(k + 1, start) + src.substring(end);
+                String between = src.substring(k + 1, start);
+                String result = src.substring(0, k) + (between.contains("\n") ? between : "") + src.substring(end);
                 return cleanupBlankLine(result, start - 1);
             }
             if (start == lineStart) {

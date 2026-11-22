@@ -26,7 +26,7 @@ public final class Manifest {
     /** Every top-level field jpm reads. The schema describes the same set (SchemaTest checks). */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
-            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "$schema");
+            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "$schema");
 
     /** The dependency sections of a manifest; {@link #key} is the section's name in {@code project.jsonc}. */
     public enum Scope {
@@ -157,6 +157,23 @@ public final class Manifest {
     public final String url;
     /** Settings for extensions, by extension name (e.g. "publish"); jpm passes them through untouched. */
     public final Map<String, Object> extensions;
+    /** The extensions this project uses, declared in {@code "extensions"} by dependency key; only in a root manifest. */
+    public final List<ExtensionDecl> declaredExtensions;
+    /** True when this manifest is an extension's own ({@code "extension": {...}}), which {@code jpm add} detects. */
+    public final boolean isExtension;
+
+    /** An extension declared in {@code "extensions"}: {@code "github:me/jpm-foo": "^1.0"}. */
+    public record ExtensionDecl(DepKey key, String spec, int line) {
+        /** The command it adds: its artifact without the {@code jpm-} prefix ({@code jpm-publish} gives {@code publish}). */
+        public String name() {
+            return nameOf(key);
+        }
+    }
+
+    /** The command an extension adds, from its dependency key. */
+    public static String nameOf(DepKey key) {
+        return key.mavenArtifact().replaceFirst("^jpm-", "");
+    }
 
     /**
      * Fields a workspace module takes from the workspace root when it does not set them itself.
@@ -333,6 +350,36 @@ public final class Manifest {
         @SuppressWarnings("unchecked")
         Map<String, Object> extMap = ext == null ? Map.of() : (Map<String, Object>) ext.value;
         this.extensions = extMap;
+        List<ExtensionDecl> decls = new ArrayList<>();
+        if (ext != null) {
+            for (Jsonc.Member e : ext.members.values()) {
+                if (!e.key.contains(":")) {
+                    if (!e.value.isObject()) throw err(e.value, "extensions." + e.key + " must be an object of settings; declare an extension by"
+                            + " its dependency key instead (\"github:me/jpm-" + e.key + "\": \"^1.0\")");
+                    continue;
+                }
+                if (parent != null) throw JpmException.at(file, line(e.keyStart), "declare extensions in the workspace root's " + FILE + ", not in a module's");
+                DepKey key;
+                try {
+                    key = DepKey.parse(e.key);
+                } catch (JpmException ex) {
+                    throw JpmException.at(file, line(e.keyStart), ex.getMessage());
+                }
+                if (key.isWorkspace() || key.isExtension() || key.isGradle()) {
+                    throw JpmException.at(file, line(e.keyStart), e.key + " cannot be an extension: use a Maven or Git dependency key");
+                }
+                if (!(e.value.value instanceof String spec)) throw err(e.value, "the extension " + e.key + " needs a version, such as \"^1.0\"");
+                ExtensionDecl d = new ExtensionDecl(key, spec, line(e.keyStart));
+                for (ExtensionDecl o : decls) {
+                    if (o.name().equals(d.name())) throw JpmException.at(file, d.line(), o.key() + " and " + key + " are both the extension " + d.name());
+                }
+                decls.add(d);
+            }
+        }
+        this.declaredExtensions = List.copyOf(decls);
+        Jsonc.Node marker = root.get("extension");
+        if (marker != null && !marker.isObject()) throw err(marker, "extension must be an object describing the extension, such as {}");
+        this.isExtension = marker != null;
         if (!packaging.equals("jar") && !packaging.equals("bundle")) throw err(root.get("package"), "package must be \"jar\" or \"bundle\"");
         String layoutName = reader.str("layout", false);
         this.layout = layoutName == null && parent != null ? parent.layout : Layout.named(layoutName);

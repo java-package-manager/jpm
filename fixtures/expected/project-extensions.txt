@@ -1,0 +1,60 @@
+$ jpm install
+warning: project.jsonc has settings for the extension "hello", but does not declare it; declare it with `jpm add <its dependency, such as github:<owner>/jpm-hello>`
+   Resolving dependencies
+      Locked 0 packages
+
+$ jpm add -g github:me/jpm-hello@1.0.0
+   Resolving dependencies
+     Cloning <tmp>/git/me/jpm-hello
+  + github:me/jpm-hello 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+    Building github:me/jpm-hello 1.0.0 (<commit>)
+   Installed jpm-hello (github:me/jpm-hello 1.0.0 (<commit>)); run it with `jpm hello`
+
+$ jpm hello world
+hello world from 1.0.0, settings: true
+
+$ jpm add github:me/jpm-hello
+    Fetching <tmp>/git/me/jpm-hello
+      Adding extension github:me/jpm-hello ^1.1.0 (run it with `jpm hello`)
+   Resolving dependencies
+      Locked 0 packages
+  extension hello:
+  + github:me/jpm-hello 1.1.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+
+--- project.jsonc
+{
+  "name": "app",
+  "version": "1.0.0",
+  "java": "21",
+  "extensions": { "hello": { "loud": true }, "github:me/jpm-hello": "^1.1.0" }
+}
+
+$ jpm hello world
+    Building github:me/jpm-hello 1.1.0 (<commit>)
+hello world from 1.1.0, settings: true
+
+$ (cd ..) jpm hello outside
+hello outside from 1.0.0, settings: false
+
+$ jpm install --frozen
+  Up to date 0 packages and 1 extension in project.lock
+
+$ jpm hello again
+hello again from 1.1.0, settings: true
+
+$ jpm remove hello
+    Removing extension github:me/jpm-hello
+warning: project.jsonc has settings for the extension "hello", but does not declare it; declare it with `jpm add github:me/jpm-hello`
+   Resolving dependencies
+      Locked 0 packages
+
+--- project.jsonc
+{
+  "name": "app",
+  "version": "1.0.0",
+  "java": "21",
+  "extensions": { "hello": { "loud": true } }
+}
+

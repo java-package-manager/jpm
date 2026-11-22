@@ -407,7 +407,6 @@ jobs:
           if [ '${{ needs.version.outputs.kind }}' = canary ]; then
             sed -i '0,/"version": "[^"]*"/s//"version": "${{ needs.version.outputs.version }}-SNAPSHOT"/' project.jsonc
           fi
-          ./jpm add -g github:java-package-manager/jpm-publish
           ./jpm publish thenextlvl --module jpm-api
 
   release:

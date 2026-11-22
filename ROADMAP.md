@@ -197,15 +197,15 @@ compiled classes or from the manifest.
 Extensions are only installed globally today (`jpm add -g`), so CI has to install each one before it
 can build, and the IDE toolbar only knows the extensions written into the plugin.
 
-- [ ] Declare extensions in the root `project.jsonc`, with a version, next to their settings in the
+- [x] Declare extensions in the root `project.jsonc`, with a version, next to their settings in the
       existing `"extensions"` field. Pin them in `project.lock`.
-- [ ] `jpm add` without `-g` adds an extension to the root `project.jsonc` (and `jpm remove` takes it
+- [x] `jpm add` without `-g` adds an extension to the root `project.jsonc` (and `jpm remove` takes it
       out); `-g` keeps installing it globally. jpm detects extensions automatically from a marker
       the extension declares in its own manifest, so no extra flag is needed.
-- [ ] `jpm install` installs the declared extensions, so CI needs no `jpm add -g` steps.
-- [ ] Settings for an extension that is not declared in the root `project.jsonc` give a warning that
+- [x] `jpm install` installs the declared extensions, so CI needs no `jpm add -g` steps.
+- [x] Settings for an extension that is not declared in the root `project.jsonc` give a warning that
       names the extension and the command that fixes it (`jpm add <extension>`).
-- [ ] A declared extension takes precedence over a global one of the same name inside the project.
+- [x] A declared extension takes precedence over a global one of the same name inside the project.
 - [ ] Every extension exposes a small public API that lists its commands with a description (and
       their options), so IDEs can show them without knowing the extension in advance, and the checks it
       adds to `jpm check`.
@@ -566,6 +566,8 @@ Builds the test and tooling base that the restructure depends on.
    - `jpm install` installs declared extensions.
    - Warn about settings for undeclared extensions.
    - A declared extension takes precedence over a global one.
+   - Done. Declarations are dependency keys inside `"extensions"`; the marker is `"extension": {}`, read
+     from Git extensions' manifests (Maven extensions are declared by hand).
 7. **Extension descriptor.**
    - Each extension describes its commands, options and checks in its own manifest.
    - jpm serves the descriptors through the protocol, so IDEs never run an extension just to list

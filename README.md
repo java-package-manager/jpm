@@ -80,9 +80,9 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | Command | |
 |---|---|
 | `init [name]` | Create a project |
-| `add <dep>[@version]` | Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository; `-g` installs an extension). Without a version: latest release (Maven) or `^latest-tag` (Git) |
-| `remove <dep>` | Remove dependencies (`-g` removes an extension) |
-| `install` | Resolve and write `project.lock`; `--frozen` fails if the lock is stale (CI) |
+| `add <dep>[@version]` | Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). An extension (a Git project with `"extension"` in its manifest) is declared in the root's `"extensions"` instead; `-g` installs one globally. Without a version: latest release (Maven) or `^latest-tag` (Git) |
+| `remove <dep>` | Remove dependencies, or a declared extension by name or key (`-g` removes a global extension) |
+| `install` | Resolve dependencies and declared extensions and write `project.lock`; `--frozen` fails if the lock is stale (CI) |
 | `update [dep...]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |
 | `outdated` | Show dependencies with newer versions |
 | `why <dep>` | Show why a dependency is in the graph |
@@ -112,7 +112,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `help` | Show this list of commands (also -h, --help) |
 | `completions <shell>` | Print shell completions: `jpm completions bash > ~/.local/share/bash-completion/completions/jpm`, and the same for `zsh`, `fish` and `powershell` |
 | `api` | Serve the jpm protocol (JSON-RPC on stdin and stdout, see [docs/protocol.md](docs/protocol.md)) for IDEs, extensions and tools; the client `dev.jpm:jpm-api` starts it |
-| `<anything else>` | Runs the extension `jpm-<name>` from `~/.jpm/bin` or `PATH`; install one with `jpm add -g <dep>` |
+| `<anything else>` | Runs the extension `<name>`: the one the project declares, else `jpm-<name>` from `~/.jpm/bin` or `PATH` (see [Extensions](#extensions)) |
 
 <!-- /commands -->
 
@@ -235,8 +235,10 @@ Other fields:
   index: `${javacArgs.0}`); the `*.properties` files next to the root's project.jsonc (such as `gradle.properties`),
   then those next to the module's; and the module's define values. Unknown names are left as they are
 - `description`, `license`, `url` (used by publishing)
-- `extensions`: settings for extensions, by name, e.g. `"extensions": { "publish": { ... } }`; jpm passes
-  them through untouched (`jpm info --json`)
+- `extensions`: the extensions the project uses, by dependency key with a version, and their settings by
+  name, which jpm passes through untouched: `"extensions": { "github:java-package-manager/jpm-publish": "^0.2",
+  "publish": { ... } }`. See [Extensions](#extensions).
+- `extension`: marks an extension's own manifest (`"extension": {}`), so `jpm add` declares it as one
 
 Unknown fields are errors, and every error names the file and line.
 
@@ -449,6 +451,31 @@ are ordinary resources. Plugins written in Kotlin with the `kotlin-dsl` conventi
 
 A shaded plugin jar is a flat bundle with `"relocate"` (see below). jpm-publish does not write Gradle plugin
 marker artifacts or publish to the Gradle Plugin Portal.
+
+## Extensions
+
+An extension is a program that adds a command: `jpm publish` runs the extension `publish`, whose artifact is
+`jpm-publish`. A project declares the extensions it uses in its root `project.jsonc`, next to their settings:
+
+```jsonc
+"extensions": {
+  "github:java-package-manager/jpm-publish": "^0.2",
+  "publish": { "javadoc": true }
+}
+```
+
+`jpm add github:java-package-manager/jpm-publish` writes the declaration: jpm sees that it is an extension from
+the `"extension"` field in its manifest. `jpm install` resolves each declared extension in a graph of its own,
+so its libraries never move the project's versions, and pins it in `project.lock` under `"extensions"`; CI
+needs no other step to run `jpm publish`. `jpm remove publish` takes it out again.
+
+Inside the project, a declared extension wins over a global one of the same name. `jpm add -g <dep>` installs an
+extension for every project, as `~/.jpm/bin/jpm-<name>`; `jpm update -g` and `jpm remove -g` manage those.
+Settings for an extension that the root does not declare give a warning naming the `jpm add` that fixes it.
+
+jpm runs an extension in the folder it was called from, with `JPM_EXE` (the jpm to call back),
+`JPM_PROJECT_DIR`, `JPM_MODULE_DIR`, `JPM_MANIFEST`, `JPM_NAME`, `JPM_VERSION` and `JPM_CONFIG` (the module's
+manifest as JSON). An extension marks its own manifest with `"extension": {}`.
 
 ## Dependencies from extensions
 

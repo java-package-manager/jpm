@@ -1,11 +1,16 @@
 package dev.jpm.cli.impl;
 
+import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.json.JsoncEdit;
 import dev.jpm.maven.MavenRepo;
+import dev.jpm.resolve.Extensions;
+import dev.jpm.resolve.GitModule;
+import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
+import dev.jpm.resolve.Resolver;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
@@ -30,8 +35,8 @@ final class AddCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(
-                new Usage(Group.PROJECT, "add <dep>[@version]", "Add dependencies (--dev, --test; -r <url> adds a Maven repository; -g installs an extension)",
-                        "Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository; `-g` installs an extension). Without a version: latest release (Maven) or `^latest-tag` (Git)"));
+                new Usage(Group.PROJECT, "add <dep>[@version]", "Add dependencies or extensions (--dev, --test; -r <url> adds a Maven repository; -g installs globally)",
+                        "Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). An extension (a Git project with `\"extension\"` in its manifest) is declared in the root's `\"extensions\"` instead; `-g` installs one globally. Without a version: latest release (Maven) or `^latest-tag` (Git)"));
     }
 
     @Override
@@ -66,6 +71,7 @@ final class AddCommand extends Command {
             }
             MavenRepo repo = new MavenRepo(p.root.repositories);
             String src = Fs.read(moduleFile);
+            String rootSrc = rootFile.equals(moduleFile) ? null : Fs.read(rootFile);
             List<Manifest.Dependency> declared = m.manifest.dependencies;
             for (String a : args) {
                 DepArgs.DepArg d = DepArgs.parse(a);
@@ -80,6 +86,12 @@ final class AddCommand extends Command {
                         throw new JpmException(e.getMessage());
                     }
                 }
+                if (scope == Manifest.Scope.RUNTIME && isExtension(p, d.key(), spec, repo)) {
+                    if (rootSrc == null) src = JsoncEdit.set(src, List.of("extensions"), d.key().toString(), Jsonc.quote(spec));
+                    else rootSrc = JsoncEdit.set(rootSrc, List.of("extensions"), d.key().toString(), Jsonc.quote(spec));
+                    Log.step("Adding", "extension " + d.key() + " " + spec + Log.dim(" (run it with `jpm " + Manifest.nameOf(d.key()) + "`)"));
+                    continue;
+                }
                 Manifest.Scope pair = scope == Manifest.Scope.DEV ? Manifest.Scope.TEST : scope == Manifest.Scope.TEST ? Manifest.Scope.DEV : null;
                 for (Manifest.Scope s : Manifest.Scope.values()) {
                     if (s == scope) continue;
@@ -93,6 +105,7 @@ final class AddCommand extends Command {
                 Log.step("Adding", d.key() + " " + spec + (scope == Manifest.Scope.RUNTIME ? "" : " (" + scope.key + ")"));
             }
             Fs.write(moduleFile, src);
+            if (rootSrc != null) Fs.write(rootFile, rootSrc);
             Install.run(Project.find(cwd), repo, new Install.Options(false, false, Set.of(), false));
         } catch (RuntimeException e) {
             Fs.write(moduleFile, moduleOriginal);
@@ -101,6 +114,14 @@ final class AddCommand extends Command {
             throw new JpmException(msg + "\n" + Manifest.FILE + " was left unchanged.", e);
         }
         return 0;
+    }
+
+    private static boolean isExtension(Project p, DepKey key, String spec, MavenRepo repo) {
+        if (!key.isGit()) return false;
+        Manifest.ExtensionDecl d = new Manifest.ExtensionDecl(key, spec, 0);
+        Graph g = new Resolver(Extensions.project(p, d), repo, null, Set.of(), false).resolve();
+        Graph.Pkg pkg = g.get(key.toString());
+        return pkg != null && pkg.commit != null && GitModule.locate(key, pkg.commit).manifest().isExtension;
     }
 
     static String withRepositories(String src, Manifest m, List<String> urls) {

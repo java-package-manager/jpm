@@ -175,6 +175,40 @@ class EndToEndTest {
     }
 
     @Test
+    void projectExtensions(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Path ext = tmp.resolve("git/me/jpm-hello");
+        String main = "package hello; public class Main { public static void main(String[] a) {"
+                + " System.out.println(\"hello %s from VERSION, settings: \" + String.valueOf(System.getenv(\"JPM_CONFIG\")).contains(\"\\\"loud\\\"\")); } }";
+        Fs.write(ext.resolve("src/hello/Main.java"), main.replace("%s", "\" + String.join(\" \", a) + \"").replace("VERSION", "1.0.0"));
+        Fs.write(ext.resolve("project.jsonc"), "{ \"name\": \"jpm-hello\", \"version\": \"1.0.0\", \"main\": \"hello.Main\", \"extension\": {} }");
+        git(ext, "init", "-q", "-b", "main");
+        git(ext, "add", "-A");
+        git(ext, "commit", "-qm", "1.0.0");
+        git(ext, "tag", "1.0.0");
+        Fs.write(ext.resolve("src/hello/Main.java"), main.replace("%s", "\" + String.join(\" \", a) + \"").replace("VERSION", "1.1.0"));
+        Fs.write(ext.resolve("project.jsonc"), "{ \"name\": \"jpm-hello\", \"version\": \"1.1.0\", \"main\": \"hello.Main\", \"extension\": {} }");
+        git(ext, "commit", "-qam", "1.1.0");
+        git(ext, "tag", "1.1.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"java\": \"21\",\n"
+                + "  \"extensions\": { \"hello\": { \"loud\": true } }\n}\n");
+        s.jpm("install");
+        s.jpm("add", "-g", "github:me/jpm-hello@1.0.0");
+        s.jpm("hello", "world");
+        s.jpm("add", "github:me/jpm-hello");
+        s.show("project.jsonc");
+        s.jpm("hello", "world");
+        s.jpmIn("..", "hello", "outside");
+        Fs.deleteTree(s.project.resolve(".cache"));
+        s.jpm("install", "--frozen");
+        s.jpm("hello", "again");
+        s.jpm("remove", "hello");
+        s.show("project.jsonc");
+        s.verify("project-extensions");
+    }
+
+    @Test
     void patchADependency(@TempDir Path tmp) {
         Session s = new Session(tmp);
         s.repo.artifact("org.example:money:1.0.0").javaClass("org.example.money.Money", MONEY_V1)

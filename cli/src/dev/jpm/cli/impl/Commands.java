@@ -81,7 +81,7 @@ public final class Commands {
         for (Command c : all(Path.of(""))) {
             for (Command.Usage u : c.usages()) rows.add("| `" + u.synopsis() + "` | " + u.docs() + " |");
         }
-        rows.add("| `<anything else>` | Runs the extension `jpm-<name>` from `~/.jpm/bin` or `PATH`; install one with `jpm add -g <dep>` |");
+        rows.add("| `<anything else>` | Runs the extension `<name>`: the one the project declares, else `jpm-<name>` from `~/.jpm/bin` or `PATH` (see [Extensions](#extensions)) |");
         return String.join("\n", rows) + "\n";
     }
 }
