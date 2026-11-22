@@ -1,0 +1,46 @@
+#!/bin/sh
+# Runs every check CI runs that can run on this machine. CI calls this script too.
+# Usage: bin/check [--no-test]    Needs a JDK, and python3 with `pip install jsonschema` for the schema check.
+set -eu
+cd "$(dirname "$0")/.."
+
+run_tests=1
+for a in "$@"; do
+  case "$a" in
+    --no-test) run_tests=0 ;;
+    *) echo "Usage: bin/check [--no-test]" >&2; exit 2 ;;
+  esac
+done
+
+JAVA="${JAVA_HOME:+$JAVA_HOME/bin/}java"
+failed=""
+step() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
+fail() { failed="$failed\n  - $1"; }
+
+ls dist/jpm-*.jar >/dev/null 2>&1 || [ -f .cache/bootstrap/jpm.jar ] || ./bootstrap.sh
+
+step "build"
+bin/jpm build --frozen || fail "build"
+
+if [ "$run_tests" = 1 ]; then
+  step "unit and end-to-end tests"
+  bin/jpm test --frozen --exclude-tag live || fail "tests"
+fi
+
+step "project.jsonc schema"
+PY=${PYTHON:-$(command -v python3 || command -v python || true)}
+if [ -z "$PY" ] || ! "$PY" -c "import jsonschema" 2>/dev/null; then
+  fail "schema: needs python3 with jsonschema (pip install jsonschema)"
+else
+  "$PY" schema/check.py project.jsonc fixtures/*/project.jsonc fixtures/*/*/project.jsonc schema/examples/valid/*.jsonc || fail "schema"
+  "$PY" schema/check.py --expect-invalid schema/examples/invalid/*.jsonc || fail "schema (invalid examples)"
+fi
+
+step "ratchets"
+"$JAVA" checks/Ratchets.java || fail "ratchets"
+
+if [ -n "$failed" ]; then
+  printf '\n\033[1;31mFailed:\033[0m%b\n' "$failed"
+  exit 1
+fi
+printf '\n\033[1;32mAll checks passed.\033[0m\n'

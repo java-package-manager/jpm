@@ -23,11 +23,6 @@ jobs:
       version: ${{ steps.decide.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check the project.jsonc schema
-        run: |
-          python3 -m pip install --quiet jsonschema
-          python3 schema/check.py project.jsonc fixtures/bundle-demo/project.jsonc fixtures/bundle-demo/*/project.jsonc schema/examples/valid/*.jsonc
-          python3 schema/check.py --expect-invalid schema/examples/invalid/*.jsonc
 
       - name: Decide between a release and a canary build
         id: decide
@@ -96,8 +91,18 @@ jobs:
       - name: Bootstrap
         run: ./bootstrap.sh
 
-      - name: Test
-        run: bin/jpm test --frozen --exclude-tag live
+      - uses: actions/setup-python@v5
+        id: python
+        with:
+          python-version: "3.12"
+
+      # build, unit and end-to-end tests, the schema check and the ratchets: what bin/check runs locally
+      - name: Checks
+        env:
+          PYTHON: ${{ steps.python.outputs.python-path }}
+        run: |
+          "$PYTHON" -m pip install --quiet jsonschema
+          bin/check
 
       - name: Native image
         run: bin/jpm build --native
