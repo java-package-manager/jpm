@@ -134,7 +134,7 @@ class PatchOptionsTest {
                 "module-info.java", "module g.mod {\n    exports g.mod.api;\n}\n",
                 "g/mod/api/A.java", "package g.mod.api; public class A { }",
                 "g/mod/internal/B.java", "package g.mod.internal; public class B { static int hidden() { return 1; } }");
-        publish(repo, work, "mod", before, jdk.major(), List.of());
+        publish(repo, work, "mod", before, Math.min(jdk.major(), Runtime.version().feature()), List.of());
         Map<String, String> after = new java.util.HashMap<>(before);
         after.put("module-info.java", "module g.mod {\n    exports g.mod.api;\n    exports g.mod.internal;\n}\n");
         // a changed class that uses a package-private member of an unchanged one in its package
