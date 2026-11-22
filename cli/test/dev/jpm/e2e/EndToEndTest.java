@@ -130,14 +130,13 @@ class EndToEndTest {
     }
 
     @Test
-    void schema(@TempDir Path tmp) {
+    void removedCommandsSayWhatReplacesThem(@TempDir Path tmp) {
         Session s = new Session(tmp);
-        String schema = s.jpmUnrecorded("schema");
-        if (!schema.contains("\"$schema\"")) throw new AssertionError("jpm schema printed no JSON Schema:\n" + schema);
-        s.jpm("schema", "--path");
-        s.jpm("--version");
-        s.jpm("schema", "--bogus");
-        s.verify("schema");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\" }");
+        s.jpm("schema");
+        s.jpm("info", "--json");
+        s.jpm("info");
+        s.verify("removed-commands");
     }
 
     private static void git(Path dir, String... args) {

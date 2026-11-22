@@ -132,7 +132,7 @@ final class ApiServer {
             }
             case "project/load" -> load(params);
             case "project/classpaths" -> classpaths(params);
-            case "schema/manifest" -> Map.of("schema", Jsonc.parse(SchemaCommand.text()), "version", Main.VERSION);
+            case "schema/manifest" -> Map.of("schema", Jsonc.parse(ManifestSchema.text()), "version", Main.VERSION);
             case "check/run" -> check(params);
             case "extensions/list" -> Map.of("extensions", ExtensionList.list(params.get("dir") instanceof String ? Project.find(dir(params)) : null));
             default -> throw new ApiError(-32601, "no method \"" + method + "\"; this jpm has " + String.join(", ", METHODS), null);

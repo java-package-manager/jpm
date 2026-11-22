@@ -51,6 +51,10 @@ final class ExtensionCommand extends Command {
         if (declared != null) return launch(cwd, project, declared, args, Map.of());
         List<String> full = new ArrayList<>();
         Path exe = dev.jpm.resolve.ExtensionDeps.executable(cmd);
+        if (exe == null && cmd.equals("schema")) {
+            throw new JpmException("jpm schema was removed in jpm 0.12", 2).withHint("editors use the schema at "
+                    + Manifest.versionedSchemaUrl(Main.VERSION) + " (or ask jpm over its protocol, schema/manifest)");
+        }
         if (exe == null) {
             throw new JpmException("Unknown command \"" + cmd + "\"").withHint("run `jpm help`, or add an extension that provides it"
                     + " with `jpm add <dependency>` (for this project) or `jpm add -g <dependency>` (it runs as jpm-" + cmd + ")");

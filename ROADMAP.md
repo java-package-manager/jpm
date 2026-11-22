@@ -188,7 +188,7 @@ compiled classes or from the manifest.
 - [ ] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output.
 - [ ] **jpm-publish:** use the public API instead of `jpm info --json`.
 - [ ] Extensions get a documented way to use the API (for example a template project).
-- [ ] Remove `jpm info --json/--ide/--classpath` and `jpm schema` in the release that ships the API,
+- [x] Remove `jpm info --json/--ide/--classpath` and `jpm schema` in the release that ships the API,
       with no deprecation period. Plain `jpm info` stays as a human-readable summary.
 
 ### Project-level extensions
@@ -386,7 +386,7 @@ Items that are not in the original list but would pay off.
 - [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …) and a template
       repository for writing new ones.
 - [ ] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists.
-- [ ] **Document the versioned schema URL:** every release already ships `project.schema.json`, so
+- [x] **Document the versioned schema URL:** every release already ships `project.schema.json`, so
       `releases/download/<version>/project.schema.json` is a stable URL per version. The README only
       mentions `releases/latest/…`; document the pinned form as the replacement for `jpm schema`.
 

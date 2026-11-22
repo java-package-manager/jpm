@@ -4,8 +4,7 @@ Status: **accepted** (roadmap Milestone 4, item 1); `jpm api` serves protocol 1.
 `ApiServer.METHODS` (item 2). Section 8 records the decisions.
 
 The protocol is how other programs (jpm-intellij, jpm-publish, extensions, editors) ask jpm about a project.
-It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which are removed in the release that
-ships it. There is exactly one jpm on a machine, the global one; the client `dev.jpm:jpm-api` starts it
+It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which jpm 0.12.0 removed. There is exactly one jpm on a machine, the global one; the client `dev.jpm:jpm-api` starts it
 and talks to it. No program bundles its own jpm.
 
 ## 1. Transport

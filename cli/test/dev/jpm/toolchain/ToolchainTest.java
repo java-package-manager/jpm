@@ -54,6 +54,9 @@ class ToolchainTest {
         assertFalse(JavaSpec.parse("21.0.50").matches(temurin));
         assertTrue(JavaSpec.versionMatches("21.0.5+11", "21.0.5"));
         assertFalse(JavaSpec.versionMatches("21.0.51", "21.0.5"));
+        assertTrue(JavaSpec.versionMatches("1.8.0_512", "8.0.512"), "a JDK 8 names its version the old way");
+        assertTrue(JavaSpec.versionMatches("1.8.0_512", "1.8.0_512"));
+        assertFalse(JavaSpec.versionMatches("1.8.0_512", "8.0.51"));
     }
 
     @Test

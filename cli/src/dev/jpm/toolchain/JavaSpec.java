@@ -119,8 +119,15 @@ public record JavaSpec(String distribution, String version) {
         return distribution == null || distribution.equals(j.distribution());
     }
 
-    /** "21.0.5" matches "21.0.5", "21.0.5+11" and "21.0.5.1"; "21.0" matches any 21.0.x. */
+    /**
+     * "21.0.5" matches "21.0.5", "21.0.5+11" and "21.0.5.1"; "21.0" matches any 21.0.x. A JDK 8 names its version the old
+     * way ("1.8.0_512"), which also matches as "8.0.512".
+     */
     static boolean versionMatches(String actual, String wanted) {
+        java.util.regex.Matcher legacy = java.util.regex.Pattern.compile("1\\.(\\d+)\\.(\\d+)_(\\d+)(.*)").matcher(actual);
+        if (legacy.matches() && !wanted.startsWith("1.")) {
+            actual = legacy.group(1) + "." + legacy.group(2) + "." + legacy.group(3) + legacy.group(4);
+        }
         if (actual.equals(wanted)) return true;
         if (!actual.startsWith(wanted)) return false;
         char next = actual.charAt(wanted.length());

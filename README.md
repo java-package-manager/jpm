@@ -86,9 +86,8 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `update [dep...]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |
 | `outdated` | Show dependencies with newer versions |
 | `why <dep>` | Show why a dependency is in the graph |
-| `info [--json]` | Describe the project: modules, versions, folders, dependencies; `--json` is a stable format for extensions, `--ide` adds test folders, scripts and scoped dependencies with sources (used by the IntelliJ plugin), `--classpath` adds every classpath (compile, processor, runtime, testCompile, testRuntime) as packages with coordinates, kind, jars and edges, and the resolved defines, without downloading sources |
+| `info` | Describe the project: each module's version and folder, and its dependencies with what they resolve to. Programs use the jpm protocol instead (`jpm api`, [docs/protocol.md](docs/protocol.md)) |
 | `import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
-| `schema [--path]` | Print the JSON Schema of `project.jsonc` built into this jpm; `--path` writes it to `~/.jpm/schemas/<version>/project.schema.json` and prints the path instead (used by the IntelliJ plugin), see [Editor support](#editor-support) |
 | `build` | Build into `dist/` (`--release`, `--profile <name>`) |
 | `build --bundle` | Also build `dist/<name>-<version>-bundle.jar` with the runtime dependencies: a runnable jar-in-jar with isolated modules for a module with a `main`, one flat jar (like a shadow jar) for one without, such as a Paper or Velocity plugin; `--flat` makes it flat either way. `"package": "bundle"` makes it the default |
 | `build --native` | Also build a native executable of `main` with GraalVM into `dist/` |
@@ -269,10 +268,16 @@ and validation. Add the line to an existing manifest to get the same:
 }
 ```
 
-`jpm schema` prints the schema of the installed jpm, and `jpm schema --path` writes it to
-`~/.jpm/schemas/<version>/project.schema.json` and prints that path, for editors that want a file that
-matches the jpm they run, offline. The [IntelliJ plugin](https://github.com/java-package-manager/jpm-intellij)
-uses it, so there every `project.jsonc` is covered without the line. The schema also describes the settings
+`releases/latest` always describes the newest jpm. To describe exactly the fields of one jpm, pin its
+version; that address never changes:
+
+```
+https://github.com/java-package-manager/jpm/releases/download/0.12.0/project.schema.json
+```
+
+Editors that want the schema of the jpm they run ask it over the jpm protocol (`schema/manifest`, see
+[docs/protocol.md](docs/protocol.md)); the [IntelliJ plugin](https://github.com/java-package-manager/jpm-intellij)
+does, so there every `project.jsonc` is covered without the line. (`jpm schema` did this before jpm 0.12.0.) The schema also describes the settings
 of the `publish` extension under `"extensions"`.
 
 ## How it works

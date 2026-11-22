@@ -22,7 +22,7 @@
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.XMLMessages",
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.DOMMessages",
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.xpath.regex.message",
-    // `jpm schema` serves the manifest schema from the binary.
+    // the manifest schema is served from the binary (schema/manifest in `jpm api`)
     "-H:IncludeResources=dev/jpm/project\\.schema\\.json"
   ]
 }

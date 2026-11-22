@@ -1,0 +1,15 @@
+$ jpm schema
+error: jpm schema was removed in jpm 0.12
+  hint: editors use the schema at https://github.com/java-package-manager/jpm/releases/download/<jpm-version>/project.schema.json (or ask jpm over its protocol, schema/manifest)
+[exit 2]
+
+$ jpm info --json
+error: jpm info --json was removed in jpm 0.12
+  hint: programs read the project over the jpm protocol (`jpm api`) with the client dev.jpm:jpm-api; see docs/protocol.md
+[exit 2]
+
+$ jpm info
+   Resolving dependencies
+      Locked 0 packages
+app 1.0.0  <project>
+

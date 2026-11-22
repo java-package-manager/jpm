@@ -23,6 +23,11 @@ public final class Manifest {
     public static final String LOCK = "project.lock";
     /** The JSON Schema of project.jsonc, src/assets/dev/jpm/project.schema.json, as attached to every release. */
     public static final String SCHEMA_URL = "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json";
+
+    /** The schema of one jpm release, which never changes: what a manifest pins to describe exactly that jpm's fields. */
+    public static String versionedSchemaUrl(String version) {
+        return "https://github.com/java-package-manager/jpm/releases/download/" + version + "/project.schema.json";
+    }
     /** Every top-level field jpm reads. The schema describes the same set (SchemaTest checks). */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
