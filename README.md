@@ -392,7 +392,8 @@ A module with Kotlin sources names the Kotlin version, and depends on the standa
 version, resolved on its own like any tool) compiles first, seeing the Java sources and the defines class, so
 the two languages can use each other; javac then compiles the Java against its output. Tests see the module's
 `internal` declarations. A module's Kotlin is compiled as a whole when a source, the classpath or a setting
-changes.
+changes. A module with Kotlin sources only gets its defines class as Kotlin (an `object` with `const val`s,
+which Java code reads as static final fields), so it needs no Java at all.
 
 Compiler plugins and flags:
 

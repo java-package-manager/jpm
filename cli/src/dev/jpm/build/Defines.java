@@ -165,6 +165,49 @@ public final class Defines {
         return s;
     }
 
+    /**
+     * The generated defines class as Kotlin, for a module with Kotlin sources only: an {@code object} whose
+     * {@code const val}s are the same static final fields Java code reads.
+     */
+    public static String kotlinSource(String fqcn, List<Value> values, String projectName, String version) {
+        int dot = fqcn.lastIndexOf('.');
+        String pkg = dot > 0 ? fqcn.substring(0, dot) : null;
+        StringBuilder sb = new StringBuilder();
+        if (pkg != null) sb.append("package ").append(pkg).append("\n\n");
+        sb.append("object ").append(fqcn.substring(dot + 1)).append(" {\n");
+        sb.append("    const val NAME: String = ").append(kotlinString(projectName)).append('\n');
+        sb.append("    const val VERSION: String = ").append(kotlinString(version)).append('\n');
+        for (Value v : values) {
+            String t = switch (v.type) {
+                case STRING -> "String";
+                case INT -> "Int";
+                case BOOLEAN -> "Boolean";
+            };
+            String literal = v.type == Manifest.DefineType.STRING ? kotlinString((String) v.value) : v.value.toString();
+            sb.append("    const val ").append(v.name).append(": ").append(t).append(" = ").append(literal).append('\n');
+        }
+        return sb.append("}\n").toString();
+    }
+
+    static String kotlinString(String s) {
+        StringBuilder sb = new StringBuilder("\"");
+        for (char c : s.toCharArray()) {
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '$' -> sb.append("\\$");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
+                    else sb.append(c);
+                }
+            }
+        }
+        return sb.append('"').toString();
+    }
+
     /** The source of the generated defines class {@code fqcn}, with NAME, VERSION and the values as constants. */
     public static String source(String fqcn, List<Value> values, String projectName, String version) {
         int dot = fqcn.lastIndexOf('.');

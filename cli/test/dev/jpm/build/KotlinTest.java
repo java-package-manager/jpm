@@ -1,5 +1,7 @@
 package dev.jpm.build;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import dev.jpm.util.Exec;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
@@ -83,6 +85,7 @@ class KotlinTest {
     @Test
     @Tag("live")
     void compilesKotlinAndJavaTogether(@TempDir Path dir) throws Exception {
+        kotlinOnlyModuleWithDefines(dir.resolve("kotlin-only"));
         Path p = dir.resolve("p");
         Fs.write(p.resolve("project.jsonc"), """
                 { "name": "mixed", "version": "1.0.0", "java": "21", "layout": "maven",
@@ -146,5 +149,40 @@ class KotlinTest {
                 "{ \"name\": \"p\", \"kotlin\": { \"version\": \"2.2.20\", \"plugins\": [\"nope\"] } }"));
         assertTrue(plugin.getMessage().startsWith("kotlin.plugins: \"nope\" is neither group:artifact[:version] nor one of Kotlin's own: "),
                 plugin.getMessage());
+    }
+
+    @Test
+    void kotlinOnlyModulesGetTheirDefinesAsKotlin() {
+        String src = Defines.kotlinSource("app.Config", List.of(new Defines.Value("GREETING", dev.jpm.Manifest.DefineType.STRING, "hi $you \"x\""),
+                new Defines.Value("RETRIES", dev.jpm.Manifest.DefineType.INT, 3)), "app", "1.0.0");
+        assertEquals("""
+                package app
+
+                object Config {
+                    const val NAME: String = "app"
+                    const val VERSION: String = "1.0.0"
+                    const val GREETING: String = "hi \\$you \\"x\\""
+                    const val RETRIES: Int = 3
+                }
+                """, src);
+    }
+
+    private static void kotlinOnlyModuleWithDefines(Path dir) throws Exception {
+        Path p = dir.resolve("p");
+        Fs.write(p.resolve("project.jsonc"), """
+                { "name": "kt", "version": "2.0.0", "java": "21", "kotlin": "2.2.20", "main": "app.MainKt",
+                  "runtime": { "org.jetbrains.kotlin:kotlin-stdlib": "2.2.20" },
+                  "define": { "GREETING": "hi" }, "defineClass": "app.Config" }
+                """);
+        Fs.write(p.resolve("src/app/Main.kt"), "package app\nfun main() { println(Config.GREETING + \" \" + Config.VERSION) }\n");
+        Project project = Project.load(p);
+        MavenRepo r = new MavenRepo(List.of());
+        Builder b = new Builder(project, Install.run(project, r, Install.Options.normal()), r, Env.Mode.PRODUCTION);
+        Project.Module m = project.modules.get(0);
+        b.compileMain(m);
+        assertTrue(Files.exists(Builder.classesDir(m).resolve("app/Config.class")));
+        assertFalse(Files.exists(m.cacheDir().resolve("generated/app/Config.java")), "no Java source for a Kotlin-only module");
+        Exec.Result run = Exec.capture(p, List.of(b.jdk(m.manifest).java(), "-cp", Compiler.join(b.runtimeClasspath(m)), "app.MainKt"));
+        assertEquals("hi 2.0.0", run.out().strip(), run.err());
     }
 }

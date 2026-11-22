@@ -334,7 +334,16 @@ public final class Builder {
             return null;
         }
         String fqcn = Defines.className(m.manifest);
-        Fs.writeIfChanged(gen.resolve(fqcn.replace('.', '/') + ".java"), Defines.source(fqcn, defs, m.name(), m.version()));
+        boolean kotlinOnly = m.manifest.kotlin != null
+                && m.srcDirs().stream().noneMatch(d -> !Fs.files(d, ".java").isEmpty());
+        Path java = gen.resolve(fqcn.replace('.', '/') + ".java"), kotlin = gen.resolve(fqcn.replace('.', '/') + ".kt");
+        if (kotlinOnly) {
+            Fs.deleteTree(java);
+            Fs.writeIfChanged(kotlin, Defines.kotlinSource(fqcn, defs, m.name(), m.version()));
+        } else {
+            Fs.deleteTree(kotlin);
+            Fs.writeIfChanged(java, Defines.source(fqcn, defs, m.name(), m.version()));
+        }
         return gen;
     }
 
@@ -867,7 +876,11 @@ public final class Builder {
             if (!defs.isEmpty() || mod.manifest().defineClass != null) {
                 String fqcn = Defines.className(mod.manifest());
                 Path gen = buildDir.resolve("generated");
-                Fs.write(gen.resolve(fqcn.replace('.', '/') + ".java"), Defines.source(fqcn, defs, mod.manifest().name, p.version));
+                boolean kotlinOnly = mod.manifest().kotlin != null
+                        && mod.manifest().sourceDirs(src).stream().noneMatch(d -> !Fs.files(d, ".java").isEmpty());
+                Fs.write(gen.resolve(fqcn.replace('.', '/') + (kotlinOnly ? ".kt" : ".java")), kotlinOnly
+                        ? Defines.kotlinSource(fqcn, defs, mod.manifest().name, p.version)
+                        : Defines.source(fqcn, defs, mod.manifest().name, p.version));
                 roots.add(gen);
             }
             Path classes = buildDir.resolve("classes");
