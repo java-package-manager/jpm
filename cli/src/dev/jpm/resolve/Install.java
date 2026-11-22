@@ -125,6 +125,12 @@ public final class Install {
     public static void fetch(Graph graph, MavenRepo repo) {
         List<Graph.Pkg> todo = new ArrayList<>();
         for (Graph.Pkg p : graph.pkgs.values()) {
+            if (p.kind != Graph.Kind.GIT || p.commit == null) continue;
+            GitModule mod = GitModule.locate(dev.jpm.DepKey.parse(p.id), p.commit);
+            repo.addRepositories(mod.root().repositories);
+            repo.addRepositories(mod.manifest().repositories);
+        }
+        for (Graph.Pkg p : graph.pkgs.values()) {
             if (p.kind == Graph.Kind.MAVEN && p.hasJar) todo.add(p);
             if (p.kind == Graph.Kind.GRADLE) {
                 GradleDist.Installed g = GradleDist.require(p.version, p.sha256);

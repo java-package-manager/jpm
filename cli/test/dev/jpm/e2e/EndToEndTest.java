@@ -253,6 +253,32 @@ class EndToEndTest {
     }
 
     @Test
+    void gitDependencyWithItsOwnRepository(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Path other = tmp.resolve("other-repo");
+        money(new dev.jpm.testing.TestRepo(other));
+        Path lib = tmp.resolve("git/me/shop");
+        Fs.write(lib.resolve("src/shop/Price.java"), "package shop; public class Price { public static String of(long c) {"
+                + " return org.example.money.Money.format(c); } }");
+        Fs.write(lib.resolve("project.jsonc"), "{ \"name\": \"shop\", \"version\": \"1.0.0\", \"repositories\": [\"" + other.toUri()
+                + "\"], \"runtime\": { \"org.example:money\": \"1.2.0\" } }");
+        git(lib, "init", "-q", "-b", "main");
+        git(lib, "add", "-A");
+        git(lib, "commit", "-qm", "1.0.0");
+        git(lib, "tag", "1.0.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \"21\","
+                + " \"main\": \"app.Main\", \"runtime\": { \"github:me/shop\": \"1.0.0\" } }");
+        Fs.write(s.project.resolve("src/app/Main.java"),
+                "package app; public class Main { public static void main(String[] a) { System.out.println(shop.Price.of(1234)); } }");
+        s.jpm("install");
+        Fs.deleteTree(s.home.resolve("repository"));
+        s.jpm("install", "--frozen");
+        s.jpm("start");
+        s.verify("git-own-repository");
+    }
+
+    @Test
     void gitDependencyWithAMavenBuild(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path lib = tmp.resolve("git/me/maven-lib");

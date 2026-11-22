@@ -1,0 +1,15 @@
+$ jpm install
+   Resolving dependencies
+     Cloning <tmp>/git/me/shop
+  + github:me/shop 1.0.0
+  + org.example:money 1.2.0
+      Locked 2 packages (2 added, 0 changed, 0 removed)
+
+$ jpm install --frozen
+  Up to date 2 packages in project.lock
+
+$ jpm start
+    Building github:me/shop 1.0.0 (<commit>)
+    Compiled app 1.0.0 (<jdk>, release 21)
+EUR 12.34
+

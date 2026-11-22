@@ -289,8 +289,9 @@ the POM lists as `compile`) are on the compile classpath only, never at run time
 **Git dependencies** go through the system `git` (so SSH keys and credential helpers work), into bare
 mirrors under `~/.jpm/git`. Versions are ranges in any of the syntaxes above matched against tags,
 exact tags, branches (`main`, or `#main` to say it is a branch; a tag of the same name wins over `main`) or
-commits. A tag must match the version in that commit's manifest; untagged commits are versioned like
-`1.3.0+a1b2c3d`. Git packages are built from source with the consuming project's resolved versions
+commits. A tag must match the version in that commit's manifest (when following a branch, a tag that does
+not is ignored); untagged commits are versioned like `1.3.0+a1b2c3d`. The `"repositories"` a Git
+dependency's manifest lists are searched too, after the project's own, for what it depends on. Git packages are built from source with the consuming project's resolved versions
 and cached in `~/.jpm/builds`, keyed by commit, patch, define values, classpath and JDK. A repository
 without a `project.jsonc` is imported from its `pom.xml` or Gradle build (see
 [Importing](#importing-maven-and-gradle-projects)); one with neither fails with a clear error.

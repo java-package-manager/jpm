@@ -373,6 +373,8 @@ public final class Resolver {
     private Expanded expandGit(String id, Selected sel) {
         DepKey key = DepKey.parse(id);
         GitModule mod = GitModule.locate(key, sel.commit);
+        repo.addRepositories(mod.root().repositories);
+        repo.addRepositories(mod.manifest().repositories);
         List<EdgeReq> edges = new ArrayList<>();
         for (Manifest.Dependency d : mod.manifest().deps(Manifest.Scope.RUNTIME)) {
             if (d.key().isWorkspace()) {

@@ -42,10 +42,24 @@ public final class MavenRepo {
     MavenRepo(List<String> repositories, boolean exact) {
         List<String> r = new ArrayList<>();
         for (String e : repositories) r.add(slash(e));
-        this.repos = r;
+        this.repos = new java.util.concurrent.CopyOnWriteArrayList<>(r);
         this.cache = Fs.home().resolve("repository");
         this.offline = Fs.offline();
         this.http = dev.jpm.util.Http.client();
+    }
+
+    /**
+     * Adds repositories that a Git dependency's manifest lists, after those already searched, so that the
+     * dependencies it brings resolve from where it says they are.
+     */
+    public void addRepositories(List<String> more) {
+        for (String m : more) {
+            String r = slash(m);
+            if (!repos.contains(r)) {
+                repos.add(r);
+                versionsMemo.clear();
+            }
+        }
     }
 
     private static List<String> withCentral(List<String> extra) {
