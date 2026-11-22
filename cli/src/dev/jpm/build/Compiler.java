@@ -216,6 +216,11 @@ public final class Compiler {
         Fs.mkdirs(tmp);
         List<String> args = new ArrayList<>();
         if (r.jdk.major() >= 9) {
+            String refused = r.release < r.jdk.major() ? refusedWithRelease(r.extraArgs) : null;
+            if (refused != null) {
+                throw new JpmException(r.label + ": \"javacArgs\" has " + refused + ", which javac allows only when the JDK is the"
+                        + " target version; build with JDK " + r.release + " (" + r.jdk.id() + " targets " + r.release + " with --release)");
+            }
             if (r.release < r.jdk.major()) {
                 args.add("--release");
                 args.add(Integer.toString(r.release));
@@ -239,7 +244,7 @@ public final class Compiler {
         cp.addAll(r.classpath);
         Path moduleInfo = Modules.moduleInfo(r.sourceRoots);
         if (moduleInfo != null && r.jdk.major() >= 9) {
-            Modules.Declaration decl = Modules.parse(moduleInfo);
+            Modules.Declaration decl = Modules.declaration(r.jdk, moduleInfo);
             List<List<Path>> split = Modules.split(decl, cp);
             if (!split.get(0).isEmpty()) {
                 args.add("--module-path");
@@ -288,11 +293,6 @@ public final class Compiler {
             } catch (IOException ignored) {
             }
             Log.tool(out);
-            if (out.contains("not allowed with --release")) {
-                throw new JpmException(r.label + ": compilation failed: \"javacArgs\" opens a JDK module, which javac only"
-                        + " allows when the JDK is the target version; build with JDK " + r.release + " (" + r.jdk.id()
-                        + " targets " + r.release + " with --release)");
-            }
             throw new JpmException(r.label + ": compilation failed");
         }
         Log.tool(out);
@@ -341,6 +341,30 @@ public final class Compiler {
             return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
         }
         return s;
+    }
+
+    /** Options that javac refuses together with {@code --release}: the JDK's own modules, opened or replaced. */
+    private static final Set<String> SYSTEM_MODULE_OPTIONS = Set.of("--add-exports", "--add-reads", "--patch-module");
+    private static final Set<String> SYSTEM_OPTIONS = Set.of("--system", "--upgrade-module-path");
+
+    /** The first of {@code args} that javac refuses with {@code --release} (ADR 0002), or null. */
+    static String refusedWithRelease(List<String> args) {
+        for (int i = 0; i < args.size(); i++) {
+            String a = args.get(i), option = a, value = null;
+            int eq = a.indexOf('=');
+            if (a.startsWith("--") && eq > 0) {
+                option = a.substring(0, eq);
+                value = a.substring(eq + 1);
+            } else if (i + 1 < args.size()) {
+                value = args.get(i + 1);
+            }
+            if (SYSTEM_OPTIONS.contains(option)) return option;
+            if (SYSTEM_MODULE_OPTIONS.contains(option) && value != null) {
+                String module = value.split("[/=]", 2)[0];
+                if (module.startsWith("java.") || module.startsWith("jdk.")) return option + " " + value;
+            }
+        }
+        return null;
     }
 
     /** Paths joined with the platform's path separator, for {@code -cp}. */

@@ -1,6 +1,9 @@
 package dev.jpm.build;
 
+import dev.jpm.toolchain.Jdk;
+import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
+import dev.jpm.util.JpmException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,9 +35,6 @@ public final class Modules {
     /** A module declaration: its name and the modules it requires. */
     public record Declaration(String name, Set<String> requires) {}
 
-    private static final Pattern MODULE = Pattern.compile("\\b(?:open\\s+)?module\\s+([\\w.]+)\\s*\\{");
-    private static final Pattern REQUIRES = Pattern.compile("\\brequires\\s+(?:(?:static|transitive)\\s+)*([\\w.]+)\\s*;");
-
     /** The module-info.java directly in one of the source roots, or null. */
     public static Path moduleInfo(List<Path> sourceRoots) {
         for (Path root : sourceRoots) {
@@ -44,18 +44,86 @@ public final class Modules {
         return null;
     }
 
-    /** Reads a {@code module-info.java}: the module's name and what it requires. */
-    public static Declaration parse(Path moduleInfo) {
-        String src = Fs.read(moduleInfo)
-                .replaceAll("(?s)/\\*.*?\\*/", " ")
-                .replaceAll("//[^\n]*", " ");
-        Matcher m = MODULE.matcher(src);
-        String name = m.find() ? m.group(1) : null;
+    /**
+     * The name and requires of a {@code module-info.java}, as javac's parser reads it: a small program on
+     * {@code jdk}'s source launcher (JDK 11 or newer) parses it with {@code com.sun.source}. jpm does not read
+     * Java sources itself. The result is cached by the file's content, so the parser runs only when it changes.
+     */
+    public static Declaration declaration(Jdk jdk, Path moduleInfo) {
+        String text = Fs.read(moduleInfo);
+        String key = dev.jpm.util.Hash.sha256(READER + "\n" + text);
+        Path cached = Fs.home().resolve("cache").resolve("module-info").resolve(key + ".txt");
+        if (!Files.exists(cached)) {
+            if (jdk.major() < 11) {
+                throw JpmException.at(moduleInfo, 0, "jpm reads module-info.java with JDK 11 or newer; " + jdk.id() + " is older")
+                        .withHint("set \"java\" to 11 or newer and \"target\" to the release you build for");
+            }
+            Path reader = Fs.home().resolve("cache").resolve("module-info").resolve("reader-" + dev.jpm.util.Hash.sha256(READER).substring(0, 12))
+                    .resolve("ModuleInfoReader.java");
+            if (!Files.exists(reader)) Fs.write(reader, READER);
+            Exec.Result r = Exec.capture(moduleInfo.getParent(), List.of(jdk.java(), reader.toString(), moduleInfo.toString()));
+            if (!r.ok()) throw JpmException.at(moduleInfo, 0, "javac could not read the module declaration:\n" + r.err().strip());
+            Fs.write(cached, r.out());
+        }
+        String name = null;
         Set<String> requires = new LinkedHashSet<>();
-        Matcher r = REQUIRES.matcher(src);
-        while (r.find()) requires.add(r.group(1));
+        for (String line : Fs.read(cached).split("\n")) {
+            if (line.startsWith("module ")) name = line.substring(7).strip();
+            else if (line.startsWith("requires ")) requires.add(line.substring(9).strip());
+        }
         return new Declaration(name, requires);
     }
+
+    /** The name and requires of a compiled module, from its {@code module-info.class}; null when there is none. */
+    public static Declaration compiled(Path classes) {
+        Path f = classes.resolve("module-info.class");
+        if (!Files.isRegularFile(f)) return null;
+        try (var in = Files.newInputStream(f)) {
+            java.lang.module.ModuleDescriptor d = java.lang.module.ModuleDescriptor.read(in);
+            Set<String> requires = new LinkedHashSet<>();
+            for (java.lang.module.ModuleDescriptor.Requires r : d.requires()) {
+                if (!r.name().equals("java.base")) requires.add(r.name());
+            }
+            return new Declaration(d.name(), requires);
+        } catch (java.io.IOException e) {
+            throw new JpmException("Could not read " + f + ": " + e.getMessage());
+        }
+    }
+
+    static final String READER = """
+            import com.sun.source.tree.ModuleTree;
+            import com.sun.source.tree.RequiresTree;
+            import com.sun.source.util.JavacTask;
+            import com.sun.source.util.TreeScanner;
+            import javax.tools.JavaCompiler;
+            import javax.tools.StandardJavaFileManager;
+            import javax.tools.ToolProvider;
+
+            public class ModuleInfoReader {
+                public static void main(String[] args) throws Exception {
+                    JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
+                    StandardJavaFileManager files = javac.getStandardFileManager(null, null, null);
+                    JavacTask task = (JavacTask) javac.getTask(null, files, null, null, null, files.getJavaFileObjects(args[0]));
+                    StringBuilder out = new StringBuilder();
+                    for (var unit : task.parse()) {
+                        new TreeScanner<Void, Void>() {
+                            @Override
+                            public Void visitModule(ModuleTree m, Void v) {
+                                out.append("module ").append(m.getName()).append('\\n');
+                                return super.visitModule(m, v);
+                            }
+
+                            @Override
+                            public Void visitRequires(RequiresTree r, Void v) {
+                                out.append("requires ").append(r.getModuleName()).append('\\n');
+                                return null;
+                            }
+                        }.scan(unit, null);
+                    }
+                    System.out.print(out);
+                }
+            }
+            """;
 
     /** The module name a jar declares (module-info or Automatic-Module-Name), or null if it is not a module. */
     public static String declaredName(Path jar) {

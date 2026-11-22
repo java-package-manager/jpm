@@ -16,8 +16,7 @@ but javac refuses it together with options that open the JDK's own modules, such
 - To use `"javacArgs"` that open JDK modules, build with a JDK of the target version.
 - The bundle launcher is compiled for the module's target, and for at least Java 8 (`Builder`).
 
-## Known problem
-
-When javac still refuses `--release`, `Compiler` recognizes the error by its text
-(`"not allowed with --release"`). The roadmap replaces this with a decision from the arguments before
-compiling (Phase 3, "No manual reading of Java source").
+- javac refuses some options together with `--release`: `--add-exports`, `--add-reads` and `--patch-module`
+  of a JDK module (`java.*`, `jdk.*`), `--system` and `--upgrade-module-path`. jpm finds them in
+  `"javacArgs"` before compiling and says which JDK to build with (`Compiler.refusedWithRelease`); it does
+  not read javac's error text.

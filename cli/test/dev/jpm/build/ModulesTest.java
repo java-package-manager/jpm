@@ -28,9 +28,31 @@ class ModulesTest {
                     exports com.example.app.api;
                 }
                 """);
-        Modules.Declaration d = Modules.parse(Modules.moduleInfo(List.of(dir)));
+        dev.jpm.toolchain.Jdk jdk = dev.jpm.toolchain.Toolchain.require(dev.jpm.toolchain.JavaSpec.any());
+        Modules.Declaration d = Modules.declaration(jdk, Modules.moduleInfo(List.of(dir)));
         assertEquals("com.example.app", d.name());
         assertEquals(Set.of("org.jspecify", "java.sql", "org.apache.commons.lang3"), d.requires());
+        Fs.write(dir.resolve("module-info.java"), """
+                @Deprecated(forRemoval = false, since = "requires fake;")
+                module com.example.app {
+                    requires /* requires fake; */ org.jspecify;
+                    requires
+                        java.sql;
+                }
+                """);
+        d = Modules.declaration(jdk, dir.resolve("module-info.java"));
+        assertEquals(Set.of("org.jspecify", "java.sql"), d.requires(), "javac's parser, not a pattern, reads the declaration");
+    }
+
+    @Test
+    void readsACompiledModule(@TempDir Path dir) {
+        Fs.write(dir.resolve("src/module-info.java"), "module m.x { requires java.sql; }");
+        assertEquals(0, javax.tools.ToolProvider.getSystemJavaCompiler().run(null, null, null, "-d", dir.resolve("out").toString(),
+                dir.resolve("src/module-info.java").toString()));
+        Modules.Declaration d = Modules.compiled(dir.resolve("out"));
+        assertEquals("m.x", d.name());
+        assertEquals(Set.of("java.sql"), d.requires());
+        assertEquals(null, Modules.compiled(dir.resolve("src")));
     }
 
     @Test

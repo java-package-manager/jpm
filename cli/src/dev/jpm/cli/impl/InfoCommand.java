@@ -138,7 +138,7 @@ final class InfoCommand extends Command {
             if (withClasspath) {
                 List<Path> compileCp = b.classpath(m, Builder.Cp.COMPILE);
                 mod.put("compileClasspath", compileCp.stream().map(Path::toString).toList());
-                Map<String, Object> compileModule = compileModule(m, compileCp);
+                Map<String, Object> compileModule = compileModule(m, b.jdk(m.manifest), compileCp);
                 if (compileModule != null) mod.put("compileModule", compileModule);
                 mod.put("classpaths", classpaths(c, b, m));
                 mod.put("defines", defines(b, m));
@@ -222,10 +222,10 @@ final class InfoCommand extends Command {
         return out;
     }
 
-    static Map<String, Object> compileModule(Project.Module m, List<Path> compileClasspath) {
+    static Map<String, Object> compileModule(Project.Module m, dev.jpm.toolchain.Jdk jdk, List<Path> compileClasspath) {
         Path moduleInfo = dev.jpm.build.Modules.moduleInfo(m.srcDirs());
         if (moduleInfo == null) return null;
-        dev.jpm.build.Modules.Declaration decl = dev.jpm.build.Modules.parse(moduleInfo);
+        dev.jpm.build.Modules.Declaration decl = dev.jpm.build.Modules.declaration(jdk, moduleInfo);
         List<List<Path>> split = dev.jpm.build.Modules.split(decl, compileClasspath);
         Map<String, Object> out = new LinkedHashMap<>();
         if (decl.name() != null) out.put("name", decl.name());

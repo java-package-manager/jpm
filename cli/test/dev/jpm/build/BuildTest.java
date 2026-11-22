@@ -229,6 +229,17 @@ class BuildTest {
         });
     }
 
+    @Test
+    void argumentsJavacRefusesWithRelease() {
+        assertEquals("--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                Compiler.refusedWithRelease(List.of("--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")));
+        assertEquals("--add-exports java.base/sun.nio.ch=ALL-UNNAMED",
+                Compiler.refusedWithRelease(List.of("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED")));
+        assertEquals("--system", Compiler.refusedWithRelease(List.of("--system", "/opt/jdk")));
+        assertEquals(null, Compiler.refusedWithRelease(List.of("--add-exports", "my.module/my.pkg=ALL-UNNAMED", "-Xlint:all")));
+        assertEquals(null, Compiler.refusedWithRelease(List.of("-parameters")));
+    }
+
     private static void quietly(Runnable r) {
         java.io.PrintStream err = System.err;
         System.setErr(new java.io.PrintStream(java.io.OutputStream.nullOutputStream()));
