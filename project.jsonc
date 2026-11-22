@@ -2,7 +2,7 @@
 {
   "$schema": "./cli/src/assets/dev/jpm/project.schema.json",
   "name": "jpm-workspace",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "group": "dev.jpm",
   "license": "MIT",
   "java": "21",
