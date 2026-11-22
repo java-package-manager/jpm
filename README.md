@@ -34,20 +34,21 @@ Open a new terminal afterwards. `JPM_VERSION=0.3.0` installs that version instea
 **Upgrading:** `jpm upgrade` replaces jpm with the latest release (checksum-verified, in place) and
 refreshes the shims. `jpm upgrade --check` only reports; `jpm upgrade 0.3.0` installs a given version.
 
-**Canary builds:** every commit on the main branch that passes CI is released as a prerelease tagged
-`<version>-<commit>` (e.g. `0.5.0-3ff03ab`, the version of the release it follows), except the commit that
-changes the version, which is released. `jpm upgrade --canary`
-installs the newest one, and again when there is a newer commit; `jpm upgrade` from a canary build moves to
+**Canary builds** are prereleases of a commit of the main branch, tagged `<version>-<commit>` (e.g.
+`0.5.0-3ff03ab`, the version of the release it follows), built when a maintainer asks for one (CI's "Run
+workflow" with `canary`). `jpm upgrade --canary` installs the newest one, and again when there is a newer
+one; `jpm upgrade` from a canary build moves to
 the next release once there is one, and `jpm upgrade <version>` goes back to a release. The install
 scripts install a canary with `JPM_VERSION=canary`. The newest ten canaries are kept.
 
 `jpm version` says when a newer release is out, and on a canary build also when a newer canary is (on
 stderr, after the version, so scripts reading the version are unaffected).
 
-**Releases** are built by CI for Linux (x64, arm64), macOS (arm64, x64) and Windows (x64). To release,
-change `"version"` in `project.jsonc` and push to the main branch: a version that has no release yet is
-tagged (plain, no `v` prefix) and released by that run, instead of a canary build. There is no tag to
-push by hand. Nothing is published unless every platform passes, and a version is never released twice.
+**Releases** are built by CI for Linux (x64, arm64), macOS (arm64, x64) and Windows (x64), when the main
+branch gets a version that has no release yet: merging the "Version packages" pull request that
+[jpm-changeset](https://github.com/java-package-manager/jpm-changeset) keeps (see CONTRIBUTING.md) tags that
+version (plain, no `v` prefix) and releases it. Other pushes only run the checks on Linux. There is no tag
+to push by hand. Nothing is published unless every platform passes, and a version is never released twice.
 Versions like `1.0.0-rc1` become GitHub prereleases, which `jpm upgrade` and the install scripts skip.
 
 ## Getting started

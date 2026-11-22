@@ -82,8 +82,10 @@ checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/p
 - The version is `"version"` in `project.jsonc`. When `main` has a version with no tag yet, CI tags that
   commit and releases it: native binaries for Linux, macOS and Windows, `SHA256SUMS`, the install scripts
   and `project.schema.json`. A version with a `-` (such as `1.0.0-rc1`) is a prerelease.
-- Every other commit on `main` is a canary prerelease named `<version>-<commit>`, which
-  `jpm upgrade --canary` installs. CI keeps the newest ten.
+- Other pushes to `main`, and pull requests, run the checks on Linux only and publish nothing. A canary
+  prerelease of a commit (`<version>-<commit>`, which `jpm upgrade --canary` installs, with
+  `dev.jpm:jpm-api` as `<version>-SNAPSHOT`) is built on request: Actions → CI → Run workflow, with
+  `canary`. CI keeps the newest ten.
 - A change users notice comes with a changeset: `jpm changeset add --module jpm --patch -m "..."` (or
   `--minor`, `--major`) writes one to `.changeset/`; commit it with the change. Pull requests are checked
   for one (`jpm changeset status --check`).
