@@ -99,10 +99,11 @@ after it.
 
 ### `check/run`
 
-Runs `jpm check` (Milestone 4, item 8) and returns its problems instead of printing them. `checks` limits
-it to some checks by id; `tests: false` leaves out the tests. Every check runs even when one fails, so
-`problems` holds all of them and `ran` lists the checks that ran. While it runs, jpm sends `progress`
-notifications.
+Runs `jpm check` and returns its problems instead of printing them. `checks` limits it to some checks by id
+(`paths`, `format:format`); `tests: false` leaves out the tests. Every check runs even when one fails, so
+`problems` holds all of them and `ran` lists the checks that ran (one skipped because an earlier check failed
+is not in it). Problem locations are absolute paths. What jpm prints while it runs (compiler and test output)
+comes as `log` notifications.
 
 ## 4. Notifications from jpm
 
@@ -216,9 +217,13 @@ An extension describes itself in its own `project.jsonc`, under `"extension"`:
       }
     }
   },
-  "checks": { "pom": { "description": "The POM has what Maven Central requires" } }
+  "checks": { "pom": { "description": "The POM has what Maven Central requires", "run": ["--check-pom"] } }
 }
 ```
+
+`jpm check` runs a check as the extension with its `run` arguments (`check <id>` when there are none), with
+`JPM_CHECK_PROBLEMS` naming a file for the problems it finds (a JSON array of `{severity, message, file?,
+line?, hint?}`, paths relative to the project); a non-zero exit fails the check.
 
 A command's name is what follows `jpm` and starts with the extension's name (`publish`, `format check`);
 options start with `-`; check ids are lowercase letters, digits and `-`. jpm rejects a descriptor that

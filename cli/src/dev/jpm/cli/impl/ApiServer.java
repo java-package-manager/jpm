@@ -29,7 +29,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 final class ApiServer {
     static final List<String> METHODS = List.of("initialize", "shutdown", "exit", "project/load", "project/classpaths",
-            "schema/manifest", "extensions/list", "$/cancelRequest");
+            "schema/manifest", "extensions/list", "check/run", "$/cancelRequest");
 
     private static final Object EOF = new Object();
 
@@ -133,6 +133,7 @@ final class ApiServer {
             case "project/load" -> load(params);
             case "project/classpaths" -> classpaths(params);
             case "schema/manifest" -> Map.of("schema", Jsonc.parse(SchemaCommand.text()), "version", Main.VERSION);
+            case "check/run" -> check(params);
             case "extensions/list" -> Map.of("extensions", ExtensionList.list(params.get("dir") instanceof String ? Project.find(dir(params)) : null));
             default -> throw new ApiError(-32601, "no method \"" + method + "\"; this jpm has " + String.join(", ", METHODS), null);
         };
@@ -188,6 +189,37 @@ final class ApiServer {
         List<String> names = new ArrayList<>();
         if (params.get("modules") instanceof List<?> l) for (Object o : l) names.add(String.valueOf(o));
         return Map.of("modules", new ProjectModel(p, repo, g).classpaths(names));
+    }
+
+    private Object check(Map<?, ?> params) {
+        java.util.Set<String> only = new java.util.LinkedHashSet<>();
+        if (params.get("checks") instanceof List<?> l) for (Object x : l) only.add(String.valueOf(x));
+        boolean tests = !Boolean.FALSE.equals(params.get("tests"));
+        Checker c = new Checker(dir(params), new Checker.Options(tests, only, List.of(), false));
+        List<dev.jpm.check.CheckResult> results = c.run();
+        List<Object> problems = new ArrayList<>();
+        List<Object> ran = new ArrayList<>();
+        for (dev.jpm.check.CheckResult r : results) {
+            if (r.skipped() == null) ran.add(r.id());
+            for (dev.jpm.check.Problem p : r.problems()) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("severity", p.severity() == dev.jpm.check.Problem.Severity.ERROR ? "error" : "warning");
+                m.put("message", p.message());
+                if (p.file() != null) {
+                    Map<String, Object> loc = new LinkedHashMap<>();
+                    loc.put("file", p.file().toAbsolutePath().normalize().toString());
+                    if (p.line() != null) loc.put("line", p.line());
+                    m.put("location", loc);
+                }
+                if (p.hint() != null) m.put("hint", p.hint());
+                m.put("check", p.check());
+                problems.add(m);
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("problems", problems);
+        out.put("ran", ran);
+        return out;
     }
 
     private static String lock(Project p) {

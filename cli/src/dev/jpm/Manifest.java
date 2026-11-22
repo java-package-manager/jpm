@@ -173,8 +173,11 @@ public final class Manifest {
     /** An option of an extension's command; {@code argument} names its value, null for a flag. */
     public record ExtensionOption(String name, String argument, String description) {}
 
-    /** A check an extension adds to {@code jpm check}, by id. */
-    public record ExtensionCheck(String id, String description) {}
+    /**
+     * A check an extension adds to {@code jpm check}, by id; {@code jpm check} runs the extension with {@code run} as its
+     * arguments ({@code check <id>} when the descriptor gives none).
+     */
+    public record ExtensionCheck(String id, String description, List<String> run) {}
 
     /** An extension declared in {@code "extensions"}: {@code "github:me/jpm-foo": "^1.0"}. */
     public record ExtensionDecl(DepKey key, String spec, int line) {
@@ -495,7 +498,15 @@ public final class Manifest {
             for (Jsonc.Member k : ks.members.values()) {
                 if (!k.key.matches("[a-z][a-z0-9-]*")) throw JpmException.at(file, line(k.keyStart), "a check id is lowercase letters, digits and -, not \"" + k.key + "\"");
                 if (!k.value.isObject()) throw err(k.value, "the check " + k.key + " must be an object");
-                checks.add(new ExtensionCheck(k.key, text(k.value, "description")));
+                List<String> run = List.of("check", k.key);
+                Jsonc.Node r = k.value.get("run");
+                if (r != null) {
+                    if (!(r.value instanceof List<?> l) || l.stream().anyMatch(x -> !(x instanceof String))) {
+                        throw err(r, "run must be a list of the arguments jpm passes to the extension, such as [\"--check\"]");
+                    }
+                    run = l.stream().map(String::valueOf).toList();
+                }
+                checks.add(new ExtensionCheck(k.key, text(k.value, "description"), run));
             }
         }
         return new ExtensionDescriptor(text(n, "description"), List.copyOf(commands), List.copyOf(checks));

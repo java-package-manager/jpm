@@ -454,7 +454,14 @@
           "additionalProperties": {
             "type": "object",
             "additionalProperties": false,
-            "properties": { "description": { "type": "string" } }
+            "properties": {
+              "description": { "type": "string" },
+              "run": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "The arguments `jpm check` runs the extension with (default: check <id>). A non-zero exit fails the check; problems the extension writes to the file in JPM_CHECK_PROBLEMS (a JSON array of {severity, message, file?, line?, hint?}) are reported with their locations."
+              }
+            }
           }
         }
       }

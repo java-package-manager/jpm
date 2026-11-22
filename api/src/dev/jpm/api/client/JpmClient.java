@@ -1,8 +1,10 @@
 package dev.jpm.api.client;
 
 import dev.jpm.api.json.Jsonc;
+import dev.jpm.api.model.CheckReport;
 import dev.jpm.api.model.Classpaths;
 import dev.jpm.api.model.Extension;
+import dev.jpm.api.model.Problem;
 import dev.jpm.api.model.Project;
 import dev.jpm.api.protocol.Frames;
 import dev.jpm.api.protocol.Protocol;
@@ -208,6 +210,30 @@ public final class JpmClient implements AutoCloseable {
             for (Object o : l) if (o instanceof Map<?, ?> m) out.add(Results.extension((Map<String, Object>) m));
         }
         return out;
+    }
+
+    /**
+     * {@code check/run}: runs {@code jpm check} and returns its problems instead of printing them; every check runs even
+     * when one fails. jpm's output while it runs comes as log messages ({@link #onLog}).
+     *
+     * @param dir    the project's folder
+     * @param checks check ids to run, such as {@code paths} or {@code format:format}; empty for all
+     * @param tests  whether to run the tests too
+     * @return the problems and the checks that ran
+     * @throws JpmError when jpm cannot run the checks at all
+     */
+    @SuppressWarnings("unchecked")
+    public CheckReport check(Path dir, List<String> checks, boolean tests) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("dir", dir.toAbsolutePath().toString());
+        params.put("checks", checks);
+        params.put("tests", tests);
+        Map<String, Object> r = call("check/run", params);
+        List<Problem> problems = new ArrayList<>();
+        if (r.get("problems") instanceof List<?> l) for (Object o : l) problems.add(Results.problem(o));
+        List<String> ran = new ArrayList<>();
+        if (r.get("ran") instanceof List<?> l) for (Object o : l) ran.add(String.valueOf(o));
+        return new CheckReport(List.copyOf(problems), List.copyOf(ran));
     }
 
     /**

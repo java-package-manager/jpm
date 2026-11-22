@@ -96,6 +96,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `start --trace` | Run under the native-image tracing agent, recording configuration for native builds |
 | `dev [entry] [-- args]` | Run `main` with the development env, restarting when sources, assets, manifest or env files change |
 | `test [filter...]` | Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag |
+| `check [check...]` | Run jpm's checks (manifest, dependencies, paths, license, compile, unused-dependencies, duplicate-classes), the checks of the extensions the project declares, then the tests, and report every problem; `--no-test`, `--fail-on-warning`, `--exclude-tag <tag>`, `--sarif <file>`, `--junit <file>`, `--frozen` |
 | `run <script> [args]` | Run a script from `scripts` (no shorthand); `<module>:<script>` runs a workspace module's script from anywhere in the workspace |
 | `clean` | Delete build output |
 | `patch <dep>` | Unpack a dependency's source for editing |
@@ -452,6 +453,41 @@ are ordinary resources. Plugins written in Kotlin with the `kotlin-dsl` conventi
 
 A shaded plugin jar is a flat bundle with `"relocate"` (see below). jpm-publish does not write Gradle plugin
 marker artifacts or publish to the Gradle Plugin Portal.
+
+## Checks
+
+`jpm check` is the one command for CI: it runs every check jpm and the project's extensions know, then the
+tests, and reports every problem before it exits, so failing tests never hide anything else.
+
+| Check | What it reports |
+|---|---|
+| `manifest` | `project.jsonc` does not load (unknown fields, bad values; the file and line) |
+| `dependencies` | the dependencies do not resolve, or `project.lock` is stale with `--frozen` |
+| `paths` | a field names a file or folder that does not exist: `sources`, `resources`, `patches`, script and hook files |
+| `license` | a module with a `"group"` (published) has no `"license"`, or one that is not an SPDX id (warning) |
+| `compile` | the sources or tests do not compile |
+| `unused-dependencies` | a declared dependency none of the module's classes refer to, read from the compiled classes (warning) |
+| `duplicate-classes` | two entries of a runtime classpath have the same class (warning) |
+| `<extension>:<check>` | the checks of the extensions the project declares (see below) |
+| `tests` | failed tests, each at its line in the test source |
+
+Errors fail `jpm check`; warnings do only with `--fail-on-warning`. `jpm check paths license` runs just those
+checks; `--no-test` leaves out the tests, `--exclude-tag <tag>` some of them. `--sarif <file>` and
+`--junit <file>` write the problems as SARIF (GitHub code scanning shows them as annotations) and as JUnit XML
+(one test case per check):
+
+```yaml
+- run: jpm check --frozen --sarif check.sarif
+- uses: github/codeql-action/upload-sarif@v4
+  if: always()
+  with: { sarif_file: check.sarif }
+```
+
+Only extensions declared in the project add checks, so CI and every developer run the same ones. An extension
+lists them in its descriptor; jpm runs the extension with the check's `"run"` arguments (default
+`check <id>`). A non-zero exit fails the check, and the extension can write its problems, with locations, to the
+file named by `JPM_CHECK_PROBLEMS` as a JSON array of `{"severity": "error" | "warning", "message", "file",
+"line", "hint"}` (paths relative to the project).
 
 ## Extensions
 

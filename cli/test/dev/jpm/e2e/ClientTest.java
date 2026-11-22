@@ -3,6 +3,7 @@ package dev.jpm.e2e;
 import dev.jpm.api.client.JpmClient;
 import dev.jpm.api.client.JpmError;
 import dev.jpm.api.client.LoadOptions;
+import dev.jpm.api.model.CheckReport;
 import dev.jpm.api.model.Classpaths;
 import dev.jpm.api.model.Extension;
 import dev.jpm.api.model.Module;
@@ -112,6 +113,28 @@ class ClientTest {
             Extension hello = all.get(1);
             assertEquals(List.of(new Extension.Command("hello", null, List.of())), hello.commands(), "no commands listed: one named after it");
             assertEquals(List.of("hello", "lint"), jpm.extensions(null).stream().map(Extension::name).sorted().toList());
+        }
+    }
+
+    @Test
+    void runsTheChecks(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"sources\": [\"src\", \"gen\"]\n}\n");
+        Fs.write(s.project.resolve("src/app/A.java"), "package app; public class A {}");
+        try (JpmClient jpm = connect(s)) {
+            assertTrue(jpm.supports("check/run"));
+            CheckReport r = jpm.check(s.project, List.of(), false);
+            assertEquals(List.of("manifest", "dependencies", "paths", "license", "compile", "unused-dependencies", "duplicate-classes"), r.ran());
+            assertTrue(r.failed());
+            dev.jpm.api.model.Problem p = r.problems().get(0);
+            assertEquals("paths", p.check());
+            assertEquals("error", p.severity());
+            assertEquals("the source folder gen does not exist", p.message());
+            assertEquals(s.project.resolve("project.jsonc"), p.file());
+            assertEquals(4, p.line());
+            CheckReport only = jpm.check(s.project, List.of("license"), false);
+            assertEquals(List.of("license"), only.ran());
+            assertFalse(only.failed());
         }
     }
 

@@ -218,17 +218,17 @@ the tests.
 
 **Needs:** the extension API above.
 
-- [ ] `jpm check` runs jpm's own project checks first (manifest, paths that do not exist, license,
+- [x] `jpm check` runs jpm's own project checks first (manifest, paths that do not exist, license,
       unused dependencies, duplicate classes), then the checks of the extensions declared in the project
       (for example `changeset status`, `format --check`), then the tests.
-- [ ] It runs every check even when one fails and reports all problems before it exits, so failing
+- [x] It runs every check even when one fails and reports all problems before it exits, so failing
       tests never hide other problems.
-- [ ] A check reports problems with a severity (error or warning), a message and a location (file and
+- [x] A check reports problems with a severity (error or warning), a message and a location (file and
       line where there is one), so CI, jpm-intellij and the language server can all show them.
-- [ ] Only extensions declared in the project add checks, so CI and every developer run the same ones.
-- [ ] `--no-test` for the quick checks only; `--fail-on-warning` for CI.
-- [ ] A machine-readable report (SARIF or JUnit XML), so GitHub shows problems as annotations.
-- [ ] Output grouped by check, using the logger's colors.
+- [x] Only extensions declared in the project add checks, so CI and every developer run the same ones.
+- [x] `--no-test` for the quick checks only; `--fail-on-warning` for CI.
+- [x] A machine-readable report (SARIF or JUnit XML), so GitHub shows problems as annotations.
+- [x] Output grouped by check, using the logger's colors.
 
 ---
 
@@ -585,6 +585,8 @@ Builds the test and tooling base that the restructure depends on.
    - Add **unused dependencies** and **duplicate classes**, read from compiled classes.
    - **Missing paths** is one shared check for every field that names a file (Phase 5, *Editing
      project.jsonc*).
+   - Done: `jpm check` (README, Checks), `check/run` and `JpmClient.check`; extension checks run with the
+     descriptor's `"run"` and report through `JPM_CHECK_PROBLEMS`.
 9. **Remove the old commands.**
    - `jpm info --json/--ide/--classpath` and `jpm schema` are removed in this release.
    - Release jpm, jpm-publish and jpm-intellij together, so nothing calls the removed commands.

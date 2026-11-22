@@ -48,18 +48,8 @@ final class ExtensionCommand extends Command {
         }
         Manifest.ExtensionDecl declared = project == null ? null
                 : project.root.declaredExtensions.stream().filter(d -> d.name().equals(cmd)).findFirst().orElse(null);
+        if (declared != null) return launch(cwd, project, declared, args, Map.of());
         List<String> full = new ArrayList<>();
-        if (declared != null) {
-            MavenRepo repo = new MavenRepo(project.root.repositories);
-            Graph g = Install.run(project, repo, Install.Options.normal());
-            GlobalExtensions.Launch l = GlobalExtensions.launch(Extensions.project(project, declared), g.extensions.get(cmd), declared.key(), repo);
-            full.add(l.java());
-            full.add("-cp");
-            full.add(dev.jpm.build.Compiler.join(l.classpath()));
-            full.add(l.main());
-            full.addAll(args);
-            return Exec.inherit(cwd, full, env(project));
-        }
         Path exe = dev.jpm.resolve.ExtensionDeps.executable(cmd);
         if (exe == null) {
             throw new JpmException("Unknown command \"" + cmd + "\"").withHint("run `jpm help`, or add an extension that provides it"
@@ -70,7 +60,26 @@ final class ExtensionCommand extends Command {
         return Exec.inherit(cwd, full, env(project));
     }
 
+    static int launch(Path cwd, Project project, Manifest.ExtensionDecl declared, List<String> args, Map<String, String> extraEnv) {
+        MavenRepo repo = new MavenRepo(project.root.repositories);
+        Graph g = Install.run(project, repo, Install.Options.normal());
+        GlobalExtensions.Launch l = GlobalExtensions.launch(Extensions.project(project, declared), g.extensions.get(declared.name()), declared.key(), repo);
+        List<String> full = new ArrayList<>();
+        full.add(l.java());
+        full.add("-cp");
+        full.add(dev.jpm.build.Compiler.join(l.classpath()));
+        full.add(l.main());
+        full.addAll(args);
+        Map<String, String> env = new LinkedHashMap<>(env(cwd, project));
+        env.putAll(extraEnv);
+        return Exec.inherit(cwd, full, env);
+    }
+
     private Map<String, String> env(Project p) {
+        return env(cwd, p);
+    }
+
+    private static Map<String, String> env(Path cwd, Project p) {
         Map<String, String> env = new LinkedHashMap<>();
         env.put("JPM_EXE", dev.jpm.util.Self.exe());
         env.put("JPM_VERSION_OF_JPM", Main.VERSION);

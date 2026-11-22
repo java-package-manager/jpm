@@ -16,7 +16,7 @@ public final class Commands {
         return List.of(
                 new InitCommand(cwd), new AddCommand(cwd), new RemoveCommand(cwd), new InstallCommand(cwd), new UpdateCommand(cwd),
                 new OutdatedCommand(cwd), new WhyCommand(cwd), new InfoCommand(cwd), new ImportCommand(cwd), new SchemaCommand(cwd),
-                new BuildCommand(cwd), new StartCommand(cwd, false), new StartCommand(cwd, true), new TestCommand(cwd),
+                new BuildCommand(cwd), new StartCommand(cwd, false), new StartCommand(cwd, true), new TestCommand(cwd), new CheckCommand(cwd),
                 new RunCommand(cwd), new CleanCommand(cwd), new PatchCommand(cwd), new JavaCommand(cwd, false),
                 new JavaCommand(cwd, true), new UpgradeCommand(cwd), new VersionCommand(cwd), new HelpCommand(cwd),
                 new CompletionsCommand(cwd), new ApiCommand(cwd));

@@ -33,6 +33,11 @@ public final class TestRunner {
 
     /** Runs a module's tests. Returns the exit code (0 when no tests exist). */
     public static int run(Builder b, Project.Module m, Selection selection) {
+        return run(b, m, selection, null);
+    }
+
+    /** Runs a module's tests, writing JUnit XML reports into {@code reports} when it is not null. */
+    public static int run(Builder b, Project.Module m, Selection selection, Path reports) {
         if (!b.compileTests(m)) {
             Log.info(m.name() + ": no tests");
             return selection.filters().isEmpty() ? 0 : NO_MATCH;
@@ -61,6 +66,11 @@ public final class TestRunner {
         if (Version.of(platform).compareTo(Version.of("1.10")) >= 0) cmd.add("execute");
         cmd.add("--disable-banner");
         cmd.add("--details=tree");
+        if (reports != null) {
+            dev.jpm.util.Fs.deleteTree(reports);
+            dev.jpm.util.Fs.mkdirs(reports);
+            cmd.add("--reports-dir=" + reports);
+        }
         if (filters.isEmpty()) {
             cmd.add("--scan-class-path=" + Builder.testClassesDir(m));
         } else {

@@ -1,0 +1,153 @@
+$ jpm check --sarif check.sarif --junit check.xml
+    Checking project.jsonc loads (manifest)
+    Checking dependencies resolve (dependencies)
+   Resolving dependencies
+     Cloning <tmp>/git/me/jpm-lint
+  + org.apiguardian:apiguardian-api <test-framework>
+  + org.example:money 1.0.0
+  + org.example:money-copy 1.0.0
+  + org.example:unused 1.0.0
+  + org.jspecify:jspecify <test-framework>
+  + org.junit.jupiter:junit-jupiter <test-framework>
+  + org.junit.jupiter:junit-jupiter-api <test-framework>
+  + org.junit.jupiter:junit-jupiter-engine <test-framework>
+  + org.junit.jupiter:junit-jupiter-params <test-framework>
+  + org.junit.platform:junit-platform-commons <test-framework>
+  + org.junit.platform:junit-platform-engine <test-framework>
+  + org.opentest4j:opentest4j <test-framework>
+      Locked 12 packages (12 added, 0 changed, 0 removed)
+  extension lint:
+  + github:me/jpm-lint 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+    Checking files and folders the manifests name exist (paths)
+error: project.jsonc:7: the source folder generated does not exist
+error: project.jsonc:8: the script file gen.java (gen) does not exist
+    Checking published modules have a license (license)
+warning: project.jsonc:3: app has a "group" but no "license"
+  hint: add an SPDX license id, such as "license": "MIT" (in the workspace root for every module)
+    Checking the sources compile (compile)
+    Compiled app 1.0.0 (<jdk>, release 21)
+    Compiled app tests
+    Checking every declared dependency is used (unused-dependencies)
+warning: project.jsonc:12: app does not use org.example:unused (runtime)
+  hint: remove it with `jpm remove org.example:unused`, or make it "runtimeOnly" if it is only loaded at run time
+    Checking no class is on a runtime classpath twice (duplicate-classes)
+warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 1 class (org.example.money.Money)
+  hint: exclude one of them, or drop the dependency that brings the second copy
+    Checking the code has style (lint:style)
+    Building github:me/jpm-lint 1.0.0 (<commit>)
+jpm-lint ran with --style
+warning: src/app/Main.java:1: Main is too long
+    Checking the tests pass (tests)
+     Testing app
+╷
+└─ JUnit Jupiter ✔
+   └─ MainTest ✔
+      └─ adds() ✘ expected: <3> but was: <2>
+
+Failures (1):
+  JUnit Jupiter:MainTest:adds()
+    MethodSource [className = 'app.MainTest', methodName = 'adds', methodParameterTypes = '']
+    => org.opentest4j.AssertionFailedError: expected: <3> but was: <2>
+       org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:569)
+       app.MainTest.adds(MainTest.java:9)
+
+Test run finished after <n> ms
+[         2 containers found      ]
+[         0 containers skipped    ]
+[         2 containers started    ]
+[         0 containers aborted    ]
+[         2 containers successful ]
+[         0 containers failed     ]
+[         1 tests found           ]
+[         0 tests skipped         ]
+[         1 tests started         ]
+[         0 tests aborted         ]
+[         0 tests successful      ]
+[         1 tests failed          ]
+
+error: test/app/MainTest.java:9: app.MainTest > adds(): expected: <3> but was: <2>
+error: jpm check found problems (9 checks: 3 errors, 4 warnings)
+[exit 1]
+
+--- check.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="jpm check" tests="9" failures="2" errors="0" skipped="0">
+    <testcase classname="jpm check" name="manifest"/>
+    <testcase classname="jpm check" name="dependencies"/>
+    <testcase classname="jpm check" name="paths">
+      <failure message="2 errors">project.jsonc:7: error: the source folder generated does not exist
+project.jsonc:8: error: the script file gen.java (gen) does not exist
+</failure>
+    </testcase>
+    <testcase classname="jpm check" name="license">
+      <system-out>project.jsonc:3: warning: app has a &quot;group&quot; but no &quot;license&quot;
+</system-out>
+    </testcase>
+    <testcase classname="jpm check" name="compile"/>
+    <testcase classname="jpm check" name="unused-dependencies">
+      <system-out>project.jsonc:12: warning: app does not use org.example:unused (runtime)
+</system-out>
+    </testcase>
+    <testcase classname="jpm check" name="duplicate-classes">
+      <system-out>project.jsonc: warning: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 1 class (org.example.money.Money)
+</system-out>
+    </testcase>
+    <testcase classname="jpm check" name="lint:style">
+      <system-out>src/app/Main.java:1: warning: Main is too long
+</system-out>
+    </testcase>
+    <testcase classname="jpm check" name="tests">
+      <failure message="1 error">test/app/MainTest.java:9: error: app.MainTest &gt; adds(): expected: &lt;3&gt; but was: &lt;2&gt;
+</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
+
+$ jpm check --no-test paths license
+    Checking files and folders the manifests name exist (paths)
+error: project.jsonc:7: the source folder generated does not exist
+error: project.jsonc:8: the script file gen.java (gen) does not exist
+    Checking published modules have a license (license)
+warning: project.jsonc:3: app has a "group" but no "license"
+  hint: add an SPDX license id, such as "license": "MIT" (in the workspace root for every module)
+error: jpm check found problems (2 checks: 2 errors, 1 warning)
+[exit 1]
+
+$ jpm check --fail-on-warning --no-test
+    Checking project.jsonc loads (manifest)
+    Checking dependencies resolve (dependencies)
+    Checking files and folders the manifests name exist (paths)
+    Checking published modules have a license (license)
+    Checking the sources compile (compile)
+    Compiled app tests
+    Checking every declared dependency is used (unused-dependencies)
+warning: project.jsonc:12: app does not use org.example:unused (runtime)
+  hint: remove it with `jpm remove org.example:unused`, or make it "runtimeOnly" if it is only loaded at run time
+    Checking no class is on a runtime classpath twice (duplicate-classes)
+warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 1 class (org.example.money.Money)
+  hint: exclude one of them, or drop the dependency that brings the second copy
+    Checking the code has style (lint:style)
+jpm-lint ran with --style
+warning: src/app/Main.java:1: Main is too long
+error: jpm check found problems (8 checks: 0 errors, 3 warnings)
+[exit 1]
+
+$ jpm check --no-test
+    Checking project.jsonc loads (manifest)
+    Checking dependencies resolve (dependencies)
+    Checking files and folders the manifests name exist (paths)
+    Checking published modules have a license (license)
+    Checking the sources compile (compile)
+    Checking every declared dependency is used (unused-dependencies)
+warning: project.jsonc:12: app does not use org.example:unused (runtime)
+  hint: remove it with `jpm remove org.example:unused`, or make it "runtimeOnly" if it is only loaded at run time
+    Checking no class is on a runtime classpath twice (duplicate-classes)
+warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 1 class (org.example.money.Money)
+  hint: exclude one of them, or drop the dependency that brings the second copy
+    Checking the code has style (lint:style)
+jpm-lint ran with --style
+warning: src/app/Main.java:1: Main is too long
+     Checked 8 checks: 0 errors, 3 warnings
+

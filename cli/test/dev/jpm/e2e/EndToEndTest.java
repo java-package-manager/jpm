@@ -210,6 +210,73 @@ class EndToEndTest {
     }
 
     @Test
+    void checkReportsEveryProblem(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        s.repo.artifact("org.example:money-copy:1.0.0").javaClass("org.example.money.Money", MONEY_V1).publish();
+        s.repo.artifact("org.example:unused:1.0.0").javaClass("org.example.unused.Unused", "package org.example.unused; public class Unused {}").publish();
+        Path lint = tmp.resolve("git/me/jpm-lint");
+        Fs.write(lint.resolve("src/lint/Main.java"), "package lint; public class Main { public static void main(String[] a) throws Exception {"
+                + " java.nio.file.Files.writeString(java.nio.file.Path.of(System.getenv(\"JPM_CHECK_PROBLEMS\")),"
+                + " \"[{\\\"severity\\\": \\\"warning\\\", \\\"message\\\": \\\"Main is too long\\\", \\\"file\\\": \\\"src/app/Main.java\\\", \\\"line\\\": 1}]\");"
+                + " System.out.println(\"jpm-lint ran with \" + String.join(\" \", a)); } }");
+        Fs.write(lint.resolve("project.jsonc"), "{ \"name\": \"jpm-lint\", \"version\": \"1.0.0\", \"main\": \"lint.Main\", \"extension\": {"
+                + " \"checks\": { \"style\": { \"description\": \"the code has style\", \"run\": [\"--style\"] } } } }");
+        git(lint, "init", "-q", "-b", "main");
+        git(lint, "add", "-A");
+        git(lint, "commit", "-qm", "1.0.0");
+        git(lint, "tag", "1.0.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("project.jsonc"), """
+                {
+                  "name": "app",
+                  "group": "org.example",
+                  "version": "1.0.0",
+                  "java": "21",
+                  "main": "app.Main",
+                  "sources": ["src", "generated"],
+                  "scripts": { "gen": "gen.java" },
+                  "runtime": {
+                    "org.example:money": "1.0.0",
+                    "org.example:money-copy": "1.0.0",
+                    "org.example:unused": "1.0.0"
+                  },
+                  "test": { "org.junit.jupiter:junit-jupiter": "*" },
+                  "extensions": { "github:me/jpm-lint": "1.0.0" }
+                }
+                """);
+        Fs.write(s.project.resolve("src/app/Main.java"), "package app; public class Main { public static void main(String[] a) {"
+                + " System.out.println(org.example.money.Money.format(1234)); } }");
+        Fs.write(s.project.resolve("test/app/MainTest.java"), """
+                package app;
+
+                import org.junit.jupiter.api.Test;
+                import static org.junit.jupiter.api.Assertions.assertEquals;
+
+                class MainTest {
+                    @Test
+                    void adds() {
+                        assertEquals(3, 1 + 1);
+                    }
+                }
+                """);
+        s.jpm("check", "--sarif", "check.sarif", "--junit", "check.xml");
+        s.show("check.xml");
+        s.jpm("check", "--no-test", "paths", "license");
+        Fs.write(s.project.resolve("project.jsonc"), Fs.read(s.project.resolve("project.jsonc")).replace("\"sources\": [\"src\", \"generated\"],", "")
+                .replace("\"scripts\": { \"gen\": \"gen.java\" },", "\"license\": \"MIT\","));
+        Fs.write(s.project.resolve("test/app/MainTest.java"), "package app; class MainTest { @org.junit.jupiter.api.Test void adds() {"
+                + " org.junit.jupiter.api.Assertions.assertEquals(2, 1 + 1); } }");
+        s.jpm("check", "--fail-on-warning", "--no-test");
+        s.jpm("check", "--no-test");
+        s.verify("check");
+        String sarif = Fs.read(s.project.resolve("check.sarif"));
+        if (!sarif.contains("\"ruleId\": \"paths\"") || !sarif.contains("\"uri\": \"src/app/Main.java\"") || !sarif.contains("\"startLine\": 9")) {
+            throw new AssertionError("the SARIF report misses results:\n" + sarif);
+        }
+    }
+
+    @Test
     void patchADependency(@TempDir Path tmp) {
         Session s = new Session(tmp);
         s.repo.artifact("org.example:money:1.0.0").javaClass("org.example.money.Money", MONEY_V1)
