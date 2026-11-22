@@ -1,5 +1,8 @@
 package dev.jpm.version;
 
+import dev.jpm.version.impl.MavenRange;
+import dev.jpm.version.impl.NpmRange;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

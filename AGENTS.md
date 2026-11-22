@@ -23,7 +23,8 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
 ## Where things live
 
 - `api/`: the public API module (`dev.jpm.api`, `module-info.java` exports only it). `cli/`: jpm itself.
-- `cli/src/dev/jpm/cli`: one class per command (`*Command`), the registry `Commands` (the source of `jpm help`, the README table and completions), `Main`, shims, upgrade.
+- `cli/src/dev/jpm/cli`: `Main`; `cli/src/dev/jpm/cli/impl`: one class per command (`*Command`), the registry `Commands` (the source of `jpm help`, the README table and completions), shims, upgrade.
+- Every area has its internal API in `dev.jpm.<area>` and its implementations in `dev.jpm.<area>.impl`.
 - `cli/src/dev/jpm/resolve`: dependency resolution and `project.lock`. `cli/src/dev/jpm/maven`: repositories, POMs.
 - `cli/src/dev/jpm/build`: compiling, jars, bundles, patches, scripts, the test runner.
 - `cli/src/dev/jpm/toolchain`: finding and installing JDKs. `cli/src/dev/jpm/importer`: Maven and Gradle import.
@@ -40,7 +41,7 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
 - No `System.out`/`System.err` outside `dev.jpm.log.Log`.
 - jpm never parses `.java`/`.kt` sources itself.
 - Tests never use the network unless tagged `@Tag("live")`, and never touch `~/.jpm`.
-- No implementation class (`dev.jpm.<area>.impl`) is used from another area.
+- No implementation class (`dev.jpm.<area>.impl`) is used from another area (the `impl-across-areas` ratchet reads the compiled classes), and implementations have no Javadoc.
 - Ratchet baselines in `checks/ratchets.properties` never go up.
 - An end-to-end transcript in `fixtures/expected/` changes only for an intended behavior change, which the
   commit message names.

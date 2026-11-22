@@ -1,5 +1,10 @@
 package dev.jpm.build;
 
+import dev.jpm.build.impl.BundleLauncher;
+import dev.jpm.build.impl.KotlinCompiler;
+import dev.jpm.build.impl.Relocator;
+import dev.jpm.build.impl.Resources;
+
 
 import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.DepKey;
@@ -462,7 +467,7 @@ public final class Builder {
     }
 
     /** Content key of directory trees: relative names, sizes and modification times. */
-    static String treeKey(List<Path> dirs) {
+    public static String treeKey(List<Path> dirs) {
         Hash h = new Hash();
         for (Path d : dirs) {
             for (Path f : Fs.files(d, null)) {

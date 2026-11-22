@@ -1,5 +1,8 @@
 package dev.jpm;
 
+import dev.jpm.impl.ManifestReader;
+import dev.jpm.impl.ScopeChecks;
+
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;

@@ -1,5 +1,7 @@
 package dev.jpm.resolve;
 
+import dev.jpm.resolve.impl.ImportedRepo;
+
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.git.GitRepo;

@@ -1,5 +1,7 @@
 package dev.jpm.build;
 
+import dev.jpm.build.impl.Resources;
+
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;

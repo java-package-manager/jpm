@@ -1,5 +1,7 @@
 package dev.jpm.resolve;
 
+import dev.jpm.resolve.impl.GitVersions;
+
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
@@ -35,9 +37,9 @@ import java.util.TreeMap;
  */
 public final class Resolver {
 
-    record Request(String spec, boolean hard, boolean direct, String from) {}
+    public record Request(String spec, boolean hard, boolean direct, String from) {}
 
-    record Selected(String version, String commit, String tag) {}
+    public record Selected(String version, String commit, String tag) {}
 
     private record EdgeReq(String target, Graph.Kind kind, String spec, boolean runtimeOnly, Set<String> exclusions, boolean compileOnly) {
         EdgeReq(String target, Graph.Kind kind, String spec, boolean runtimeOnly, Set<String> exclusions) {
@@ -281,7 +283,7 @@ public final class Resolver {
         return true;
     }
 
-    static JpmException conflict(String id, List<Request> reqs) {
+    public static JpmException conflict(String id, List<Request> reqs) {
         StringBuilder sb = new StringBuilder("No version of " + id + " satisfies every requirement:");
         for (Request r : reqs) sb.append("\n  ").append(r.spec).append("  required by ").append(r.from);
         return new JpmException(sb.toString());

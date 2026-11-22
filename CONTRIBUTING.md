@@ -53,8 +53,8 @@ checks/coverage.sh              # tests with JaCoCo; report in .cache/coverage/
 - **Layers.** `dev.jpm.api…` (the `api` module) is the public API: exported, with full Javadoc (javac
   fails the build on anything missing), kept stable once jpm reaches 1.0. `dev.jpm.<area>` (such as `resolve`, `build`, `toolchain`) is internal API: the interfaces and
   records areas use to talk to each other, with Javadoc, not exported. `dev.jpm.<area>.impl` holds
-  implementations, without Javadoc, and is never used from another area. The code is moving into these
-  layers (roadmap Milestone 2).
+  implementations, without Javadoc, and is never used from another area. `checks/Ratchets.java` checks
+  both, the second over the compiled classes (jdeps).
 - **No reading of Java sources.** jpm does not parse `.java` or `.kt` files itself; what it needs comes
   from the compiler, from compiled classes or from the manifest.
 - **Output goes through `dev.jpm.log.Log`.** No `System.out` or `System.err` anywhere else (a ratchet

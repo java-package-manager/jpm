@@ -1,5 +1,7 @@
 package dev.jpm.build;
 
+import dev.jpm.build.impl.Relocator;
+
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 

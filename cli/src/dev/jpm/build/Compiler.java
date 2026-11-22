@@ -1,5 +1,7 @@
 package dev.jpm.build;
 
+import dev.jpm.build.impl.ClassInfo;
+
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;

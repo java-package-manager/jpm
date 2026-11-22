@@ -75,7 +75,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 
 ## Commands
 
-<!-- commands: generated from the command registry, `JPM_UPDATE_EXPECTED=1 bin/jpm test dev.jpm.cli.CommandsTest` rewrites it -->
+<!-- commands: generated from the command registry, `JPM_UPDATE_EXPECTED=1 bin/jpm test dev.jpm.cli.impl.CommandsTest` rewrites it -->
 
 | Command | |
 |---|---|

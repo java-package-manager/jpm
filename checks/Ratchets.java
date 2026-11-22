@@ -44,8 +44,16 @@ public final class Ratchets {
             new Ratchet("exports-outside-api", "packages a module-info.java exports outside dev.jpm.api", List.of("api/src", "cli/src"),
                     s -> s.path().getFileName().toString().equals("module-info.java")
                             ? matches(s, Pattern.compile("\\bexports\\s+(?!dev\\.jpm\\.api\\b)[\\w.]+")) : List.of()),
+            new Ratchet("impl-javadoc", "Javadoc in dev.jpm.<area>.impl (implementations have none)", List.of("cli/src"),
+                    s -> isImpl(s.path()) ? s.comments().stream().filter(Comment::javadoc).map(c -> s.path() + ":" + c.line()).toList() : List.of()),
+            new Ratchet("missing-internal-javadoc", "public types and members of internal API (dev.jpm.<area>, not impl) without Javadoc",
+                    List.of("cli/src"), s -> isImpl(s.path()) ? List.of() : missingJavadoc(s)),
             new Ratchet("missing-api-javadoc", "public types and members in dev.jpm.api without Javadoc", List.of("api/src"),
                     Ratchets::missingJavadoc));
+
+    private static boolean isImpl(Path p) {
+        return p.toString().replace('\\', '/').contains("/impl/");
+    }
 
     private static boolean isLogger(Path p) {
         String s = p.toString().replace('\\', '/');
@@ -155,7 +163,40 @@ public final class Ratchets {
             for (Path f : javaFiles(r.roots())) hits.addAll(r.find().apply(parse(f)));
             found.put(r.name(), hits);
         }
+        found.put("impl-across-areas", implAcrossAreas());
         return found;
+    }
+
+    static final String IMPL_ACROSS = "uses of a dev.jpm.<area>.impl class from another area (compiled classes)";
+
+    /** The area of a class: the package after {@code dev.jpm}, or "root" for {@code dev.jpm} and {@code dev.jpm.impl}. */
+    static String area(String cls) {
+        String[] p = cls.split("\\.");
+        if (p.length <= 3 || p[2].equals("impl")) return "root";
+        return p[2];
+    }
+
+    /**
+     * Edges from a class to an implementation class of another area, read from jpm's compiled classes with jdeps
+     * ({@code bin/jpm build} first). Empty when the classes are not built.
+     */
+    static List<String> implAcrossAreas() {
+        Path classes = Path.of(".cache/build/jpm/classes"), api = Path.of(".cache/build/jpm-api/classes");
+        if (!Files.isDirectory(classes)) return List.of();
+        var jdeps = java.util.spi.ToolProvider.findFirst("jdeps").orElseThrow();
+        var out = new java.io.StringWriter();
+        jdeps.run(new java.io.PrintWriter(out), new java.io.PrintWriter(new java.io.StringWriter()),
+                "-verbose:class", "-filter:none", "--module-path", api.toString(), classes.toString());
+        java.util.TreeSet<String> hits = new java.util.TreeSet<>();
+        for (String line : out.toString().split("\n")) {
+            String[] t = line.trim().split("\\s+");
+            if (t.length < 3 || !t[1].equals("->")) continue;
+            String from = t[0].replaceFirst("\\$.*", ""), to = t[2].replaceFirst("\\$.*", "");
+            if (!from.startsWith("dev.jpm.") || !to.startsWith("dev.jpm.") || to.startsWith("dev.jpm.api.")) continue;
+            boolean impl = to.substring(0, to.lastIndexOf('.')).endsWith(".impl");
+            if (impl && !area(from).equals(area(to))) hits.add(from + " -> " + to);
+        }
+        return new ArrayList<>(hits);
     }
 
     public static void main(String[] args) throws IOException {
@@ -179,7 +220,9 @@ public final class Ratchets {
         }
         Map<String, Integer> next = new TreeMap<>();
         boolean failed = false;
-        for (Ratchet r : RATCHETS) {
+        List<Ratchet> all = new ArrayList<>(RATCHETS);
+        all.add(new Ratchet("impl-across-areas", IMPL_ACROSS, List.of(), x -> List.of()));
+        for (Ratchet r : all) {
             int now = found.get(r.name()).size();
             String b = base.getProperty(r.name());
             int was = b == null ? now : Integer.parseInt(b.strip());

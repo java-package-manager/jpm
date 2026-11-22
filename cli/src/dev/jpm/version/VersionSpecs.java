@@ -1,5 +1,8 @@
 package dev.jpm.version;
 
+import dev.jpm.version.impl.MavenRange;
+import dev.jpm.version.impl.NpmRange;
+
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Optional;

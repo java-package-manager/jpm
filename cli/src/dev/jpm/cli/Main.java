@@ -1,5 +1,10 @@
 package dev.jpm.cli;
 
+import dev.jpm.cli.impl.Commands;
+import dev.jpm.cli.impl.JavaCommand;
+import dev.jpm.cli.impl.Shims;
+import dev.jpm.cli.impl.Upgrade;
+
 import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
 
@@ -35,7 +40,7 @@ public final class Main {
     }
 
     /** Prints a failure: what went wrong, where, and what to do next. */
-    static void report(JpmException e) {
+    public static void report(JpmException e) {
         Log.error(e.getMessage());
         if (e.location() != null) Log.info("  --> " + e.location());
         if (e.hint() != null) Log.info("  hint: " + e.hint());
@@ -132,7 +137,7 @@ public final class Main {
                 return 0;
             }
             logOptions(args, false);
-            return new JavaCommand(Path.of("").toAbsolutePath(), true).run(args);
+            return Commands.run(Path.of("").toAbsolutePath(), "jvm", args);
         }
         while (!args.isEmpty() && args.get(0).startsWith("-")) {
             String a = args.get(0);
@@ -147,6 +152,6 @@ public final class Main {
             return 0;
         }
         String cmd = args.remove(0);
-        return Commands.find(Path.of("").toAbsolutePath(), cmd).run(args);
+        return Commands.run(Path.of("").toAbsolutePath(), cmd, args);
     }
 }

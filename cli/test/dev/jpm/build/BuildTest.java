@@ -1,5 +1,8 @@
 package dev.jpm.build;
 
+import dev.jpm.build.impl.BundleLauncher;
+import dev.jpm.build.impl.ClassInfo;
+
 import dev.jpm.Manifest;
 import dev.jpm.toolchain.JavaSpec;
 import dev.jpm.toolchain.Jdk;

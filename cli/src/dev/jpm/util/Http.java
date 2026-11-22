@@ -1,5 +1,7 @@
 package dev.jpm.util;
 
+import dev.jpm.util.impl.NetworkSettings;
+
 import dev.jpm.log.Log;
 import java.io.IOException;
 import java.io.InputStream;

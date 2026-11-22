@@ -1,5 +1,9 @@
 package dev.jpm.importer;
 
+import dev.jpm.importer.impl.GradleImport;
+import dev.jpm.importer.impl.GradleScripts;
+import dev.jpm.importer.impl.MavenImport;
+
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.JpmException;
 

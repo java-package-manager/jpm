@@ -1,5 +1,7 @@
 package dev.jpm.build;
 
+import dev.jpm.build.impl.Resources;
+
 import dev.jpm.toolchain.JavaSpec;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.toolchain.Toolchain;

@@ -30,13 +30,13 @@ public final class Imported {
     }
 
     /** Smallest LTS JDK that can compile for the given release (at least 17, so modern tools run). */
-    static String jdkFor(int release) {
+    public static String jdkFor(int release) {
         for (int lts : new int[]{17, 21, 25}) if (release <= lts) return Integer.toString(lts);
         return Integer.toString(release);
     }
 
     /** Parses "1.8", "8", "17", "VERSION_17", "JavaVersion.VERSION_1_8" into a major version, or null. */
-    static Integer major(String v) {
+    public static Integer major(String v) {
         if (v == null) return null;
         String s = v.trim().replace("JavaVersion.", "").replace("VERSION_", "").replace('_', '.');
         if (s.startsWith("1.")) s = s.substring(2);
