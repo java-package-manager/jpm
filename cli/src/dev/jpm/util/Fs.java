@@ -36,6 +36,10 @@ public final class Fs {
 
     /** A file's text, as UTF-8. */
     public static String read(Path p) {
+        String name = p.getFileName() == null ? "" : p.getFileName().toString();
+        if (name.endsWith(".java") || name.endsWith(".kt")) {
+            throw new IllegalStateException("jpm does not read Java or Kotlin sources (ADR 0001): " + p);
+        }
         try {
             return Files.readString(p, StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -57,7 +61,11 @@ public final class Fs {
 
     /** Writes only if the content differs, keeping timestamps stable. */
     public static boolean writeIfChanged(Path p, String content) {
-        if (Files.exists(p) && read(p).equals(content)) return false;
+        try {
+            if (Files.exists(p) && java.util.Arrays.equals(Files.readAllBytes(p), content.getBytes(StandardCharsets.UTF_8))) return false;
+        } catch (IOException e) {
+            throw new JpmException("Could not read " + p + ": " + e.getMessage());
+        }
         write(p, content);
         return true;
     }

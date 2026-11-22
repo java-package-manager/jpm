@@ -50,8 +50,7 @@ public final class Modules {
      * Java sources itself. The result is cached by the file's content, so the parser runs only when it changes.
      */
     public static Declaration declaration(Jdk jdk, Path moduleInfo) {
-        String text = Fs.read(moduleInfo);
-        String key = dev.jpm.util.Hash.sha256(READER + "\n" + text);
+        String key = new dev.jpm.util.Hash().add(READER).addFile(moduleInfo).hex();
         Path cached = Fs.home().resolve("cache").resolve("module-info").resolve(key + ".txt");
         if (!Files.exists(cached)) {
             if (jdk.major() < 11) {

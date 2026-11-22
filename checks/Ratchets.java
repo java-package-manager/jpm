@@ -44,6 +44,8 @@ public final class Ratchets {
             new Ratchet("exports-outside-api", "packages a module-info.java exports outside dev.jpm.api", List.of("api/src", "cli/src"),
                     s -> s.path().getFileName().toString().equals("module-info.java")
                             ? matches(s, Pattern.compile("\\bexports\\s+(?!dev\\.jpm\\.api\\b)[\\w.]+")) : List.of()),
+            new Ratchet("text-reads-outside-fs", "text reads that bypass Fs.read, which refuses .java and .kt files",
+                    List.of("api/src", "cli/src"), s -> s.path().endsWith(Path.of("dev/jpm/util/Fs.java")) ? List.of() : matches(s, Ratchets.TEXT_READ)),
             new Ratchet("impl-javadoc", "Javadoc in dev.jpm.<area>.impl (implementations have none)", List.of("cli/src"),
                     s -> isImpl(s.path()) ? s.comments().stream().filter(Comment::javadoc).map(c -> s.path() + ":" + c.line()).toList() : List.of()),
             new Ratchet("missing-internal-javadoc", "public types and members of internal API (dev.jpm.<area>, not impl) without Javadoc",
@@ -90,6 +92,9 @@ public final class Ratchets {
         }
         return out;
     }
+
+    private static final Pattern TEXT_READ = Pattern.compile(
+            "\\b(Files\\.readString|Files\\.readAllLines|Files\\.lines|Files\\.newBufferedReader)\\s*\\(");
 
     private static int annotationLines(String annotations) {
         return annotations == null ? 0 : (int) annotations.chars().filter(c -> c == '\n').count();

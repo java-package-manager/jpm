@@ -62,7 +62,11 @@ final class Session {
             for (Path f : (Iterable<Path>) s::iterator) {
                 Path rel = from.relativize(f);
                 if (rel.toString().startsWith(".cache") || rel.toString().contains("dist") || rel.endsWith("project.lock")) continue;
-                if (Files.isRegularFile(f)) Fs.write(project.resolve(rel.toString()), Fs.read(f));
+                if (Files.isRegularFile(f)) {
+                    Path to = project.resolve(rel.toString());
+                    Files.createDirectories(to.getParent());
+                    Files.copy(f, to, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

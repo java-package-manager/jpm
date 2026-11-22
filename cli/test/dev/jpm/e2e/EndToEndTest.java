@@ -191,7 +191,11 @@ class EndToEndTest {
         } catch (java.io.IOException e) {
             throw new java.io.UncheckedIOException(e);
         }
-        Fs.write(source, Fs.read(source).replace("EUR", "USD"));
+        try {
+            Fs.write(source, java.nio.file.Files.readString(source).replace("EUR", "USD"));
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
         s.jpm("patch", "--commit", "org.example:money");
         s.tree("patches").show("project.jsonc");
         s.jpm("start");

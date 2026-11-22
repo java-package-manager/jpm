@@ -162,7 +162,7 @@ compiled classes or from the manifest.
 - [x] Generated sources (`Defines`, the bundle launcher) are generated per language or as class files,
       so a Kotlin-only module does not need Java source generation. The defines class is Kotlin in a
       Kotlin-only module; the bundle launcher is jpm's own code, compiled on its own with the JDK.
-- [ ] A check in CI that fails when `src/` gains new code that opens `.java` files for reading.
+- [x] A check in CI that fails when `src/` gains new code that opens `.java` files for reading.
 
 ### Every supported Java version
 
