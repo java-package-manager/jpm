@@ -135,14 +135,14 @@ public final class Project {
                 if (!d.key().isWorkspace()) continue;
                 Module target = p.module(d.key().artifact());
                 if (target == null) {
-                    throw new JpmException(m.manifest.file + ":" + d.line() + ": no workspace module named \"" + d.key().artifact() + "\"");
+                    throw JpmException.at(m.manifest.file, d.line(), "no workspace module named \"" + d.key().artifact() + "\"");
                 }
                 if (m.manifest.isolated) {
-                    throw new JpmException(m.manifest.file + ":" + d.line() + ": an isolated module cannot depend on workspace modules"
+                    throw JpmException.at(m.manifest.file, d.line(), "an isolated module cannot depend on workspace modules"
                             + " (it is resolved in a graph of its own)");
                 }
                 if (target.manifest.isolated) {
-                    throw new JpmException(m.manifest.file + ":" + d.line() + ": " + target.name() + " is isolated, so no module can depend on it");
+                    throw JpmException.at(m.manifest.file, d.line(), target.name() + " is isolated, so no module can depend on it");
                 }
             }
         }

@@ -1,5 +1,6 @@
 package dev.jpm.util;
 
+import dev.jpm.log.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -64,29 +65,21 @@ public final class Http {
             Files.createDirectories(target.getParent());
             Path tmp = Files.createTempFile(target.getParent(), target.getFileName().toString(), ".part");
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            boolean tty = System.console() != null;
-            try (InputStream in = r.body(); OutputStream out = Files.newOutputStream(tmp)) {
+            try (InputStream in = r.body(); OutputStream out = Files.newOutputStream(tmp);
+                 Log.Progress progress = Log.progress("Downloading", label)) {
                 byte[] buf = new byte[1 << 16];
                 long done = 0;
-                int lastPct = -1;
                 int n;
                 while ((n = in.read(buf)) > 0) {
                     out.write(buf, 0, n);
                     md.update(buf, 0, n);
                     done += n;
-                    if (tty && total > 0) {
-                        int pct = (int) (done * 100 / total);
-                        if (pct != lastPct) {
-                            System.err.print("\r" + String.format("%12s", "Downloading") + " " + label + " " + pct + "% of " + (total >> 20) + " MB");
-                            lastPct = pct;
-                        }
-                    }
+                    progress.update(done, total);
                 }
             } catch (IOException e) {
                 Files.deleteIfExists(tmp);
                 throw e;
             }
-            if (tty && total > 0) System.err.print("\r\u001b[K");
             Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             return HexFormat.of().formatHex(md.digest());
         } catch (IOException e) {

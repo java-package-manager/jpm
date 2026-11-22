@@ -2,7 +2,7 @@ package dev.jpm.maven;
 
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 
 import java.io.IOException;
@@ -187,13 +187,13 @@ public final class MavenRepo {
             String failure = failures.get(local(group, artifact, version, classifier, ext));
             if (failure != null) {
                 throw new JpmException("Could not download " + group + ":" + artifact + ":" + version
-                        + (classifier != null ? ":" + classifier : "") + " (" + ext + "): " + failure
-                        + "\nThis looks like a network or repository problem, not a missing artifact: try again.");
+                        + (classifier != null ? ":" + classifier : "") + " (" + ext + "): " + failure)
+                        .withHint("this looks like a network or repository problem, not a missing artifact: try again");
             }
             throw new JpmException("Could not find " + group + ":" + artifact + ":" + version
-                    + (classifier != null ? ":" + classifier : "") + " (" + ext + ") in " + String.join(", ", repos)
-                    + "\nIf it is published elsewhere, add that repository: `jpm add -r <url> " + group + ":" + artifact
-                    + "`, or list it in \"repositories\" in project.jsonc.");
+                    + (classifier != null ? ":" + classifier : "") + " (" + ext + ") in " + String.join(", ", repos))
+                    .withHint("if it is published elsewhere, add that repository: `jpm add -r <url> " + group + ":" + artifact
+                            + "`, or list it in \"repositories\" in project.jsonc");
         }
         return p;
     }

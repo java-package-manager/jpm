@@ -5,7 +5,7 @@ import dev.jpm.json.Jsonc;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,6 +83,7 @@ public final class ExtensionDeps {
         ProcessBuilder pb = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.INHERIT);
         pb.environment().put("JPM_EXE", dev.jpm.util.Self.exe());
         pb.environment().put("JPM_VERSION_OF_JPM", dev.jpm.BuildConfig.VERSION);
+        pb.environment().putAll(Log.childEnv());
         pb.environment().put("JPM_HOME", Fs.home().toString());
         if (Fs.offline()) pb.environment().put("JPM_OFFLINE", "1");
         String out;

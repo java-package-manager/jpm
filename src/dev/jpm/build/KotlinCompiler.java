@@ -8,7 +8,7 @@ import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -137,10 +137,10 @@ public final class KotlinCompiler {
                 Files.deleteIfExists(r.stateFile);
             } catch (IOException ignored) {
             }
-            if (!out.isEmpty()) System.err.println(out);
+            Log.tool(out);
             throw new JpmException(r.label + ": Kotlin compilation failed");
         }
-        if (!out.isEmpty()) System.err.println(out);
+        Log.tool(out);
         Fs.deleteTree(r.outDir);
         try {
             Files.move(tmp, r.outDir);

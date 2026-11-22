@@ -11,7 +11,7 @@ import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -71,7 +71,7 @@ final class JavaCommands {
             case "current", "which" -> current(args);
             case "setup" -> setup(args);
             case "help", "-h", "--help" -> {
-                System.out.print(JVM_HELP);
+                Log.print(JVM_HELP);
                 yield 0;
             }
             default -> throw new JpmException("Unknown command `" + self + " " + sub + "`. Run `" + self + " help`.");
@@ -82,8 +82,8 @@ final class JavaCommands {
         if (args.remove("--available")) {
             String dist = args.isEmpty() ? JavaSpec.DEFAULT_DISTRIBUTION : JavaSpec.parse(args.get(0)).installDistribution();
             List<String> versions = Foojay.available(dist);
-            System.out.println(Log.bold(dist + " for " + Foojay.os() + "/" + Foojay.arch()));
-            for (String v : versions) System.out.println("  " + v);
+            Log.out(Log.bold(dist + " for " + Foojay.os() + "/" + Foojay.arch()));
+            for (String v : versions) Log.out("  " + v);
             return 0;
         }
         List<Jdk> all = Jdk.discover();
@@ -104,7 +104,7 @@ final class JavaCommands {
         for (Jdk j : all) {
             String mark = j.equals(current) ? "*" : " ";
             String tags = (j.graal() ? " native-image" : "") + (j.managed() ? " (jpm)" : "") + (j.equals(defJdk) ? " (default)" : "");
-            System.out.println(mark + " " + String.format("%-40s %s", j.id() + tags, j.home()));
+            Log.out(mark + " " + String.format("%-40s %s", j.id() + tags, j.home()));
         }
         if (current != null) Log.info(Log.dim("* what `java` runs here: " + reason));
         return 0;
@@ -148,7 +148,7 @@ final class JavaCommands {
         } else {
             j = Toolchain.require(JavaSpec.parse(args.get(0)));
         }
-        System.out.println(j.home());
+        Log.out(j.home().toString());
         return 0;
     }
 
@@ -205,9 +205,9 @@ final class JavaCommands {
         String tool = args.isEmpty() ? "java" : args.get(0);
         Shims.Choice c = Shims.choose(cwd, tool);
         if (c.jdk() != null) {
-            System.out.println(c.jdk().id() + "  " + c.jdk().home());
+            Log.out(c.jdk().id() + "  " + c.jdk().home());
         } else {
-            System.out.println(c.systemTool());
+            Log.out(c.systemTool().toString());
         }
         Log.info(Log.dim("chosen by " + c.reason()));
         if (!Shims.installed()) {
@@ -266,8 +266,8 @@ final class JavaCommands {
         Jdk j = Toolchain.require(JavaSpec.parse(args.get(0)));
         boolean win = System.getProperty("os.name").toLowerCase().contains("win") && System.getenv("SHELL") == null;
         for (Map.Entry<String, String> e : envFor(j).entrySet()) {
-            if (win) System.out.println("set \"" + e.getKey() + "=" + e.getValue() + "\"");
-            else System.out.println("export " + e.getKey() + "=" + shellQuote(e.getValue()));
+            if (win) Log.out("set \"" + e.getKey() + "=" + e.getValue() + "\"");
+            else Log.out("export " + e.getKey() + "=" + shellQuote(e.getValue()));
         }
         return 0;
     }

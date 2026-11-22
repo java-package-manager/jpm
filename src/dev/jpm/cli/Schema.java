@@ -1,5 +1,6 @@
 package dev.jpm.cli;
 
+import dev.jpm.log.Log;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 
@@ -26,8 +27,8 @@ final class Schema {
             if (a.equals("--path")) path = true;
             else throw new JpmException("Usage: jpm schema [--path]", 2);
         }
-        if (path) System.out.println(install(Fs.home(), Main.VERSION));
-        else System.out.print(text());
+        if (path) Log.out(install(Fs.home(), Main.VERSION).toString());
+        else Log.print(text());
         return 0;
     }
 

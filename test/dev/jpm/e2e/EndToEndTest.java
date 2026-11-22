@@ -195,4 +195,19 @@ class EndToEndTest {
         s.jpm("start");
         s.verify("patch");
     }
+
+    @Test
+    void outputOptions(@TempDir Path tmp) {
+        Session s = new Session(tmp).fixture("workspace-demo");
+        money(s.repo);
+        s.jpm("--quiet", "install");
+        s.jpm("build", "--quiet");
+        s.jpm("-q", "why", "org.example:money");
+        s.jpm("--color=sometimes", "build");
+        s.jpm("--color", "never", "outdated");
+        s.jpm("install", "-v");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"shop\", \"versoin\": \"1.0.0\" }");
+        s.jpm("build");
+        s.verify("output");
+    }
 }

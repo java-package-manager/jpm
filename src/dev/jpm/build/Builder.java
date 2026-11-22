@@ -17,7 +17,7 @@ import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,7 +78,8 @@ public final class Builder {
         try {
             return Toolchain.require(JavaSpec.parse(m.java));
         } catch (JpmException e) {
-            throw new JpmException(m.file + ": " + e.getMessage());
+            JpmException at = JpmException.at(m.file, 0, e.getMessage());
+            throw e.hint() == null ? at : at.withHint(e.hint());
         }
     }
 

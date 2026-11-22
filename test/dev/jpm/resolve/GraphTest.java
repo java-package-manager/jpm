@@ -132,13 +132,17 @@ class GraphTest {
     void manifestErrorsNameTheLine() {
         JpmException e = assertThrows(JpmException.class, () -> Manifest.parse(Path.of("project.jsonc"),
                 "{\n  \"name\": \"x\",\n  \"runtime\": {\n    \"guava\": \"1\"\n  }\n}"));
-        assertTrue(e.getMessage().contains("project.jsonc:4"), e.getMessage());
+        assertEquals("project.jsonc:4", e.location());
         JpmException dup = assertThrows(JpmException.class, () -> Manifest.parse(Path.of("project.jsonc"),
                 "{ \"name\": \"x\", \"runtime\": { \"a:b\": \"1\" },\n \"dev\": { \"a:b\": \"2\" } }"));
-        assertTrue(dup.getMessage().contains("project.jsonc:2:") && dup.getMessage().contains("different versions"), dup.getMessage());
+        assertEquals("project.jsonc:2", dup.location());
+        assertTrue(dup.getMessage().contains("different versions"), dup.getMessage());
         JpmException unknown = assertThrows(JpmException.class, () -> Manifest.parse(Path.of("project.jsonc"),
                 "{ \"name\": \"x\",\n \"dependencies\": {} }"));
-        assertTrue(unknown.getMessage().contains(":2: unknown field"), unknown.getMessage());
+        assertEquals("project.jsonc:2", unknown.location());
+        assertEquals("unknown field \"dependencies\"", unknown.getMessage());
+        JpmException typo = assertThrows(JpmException.class, () -> Manifest.parse(Path.of("project.jsonc"), "{ \"name\": \"x\", \"runtim\": {} }"));
+        assertEquals("did you mean \"runtime\"?", typo.hint());
     }
 
     @Test

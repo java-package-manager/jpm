@@ -8,7 +8,7 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.maven.Pom;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 import dev.jpm.version.VersionSpec;
 import dev.jpm.version.VersionSpecs;

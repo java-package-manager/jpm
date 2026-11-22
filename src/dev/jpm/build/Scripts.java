@@ -9,7 +9,7 @@ import dev.jpm.resolve.Resolver;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -147,6 +147,7 @@ public final class Scripts {
         // so scripts and hooks can call back into this jpm (jpm info --json, jpm build <module>)
         env.put("JPM_EXE", dev.jpm.util.Self.exe());
         env.put("JPM_VERSION_OF_JPM", dev.jpm.BuildConfig.VERSION);
+        env.putAll(Log.childEnv());
         env.put("JPM_PROJECT_DIR", b.project.dir.toString());
         env.put("JPM_MODULE_DIR", m.dir.toString());
         env.put("JPM_NAME", m.name());

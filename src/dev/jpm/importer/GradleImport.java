@@ -7,7 +7,7 @@ import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 import dev.jpm.version.VersionSpecs;
 
 import java.io.IOException;

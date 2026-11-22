@@ -1,5 +1,6 @@
 package dev.jpm.util;
 
+import dev.jpm.log.Log;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;

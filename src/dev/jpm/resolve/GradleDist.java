@@ -5,7 +5,7 @@ import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.Http;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;

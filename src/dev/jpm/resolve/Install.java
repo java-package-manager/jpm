@@ -5,7 +5,7 @@ import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

@@ -5,7 +5,7 @@ import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Http;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 
 import java.io.IOException;
@@ -107,7 +107,7 @@ final class Upgrade {
      * after a few seconds and stays silent when offline; JPM_OFFLINE or JPM_NO_UPDATE_CHECK skip it.
      */
     static int version() {
-        System.out.println("jpm " + Main.VERSION);
+        Log.out("jpm " + Main.VERSION);
         String notice = updateNotice(Main.VERSION);
         if (notice != null) Log.info(notice);
         return 0;

@@ -26,7 +26,7 @@ import dev.jpm.resolve.Resolver;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 import dev.jpm.version.MavenRange;
 import dev.jpm.version.NpmRange;
 import dev.jpm.version.Version;
@@ -494,7 +494,7 @@ final class Commands {
         for (int i = 0; i < rows.size(); i++) {
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < 5; j++) sb.append(String.format("%-" + (w[j] + 2) + "s", rows.get(i)[j]));
-            System.out.println(i == 0 ? Log.bold(sb.toString().strip()) : sb.toString().strip());
+            Log.out(i == 0 ? Log.bold(sb.toString().strip()) : sb.toString().strip());
         }
         return 0;
     }
@@ -517,7 +517,7 @@ final class Commands {
             }
         }
         List<List<String>> paths = c.graph.paths(roots, id);
-        System.out.println(Log.bold(id + " " + target.version) + (target.commit != null ? " (" + target.commit.substring(0, 7) + ")" : ""));
+        Log.out(Log.bold(id + " " + target.version) + (target.commit != null ? " (" + target.commit.substring(0, 7) + ")" : ""));
         for (List<String> path : paths) {
             StringBuilder sb = new StringBuilder("  ").append(path.get(0));
             for (int i = 1; i < path.size(); i++) {
@@ -525,7 +525,7 @@ final class Commands {
                 sb.append(" > ").append(path.get(i));
                 if (p != null && p.kind != Graph.Kind.LOCAL) sb.append(' ').append(p.version);
             }
-            System.out.println(sb);
+            Log.out(sb.toString());
         }
         return 0;
     }
@@ -719,7 +719,7 @@ final class Commands {
                 Log.info("No scripts in " + m.manifest.file);
             } else {
                 for (Map.Entry<String, String> e : m.manifest.scripts.entrySet()) {
-                    System.out.println(Log.bold(e.getKey()) + "  " + Log.dim(e.getValue()));
+                    Log.out(Log.bold(e.getKey()) + "  " + Log.dim(e.getValue()));
                 }
             }
             return 0;
@@ -1031,15 +1031,15 @@ final class Commands {
         }
         out.put("modules", modules);
         if (json) {
-            System.out.println(Jsonc.write(out));
+            Log.out(Jsonc.write(out));
         } else {
             for (Object o : modules) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> mod = (Map<String, Object>) o;
-                System.out.println(Log.bold(mod.get("name") + " " + mod.get("version")) + "  " + mod.get("dir"));
+                Log.out(Log.bold(mod.get("name") + " " + mod.get("version")) + "  " + mod.get("dir"));
                 for (Object d : (List<?>) mod.get("dependencies")) {
                     Map<?, ?> dm = (Map<?, ?>) d;
-                    System.out.println("  " + dm.get("scope") + "  " + dm.get("key") + " " + dm.get("spec")
+                    Log.out("  " + dm.get("scope") + "  " + dm.get("key") + " " + dm.get("spec")
                             + (dm.get("resolved") != null ? Log.dim(" -> " + dm.get("resolved")) : ""));
                 }
             }
@@ -1067,8 +1067,8 @@ final class Commands {
             String text = imp.render(rel);
             Path f = dir.resolve(rel).resolve(Manifest.FILE);
             if (dryRun) {
-                System.out.println(Log.bold("// " + (rel.isEmpty() ? "" : rel + "/") + Manifest.FILE));
-                System.out.println(text);
+                Log.out(Log.bold("// " + (rel.isEmpty() ? "" : rel + "/") + Manifest.FILE));
+                Log.out(text);
             } else {
                 Fs.write(f, text);
                 Log.step("Imported", (rel.isEmpty() ? "" : rel + "/") + Manifest.FILE + " from " + imp.tool);
@@ -1113,13 +1113,14 @@ final class Commands {
         if (!cmd.matches("[A-Za-z0-9][A-Za-z0-9_-]*")) throw new JpmException("Unknown command \"" + cmd + "\". Run `jpm help`.");
         Path exe = dev.jpm.resolve.ExtensionDeps.executable(cmd);
         if (exe == null) {
-            throw new JpmException("Unknown command \"" + cmd + "\". Run `jpm help`, or install an extension that provides it"
-                    + " with `jpm add -g <dependency>` (it runs as jpm-" + cmd + ").");
+            throw new JpmException("Unknown command \"" + cmd + "\"").withHint("run `jpm help`, or install an extension that"
+                    + " provides it with `jpm add -g <dependency>` (it runs as jpm-" + cmd + ")");
         }
         Map<String, String> env = new LinkedHashMap<>();
         // so the extension can call back into this jpm (jpm build, jpm info --json)
         env.put("JPM_EXE", dev.jpm.util.Self.exe());
         env.put("JPM_VERSION_OF_JPM", Main.VERSION);
+        env.putAll(Log.childEnv());
         try {
             Project p = Project.find(cwd);
             Project.Module m = p.moduleAt(cwd) != null ? p.moduleAt(cwd) : p.rootModule();

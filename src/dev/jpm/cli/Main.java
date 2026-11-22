@@ -1,7 +1,7 @@
 package dev.jpm.cli;
 
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,7 +63,7 @@ public final class Main {
                                           --canary installs the newest build of the main branch)
 
             Any other command runs an extension: `jpm format` runs `jpm-format`.
-            Global options: -v/--verbose, --offline
+            Global options: -v/--verbose (-vv for more), -q/--quiet, --color=auto|always|never, --offline
             """;
 
     public static void main(String[] argv) {
@@ -71,17 +71,24 @@ public final class Main {
         try {
             code = run(new ArrayList<>(Arrays.asList(argv)));
         } catch (JpmException e) {
-            Log.error(e.getMessage());
-            if (Log.verbose && e.getCause() != null) e.getCause().printStackTrace();
+            report(e);
+            Log.stackTrace(e.getCause());
             code = e.exitCode();
         } catch (RuntimeException e) {
             Log.error("unexpected failure: " + e);
-            if (Log.verbose) e.printStackTrace();
+            if (Log.verbose()) Log.stackTrace(e);
             else Log.info("Run with -v for details.");
             code = 70;
         }
-        System.out.flush();
+        Log.flush();
         System.exit(code);
+    }
+
+    /** Prints a failure: what went wrong, where, and what to do next. */
+    static void report(JpmException e) {
+        Log.error(e.getMessage());
+        if (e.location() != null) Log.info("  --> " + e.location());
+        if (e.hint() != null) Log.info("  hint: " + e.hint());
     }
 
     /** True when started as {@code jvm} (a link or copy of the binary, or the jvm launcher script). */
@@ -119,6 +126,46 @@ public final class Main {
         }
     }
 
+    /**
+     * Applies the output options anywhere in {@code args} and removes them: {@code -v}/{@code --verbose}
+     * (twice, or {@code -vv}, for trace messages), {@code -q}/{@code --quiet} (only before the command, where
+     * {@code global} is true) and {@code --color=WHEN}.
+     */
+    static void logOptions(List<String> args, boolean global) {
+        for (int i = 0; i < args.size(); ) {
+            if (args.get(i).equals("--")) return;
+            if (!logOption(args, i, global)) i++;
+        }
+    }
+
+    private static boolean logOption(List<String> args, int i, boolean global) {
+        String a = args.get(i);
+        switch (a) {
+            case "-v", "--verbose" -> Log.configure(Log.verbose() ? Log.Level.TRACE : Log.Level.DEBUG, colorFlag);
+            case "-vv" -> Log.configure(Log.Level.TRACE, colorFlag);
+            case "--quiet" -> Log.configure(Log.Level.WARN, colorFlag);
+            case "-q" -> {
+                if (!global) return false;
+                Log.configure(Log.Level.WARN, colorFlag);
+            }
+            default -> {
+                String when;
+                if (a.startsWith("--color=")) when = a.substring(8);
+                else if (a.equals("--color") && i + 1 < args.size() && Log.Color.parse(args.get(i + 1)) != null) {
+                    when = args.remove(i + 1);
+                } else return false;
+                Log.Color c = Log.Color.parse(when);
+                if (c == null) throw new JpmException("--color takes auto, always or never, not \"" + when + "\"", 2);
+                colorFlag = c;
+                Log.configure(null, c);
+            }
+        }
+        args.remove(i);
+        return true;
+    }
+
+    private static Log.Color colorFlag;
+
     static int run(List<String> args) {
         // Started as java, javac, ...: a shim that runs the right JDK's tool, with arguments untouched.
         // Only the native binary can be a shim: on a JVM, argv[0] is the JVM's own java.
@@ -130,40 +177,33 @@ public final class Main {
         if (nativeImage && Shims.isTool(invoked)) return Shims.run(invoked, args);
         if (invokedAsJvm()) {
             if (args.isEmpty() || args.get(0).equals("-h") || args.get(0).equals("--help")) {
-                System.out.print(JavaCommands.JVM_HELP);
+                Log.print(JavaCommands.JVM_HELP);
                 return 0;
             }
             if (args.get(0).equals("--version")) {
-                System.out.println("jvm (jpm " + VERSION + ")");
+                Log.out("jvm (jpm " + VERSION + ")");
                 return 0;
             }
-            args.removeIf(a -> {
-                if (a.equals("-v") || a.equals("--verbose")) { Log.verbose = true; return true; }
-                return false;
-            });
+            logOptions(args, false);
             return new Commands().java(args, true);
         }
         // global flags, before the command
         while (!args.isEmpty() && args.get(0).startsWith("-")) {
             String a = args.get(0);
-            if (a.equals("-v") || a.equals("--verbose")) { Log.verbose = true; args.remove(0); }
-            else if (a.equals("--offline")) { System.setProperty("jpm.offline", "true"); args.remove(0); }
-            else if (a.equals("-h") || a.equals("--help")) { System.out.print(HELP.formatted(VERSION)); return 0; }
+            if (a.equals("--offline")) { System.setProperty("jpm.offline", "true"); args.remove(0); }
+            else if (a.equals("-h") || a.equals("--help")) { Log.print(HELP.formatted(VERSION)); return 0; }
             else if (a.equals("--version")) return Upgrade.version();
-            else break;
+            else if (!logOption(args, 0, true)) break;
         }
-        args.removeIf(a -> {
-            if (a.equals("-v") || a.equals("--verbose")) { Log.verbose = true; return true; }
-            return false;
-        });
+        logOptions(args, false);
         if (args.isEmpty()) {
-            System.out.print(HELP.formatted(VERSION));
+            Log.print(HELP.formatted(VERSION));
             return 0;
         }
         String cmd = args.remove(0);
         Commands c = new Commands();
         return switch (cmd) {
-            case "help" -> { System.out.print(HELP.formatted(VERSION)); yield 0; }
+            case "help" -> { Log.print(HELP.formatted(VERSION)); yield 0; }
             case "version" -> Upgrade.version();
             case "upgrade", "self-update" -> Upgrade.run(args);
             case "init" -> c.init(args);

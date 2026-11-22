@@ -10,7 +10,7 @@ import dev.jpm.resolve.Install;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -57,7 +57,7 @@ final class DevLoop {
                     proc = Exec.start(m.dir, cmd, Env.forChild(project.dir, Env.Mode.DEVELOPMENT));
                     Log.info(Log.dim("watching for changes (Ctrl+C to stop)"));
                 } catch (JpmException e) {
-                    Log.error(e.getMessage());
+                    Main.report(e);
                     Log.info(Log.dim("waiting for changes"));
                 }
             }

@@ -1,0 +1,26 @@
+$ jpm --quiet install
+
+$ jpm build --quiet
+
+$ jpm -q why org.example:money
+org.example:money 1.2.0
+  core (runtime) > org.example:money 1.2.0
+  app (runtime) > workspace:core > org.example:money 1.2.0
+
+$ jpm --color=sometimes build
+error: --color takes auto, always or never, not "sometimes"
+[exit 2]
+
+$ jpm --color never outdated
+Package            Current  Wanted  Latest  Used by
+org.example:money  1.2.0    1.2.0   2.0.0   core (runtime)
+
+$ jpm install -v
+  Up to date 10 packages in project.lock
+
+$ jpm build
+error: unknown field "versoin"
+  --> <project>/project.jsonc:1
+  hint: did you mean "version"?
+[exit 1]
+

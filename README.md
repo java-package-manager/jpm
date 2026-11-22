@@ -565,8 +565,9 @@ jar and is picked up by native-image automatically.
 |---|---|
 | `JPM_HOME` | Where jpm keeps its cache, JDKs and shims (default `$HOME/.jpm`) |
 | `JPM_OFFLINE`, `--offline` | Use only what is cached |
-| `JPM_VERBOSE`, `-v` | Show what jpm runs and downloads |
-| `JPM_COLOR=1`, `NO_COLOR` | Force colored output where it is shown in color but is not a terminal (IDE consoles), or turn colors off |
+| `JPM_VERBOSE`, `-v` | Show what jpm runs and downloads; `JPM_VERBOSE=2` or `-vv` shows trace messages too |
+| `-q`, `--quiet` | Show only errors and warnings |
+| `--color=auto\|always\|never`, `JPM_COLOR`, `NO_COLOR`, `FORCE_COLOR` | Colored output. The first that is set decides: `--color`, `JPM_COLOR` (`1`/`always`, `0`/`never`, `auto`), `NO_COLOR` (never), `FORCE_COLOR` (always, unless `0`); otherwise jpm colors when stderr is a terminal. Scripts and extensions get `JPM_COLOR` from jpm |
 | `JPM_NO_INSTALL` | Never install JDKs automatically |
 | `JPM_NO_UPDATE_CHECK` | `jpm version` does not look for a newer jpm |
 | `JPM_JAVA` | JDK for the `java` shims in this shell, e.g. `21` |

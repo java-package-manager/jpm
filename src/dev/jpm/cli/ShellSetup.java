@@ -1,7 +1,7 @@
 package dev.jpm.cli;
 
 import dev.jpm.util.Fs;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

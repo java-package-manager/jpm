@@ -7,7 +7,7 @@ import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.util.Exec;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 
 import java.nio.file.Path;

@@ -45,16 +45,16 @@ Small, independent items that make the rest of the work easier.
 
 ### Logger
 
-- [ ] Replace `dev.jpm.util.Log` with a proper logger: levels (`error`, `warn`, `info`, `debug`,
+- [x] Replace `dev.jpm.util.Log` with a proper logger: levels (`error`, `warn`, `info`, `debug`,
       `trace`), one place that decides on color, and no `System.out`/`System.err` calls elsewhere
       (there are about 40 today).
-- [ ] Colors:
+- [x] Colors:
   - errors are always red;
   - warnings are orange (256-color `38;5;208`, yellow as fallback on 16-color terminals);
   - debug messages are yellow.
-- [ ] `--color=auto|always|never`, respecting `NO_COLOR`, `FORCE_COLOR` and `JPM_COLOR`.
-- [ ] `--quiet` and `--verbose` flags next to `JPM_VERBOSE`.
-- [ ] Progress output (downloads, compilation) goes through the logger, so it is suppressed when
+- [x] `--color=auto|always|never`, respecting `NO_COLOR`, `FORCE_COLOR` and `JPM_COLOR`.
+- [x] `--quiet` and `--verbose` flags next to `JPM_VERBOSE`.
+- [x] Progress output (downloads, compilation) goes through the logger, so it is suppressed when
       output is not a terminal.
 
 ### Contributor docs (all jpm projects)

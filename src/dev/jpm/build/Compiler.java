@@ -6,7 +6,7 @@ import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -293,7 +293,7 @@ public final class Compiler {
                 Files.deleteIfExists(r.stateFile);
             } catch (IOException ignored) {
             }
-            System.err.println(out);
+            Log.tool(out);
             if (out.contains("not allowed with --release")) {
                 throw new JpmException(r.label + ": compilation failed: \"javacArgs\" opens a JDK module, which javac only"
                         + " allows when the JDK is the target version; build with JDK " + r.release + " (" + r.jdk.id()
@@ -301,7 +301,7 @@ public final class Compiler {
             }
             throw new JpmException(r.label + ": compilation failed");
         }
-        if (!out.isEmpty()) System.err.println(out);
+        Log.tool(out);
 
         // Map produced classes to the source they came from.
         Map<String, Set<String>> produced = new TreeMap<>();

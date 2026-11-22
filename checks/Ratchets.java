@@ -46,7 +46,7 @@ public final class Ratchets {
 
     private static boolean isLogger(Path p) {
         String s = p.toString().replace('\\', '/');
-        return s.contains("/dev/jpm/log/") || s.endsWith("/dev/jpm/util/Log.java");
+        return s.contains("/dev/jpm/log/");
     }
 
     private static List<String> matches(Source s, Pattern p) {

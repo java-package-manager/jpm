@@ -3,7 +3,7 @@ package dev.jpm;
 import dev.jpm.json.Jsonc;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.util.Log;
+import dev.jpm.log.Log;
 
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -169,14 +169,17 @@ public final class Manifest {
         try {
             this.root = Jsonc.parseNode(source);
         } catch (Jsonc.ParseException e) {
-            throw new JpmException(file + ": " + e.getMessage());
+            throw JpmException.at(file, e.line, e.getMessage().replaceFirst(" at line \\d+, column \\d+$", "")
+                    + " (column " + e.column + ")");
         }
         if (!root.isObject()) throw err(root, "the manifest must be a JSON object");
 
         Set<String> known = FIELDS;
         for (Jsonc.Member m : root.members.values()) {
             if (!known.contains(m.key)) {
-                throw new JpmException(file + ":" + line(m.keyStart) + ": unknown field \"" + m.key + "\"");
+                JpmException e = JpmException.at(file, line(m.keyStart), "unknown field \"" + m.key + "\"");
+                String near = dev.jpm.util.Strings.closest(m.key, known);
+                throw near == null ? e : e.withHint("did you mean \"" + near + "\"?");
             }
         }
 
@@ -224,7 +227,7 @@ public final class Manifest {
                 try {
                     key = DepKey.parse(e.key);
                 } catch (JpmException ex) {
-                    throw new JpmException(file + ":" + line(e.keyStart) + ": " + ex.getMessage());
+                    throw JpmException.at(file, line(e.keyStart), ex.getMessage());
                 }
                 deps.add(dependency(key, e, s));
             }
@@ -281,7 +284,7 @@ public final class Manifest {
                         try {
                             key = DepKey.parse(d.key);
                         } catch (JpmException ex) {
-                            throw new JpmException(file + ":" + line(d.keyStart) + ": " + ex.getMessage());
+                            throw JpmException.at(file, line(d.keyStart), ex.getMessage());
                         }
                         if (key.isWorkspace()) throw err(d.value, "patch dependencies cannot be workspace modules");
                         pd.add(dependency(key, d, Scope.DEV));
@@ -499,13 +502,13 @@ public final class Manifest {
     }
 
     public JpmException err(Jsonc.Node n, String msg) {
-        return new JpmException(file + ":" + (n == null ? 1 : line(n.start)) + ": " + msg);
+        return JpmException.at(file, n == null ? 1 : line(n.start), msg);
     }
 
     private String str(String key, boolean required) {
         Jsonc.Node n = root.get(key);
         if (n == null) {
-            if (required) throw new JpmException(file + ": missing required field \"" + key + "\"");
+            if (required) throw JpmException.at(file, 1, "missing required field \"" + key + "\"");
             return null;
         }
         if (n.value instanceof BigDecimal bd && (key.equals("java") || key.equals("target"))) return bd.toPlainString();
@@ -610,7 +613,7 @@ public final class Manifest {
             Dependency runtime = scopes.get(Scope.RUNTIME), dev = scopes.get(Scope.DEV), test = scopes.get(Scope.TEST);
             if (runtime != null && dev != null) {
                 if (!sameVersion(runtime, dev)) {
-                    throw new JpmException(file + ":" + dev.line + ": " + dev.key + " is declared in \"runtime\" (" + runtime.spec
+                    throw JpmException.at(file, dev.line, dev.key + " is declared in \"runtime\" (" + runtime.spec
                             + ") and in \"dev\" (" + dev.spec + ") with different versions; runtime dependencies are on the"
                             + " compile classpath already, so remove the \"dev\" entry");
                 }
@@ -627,7 +630,7 @@ public final class Manifest {
                         + (sameVersion(runtime, test) ? "" : " and " + runtime.spec + " is used, not " + test.spec) + ". Remove it");
                 drop.add(test);
             } else if (dev != null && test != null && !sameVersion(dev, test)) {
-                throw new JpmException(file + ":" + test.line + ": " + test.key + " is declared in \"dev\" (" + dev.spec
+                throw JpmException.at(file, test.line, test.key + " is declared in \"dev\" (" + dev.spec
                         + ") and in \"test\" (" + test.spec + ") with different versions; a project uses one version of a"
                         + " package, so give both the same");
             }

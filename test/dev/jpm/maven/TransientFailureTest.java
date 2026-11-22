@@ -69,7 +69,7 @@ class TransientFailureTest {
         MavenRepo r = repo();
         JpmException e = assertThrows(JpmException.class, () -> r.require("g", "a", "1.0", null, "jar"));
         assertTrue(e.getMessage().contains("HTTP 429"), e.getMessage());
-        assertTrue(e.getMessage().contains("not a missing artifact"), e.getMessage());
+        assertTrue(e.hint().contains("not a missing artifact"), e.hint());
         assertEquals(1, requests.get(), "no retries");
         assertFalse(Files.exists(missing(r.local("g", "a", "1.0", null, "jar"))));
 
