@@ -1,6 +1,7 @@
 # jpm protocol
 
-Status: **accepted** (roadmap Milestone 4, item 1). Section 8 records the decisions.
+Status: **accepted** (roadmap Milestone 4, item 1); `jpm api` serves protocol 1.0 with the methods in
+`ApiServer.METHODS` (item 2). Section 8 records the decisions.
 
 The protocol is how other programs (jpm-intellij, jpm-publish, extensions, editors) ask jpm about a project.
 It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which are removed in the release that
@@ -175,7 +176,8 @@ workspace module's classes folder), `sources?` (path), `dependencies` ([id]).
 ### Classpaths
 
 `compile`, `processor`, `runtime`, `testCompile`, `testRuntime`: each a list of `Package`, in classpath
-order. `modulePath?`: the same as in Module.
+order, without `scope` and `sources` (the classpath says where each is needed). `modulePath?`: the same as
+in Module.
 
 ### ModuleSplit
 

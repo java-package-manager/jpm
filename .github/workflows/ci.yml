@@ -113,7 +113,7 @@ jobs:
 
       - name: End-to-end tests on the native binary
         if: runner.os != 'Windows'
-        run: JPM_E2E_BINARY="$PWD/cli/dist/jpm" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest
+        run: JPM_E2E_BINARY="$PWD/cli/dist/jpm" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest dev.jpm.e2e.ApiTest
 
       - name: Smoke test the native binary
         run: |

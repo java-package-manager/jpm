@@ -170,7 +170,7 @@ final class Session {
                 + " (JPM_UPDATE_EXPECTED=1 writes it, if the change is intended)");
     }
 
-    private Map<String, String> env() {
+    Map<String, String> env() {
         Map<String, String> env = new LinkedHashMap<>();
         env.put("JPM_HOME", home.toString());
         env.put("JPM_MAVEN_CENTRAL", repo.uri());
@@ -183,7 +183,7 @@ final class Session {
         return env;
     }
 
-    private static List<String> binary() {
+    static List<String> binary() {
         String bin = System.getenv("JPM_E2E_BINARY");
         if (bin != null && !bin.isBlank()) return List.of(Path.of(bin).toAbsolutePath().toString());
         List<String> cmd = new ArrayList<>(List.of(Path.of(System.getProperty("java.home"), "bin", "java").toString(),

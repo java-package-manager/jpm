@@ -19,7 +19,7 @@ public final class Commands {
                 new BuildCommand(cwd), new StartCommand(cwd, false), new StartCommand(cwd, true), new TestCommand(cwd),
                 new RunCommand(cwd), new CleanCommand(cwd), new PatchCommand(cwd), new JavaCommand(cwd, false),
                 new JavaCommand(cwd, true), new UpgradeCommand(cwd), new VersionCommand(cwd), new HelpCommand(cwd),
-                new CompletionsCommand(cwd));
+                new CompletionsCommand(cwd), new ApiCommand(cwd));
     }
 
     public static Command find(Path cwd, String name) {

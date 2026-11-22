@@ -128,49 +128,106 @@ public final class Log {
         return env;
     }
 
+    /** Where messages go instead of the console, for example to a protocol client (see {@link #sink}). */
+    public interface Sink {
+        /**
+         * One message.
+         *
+         * @param level   its level
+         * @param message its text, without colors
+         */
+        void log(Level level, String message);
+    }
+
+    private static volatile Sink sink;
+
+    /**
+     * Sends every message, and what would go to stdout, to {@code s} instead of the console; null prints again.
+     * {@code jpm api} uses it, because its stdout carries protocol messages only.
+     */
+    public static void sink(Sink s) {
+        sink = s;
+    }
+
+    /**
+     * Hands the process's stdout to the caller (the {@code jpm api} protocol) and points {@code System.out} at
+     * stderr, so that nothing else can write to it.
+     */
+    public static java.io.OutputStream claimStdout() {
+        java.io.OutputStream stdout = new java.io.BufferedOutputStream(new java.io.FileOutputStream(java.io.FileDescriptor.out));
+        System.setOut(System.err);
+        return stdout;
+    }
+
+    /** stderr, where output that must not reach stdout goes, such as a child's output under {@code jpm api}. */
+    public static PrintStream stderr() {
+        return err();
+    }
+
+    /** True while a {@link #sink(Sink)} receives the messages: stdout is not jpm's to print on. */
+    public static boolean sunk() {
+        return sink != null;
+    }
+
+    private static boolean toSink(Level level, String msg) {
+        Sink s = sink;
+        if (s == null) return false;
+        if (enabled(level)) s.log(level, msg);
+        return true;
+    }
+
     /** An error: always shown, in red. */
     public static void error(String msg) {
+        if (toSink(Level.ERROR, msg)) return;
         err().println(c("1;31", "error") + ": " + msg);
     }
 
     /** A warning: shown unless only errors are, in orange (yellow on 16-color terminals). */
     public static void warn(String msg) {
+        if (toSink(Level.WARN, msg)) return;
         if (enabled(Level.WARN)) err().println(c(colors256 ? "1;38;5;208" : "1;33", "warning") + ": " + msg);
     }
 
     /** A plain message, for example a next step. */
     public static void info(String msg) {
+        if (toSink(Level.INFO, msg)) return;
         if (enabled(Level.INFO)) err().println(msg);
     }
 
     /** A status line: {@code verb} right-aligned in green, then the message ("   Compiled app 1.0.0"). */
     public static void step(String verb, String msg) {
+        if (toSink(Level.INFO, verb + " " + msg)) return;
         if (enabled(Level.INFO)) err().println(c("1;32", String.format("%12s", verb)) + " " + msg);
     }
 
     /** A debug message, in yellow, with {@code --verbose}. */
     public static void debug(String msg) {
+        if (toSink(Level.DEBUG, msg)) return;
         if (enabled(Level.DEBUG)) err().println(c("33", "  " + msg));
     }
 
     /** A trace message, dim, with {@code -vv}. */
     public static void trace(String msg) {
+        if (toSink(Level.TRACE, msg)) return;
         if (enabled(Level.TRACE)) err().println(c("2", "  " + msg));
     }
 
     /** What a command produces, on stdout, at every level: for example {@code jpm info} or the help text. */
     public static void out(String line) {
+        if (toSink(Level.INFO, line)) return;
         out().println(line);
     }
 
     /** Like {@link #out(String)}, without a line break. */
     public static void print(String text) {
+        if (toSink(Level.INFO, text.stripTrailing())) return;
         out().print(text);
     }
 
     /** Output of a tool jpm ran, such as javac's errors and warnings, on stderr at every level. */
     public static void tool(String text) {
-        if (!text.isEmpty()) err().println(text);
+        if (text.isEmpty() || toSink(Level.INFO, text)) return;
+        err().println(text);
     }
 
     /** The stack trace of an unexpected failure, shown with {@code --verbose} only. */

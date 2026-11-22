@@ -54,12 +54,14 @@ public final class Exec {
     public static int inherit(Path dir, List<String> cmd, Map<String, String> env) {
         Log.debug("$ " + String.join(" ", cmd));
         ProcessBuilder pb = new ProcessBuilder(cmd).inheritIO();
+        if (Log.sunk()) pb.redirectOutput(ProcessBuilder.Redirect.PIPE);
         if (dir != null) pb.directory(dir.toFile());
         pb.environment().remove("JPM_AS");
         pb.environment().putAll(env);
         try {
             Process p = pb.start();
             Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
+            if (Log.sunk()) p.getInputStream().transferTo(Log.stderr());
             return p.waitFor();
         } catch (IOException e) {
             throw new JpmException("Could not run " + cmd.get(0) + ": " + e.getMessage());
