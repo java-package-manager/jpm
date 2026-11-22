@@ -342,17 +342,21 @@ jobs:
       JPM_NO_UPDATE_CHECK: "1"
     steps:
       - uses: actions/checkout@v4
-      - { uses: actions/setup-java@v6, id: j8, with: { distribution: temurin, java-version: "8" } }
-      - { uses: actions/setup-java@v6, id: j11, with: { distribution: temurin, java-version: "11" } }
-      - { uses: actions/setup-java@v6, id: j17, with: { distribution: temurin, java-version: "17" } }
-      - { uses: actions/setup-java@v6, id: j25, with: { distribution: temurin, java-version: "25" } }
-      - { uses: actions/setup-java@v6, id: j27, with: { distribution: temurin, java-version: "27" } }
-      - { uses: actions/setup-java@v6, id: j21, with: { distribution: temurin, java-version: "21" } }
+      # jpm installs the JDKs itself (foojay, checksums verified), as users get them; the runner's JDK 21 builds jpm.
       - name: Bootstrap
-        run: ./bootstrap.sh
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+          JAVA_HOME="$JAVA_HOME_21_X64" ./bootstrap.sh
+      - name: Install the JDKs
+        run: |
+          set -e
+          homes=""
+          for v in 8 11 17 21 25 27; do
+            bin/jpm java install "temurin-$v"
+            homes="$homes${homes:+:}$(bin/jpm java home "temurin-$v" | tail -n 1)"
+          done
+          echo "JPM_TEST_JDKS=$homes" >> "$GITHUB_ENV"
       - name: Every target with every JDK
-        env:
-          JPM_TEST_JDKS: ${{ steps.j8.outputs.path }}:${{ steps.j11.outputs.path }}:${{ steps.j17.outputs.path }}:${{ steps.j21.outputs.path }}:${{ steps.j25.outputs.path }}:${{ steps.j27.outputs.path }}
         run: bin/jpm test --frozen --module jpm dev.jpm.e2e.JavaVersionsTest
 
   # Line coverage of the unit and end-to-end tests, to find dead code: the report is an artifact, the
