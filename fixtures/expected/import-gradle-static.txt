@@ -1,0 +1,61 @@
+$ jpm import --static
+    Imported project.jsonc from Gradle
+    Imported core/project.jsonc from Gradle
+    Imported app/project.jsonc from Gradle
+warning: the Gradle build was read without running it; check the result
+warning: core: platform com.fasterxml.jackson:jackson-bom is not carried over; the versions it manages are written out instead
+   Resolving dependencies
+  + com.fasterxml.jackson.core:jackson-databind 2.17.2
+  + com.google.guava:guava 33.3.1-jre
+  + org.apache.commons:commons-lang3 3.14.0
+  + org.junit.jupiter:junit-jupiter 5.11.4
+  + org.projectlombok:lombok 1.18.34
+      Locked 5 packages (5 added, 0 changed, 0 removed)
+Next: `jpm build` and `jpm test`. Sources stay where they are ("layout": "maven").
+
+--- project.jsonc
+// Imported from Gradle by `jpm import`. Edit freely; jpm does not read the Gradle build anymore.
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "demo",
+  "version": "1.4.0",
+  "workspace": ["core", "app"]
+}
+
+--- core/project.jsonc
+// Imported from Gradle by `jpm import`. Edit freely; jpm does not read the Gradle build anymore.
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "core",
+  "group": "com.example",
+  "layout": "maven",
+  "java": "17",
+  "target": "17",
+  "runtime": {
+    "com.fasterxml.jackson.core:jackson-databind": "2.17.2",
+    "com.google.guava:guava": "33.3.1-jre",
+    "org.apache.commons:commons-lang3": "3.14.0"
+  },
+  "dev": {
+    "org.projectlombok:lombok": "1.18.34"
+  }
+}
+
+--- app/project.jsonc
+// Imported from Gradle by `jpm import`. Edit freely; jpm does not read the Gradle build anymore.
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "app",
+  "group": "com.example",
+  "layout": "maven",
+  "java": "17",
+  "target": "17",
+  "main": "demo.Main",
+  "runtime": {
+    "workspace:core": "*"
+  },
+  "test": {
+    "org.junit.jupiter:junit-jupiter": "5.11.4"
+  }
+}
+

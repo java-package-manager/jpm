@@ -1,0 +1,11 @@
+{
+  "name": "app",
+  "main": "shop.app.Main",
+  "define": {
+    "GREETING": "Welcome"
+  },
+  "defineClass": "shop.app.Config",
+  "runtime": {
+    "workspace:core": "*"
+  }
+}

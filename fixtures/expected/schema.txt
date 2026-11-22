@@ -1,0 +1,13 @@
+$ jpm schema
+(output not recorded)
+
+$ jpm schema --path
+<home>/schemas/<jpm-version>/project.schema.json
+
+$ jpm --version
+jpm <jpm-version>
+
+$ jpm schema --bogus
+error: Usage: jpm schema [--path]
+[exit 2]
+

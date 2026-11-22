@@ -1,0 +1,51 @@
+$ jpm import --dry-run
+// project.jsonc
+// Imported from Maven by `jpm import`. Edit freely; jpm does not read the pom.xml anymore.
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "maven-demo",
+  "group": "org.example",
+  "version": "2.1.0",
+  "layout": "maven",
+  "java": "21",
+  "target": "21",
+  "runtime": {
+    "org.example:money": "1.0.0"
+  }
+}
+
+
+$ jpm import
+    Imported project.jsonc from Maven
+   Resolving dependencies
+  + org.example:money 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+Next: `jpm build` and `jpm test`. Sources stay where they are ("layout": "maven").
+
+--- project.jsonc
+// Imported from Maven by `jpm import`. Edit freely; jpm does not read the pom.xml anymore.
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "maven-demo",
+  "group": "org.example",
+  "version": "2.1.0",
+  "layout": "maven",
+  "java": "21",
+  "target": "21",
+  "runtime": {
+    "org.example:money": "1.0.0"
+  }
+}
+
+$ jpm import
+error: project.jsonc already exists; use --force to overwrite it
+[exit 1]
+
+$ jpm build
+    Compiled maven-demo 2.1.0 (<jdk>, release 21)
+    Packaged dist/maven-demo-2.1.0.jar
+
+$ jpm start
+error: <project>/project.jsonc has no "main"
+[exit 1]
+

@@ -1,0 +1,20 @@
+$ jpm build
+   Resolving dependencies
+  + org.apache.commons:commons-text 1.12.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+    Compiled api 1.0.0 (<jdk>, release 21)
+    Packaged dist/api-1.0.0.jar
+    Compiled impl 1.0.0 (<jdk>, release 21)
+    Packaged dist/impl-1.0.0.jar
+    Compiled app 1.0.0 (<jdk>, release 21)
+    Packaged dist/app-1.0.0.jar
+     Bundled dist/app-1.0.0-bundle.jar (2 shared jars, isolated: workspace:impl)
+
+--- files in app/dist
+app-1.0.0-bundle.jar
+app-1.0.0.jar
+
+$ <java-home>/bin/java -jar app/dist/app-1.0.0-bundle.jar
+Hello Bundle
+implementation dependencies visible to the app: false
+

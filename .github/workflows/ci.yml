@@ -102,6 +102,10 @@ jobs:
       - name: Native image
         run: bin/jpm build --native
 
+      - name: End-to-end tests on the native binary
+        if: runner.os != 'Windows'
+        run: JPM_E2E_BINARY="$PWD/dist/jpm" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest
+
       - name: Smoke test the native binary
         run: |
           set -eux

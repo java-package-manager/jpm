@@ -1,0 +1,86 @@
+$ jpm init hello
+     Created project.jsonc, src/hello/App.java and test/hello/AppTest.java
+Next: `jpm start` to run it, `jpm test` to test it.
+
+--- files in .
+.gitignore
+project.jsonc
+src/hello/App.java
+test/hello/AppTest.java
+
+--- project.jsonc
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "hello",
+  "version": "0.1.0",
+  "java": "21",
+  "main": "hello.App",
+  "runtime": {},
+  "test": {}
+}
+
+--- .gitignore
+.cache/
+dist/
+.env.local
+
+$ jpm add --test org.junit.jupiter:junit-jupiter@*
+      Adding org.junit.jupiter:junit-jupiter * (test)
+   Resolving dependencies
+  + org.apiguardian:apiguardian-api <test-framework>
+  + org.jspecify:jspecify <test-framework>
+  + org.junit.jupiter:junit-jupiter <test-framework>
+  + org.junit.jupiter:junit-jupiter-api <test-framework>
+  + org.junit.jupiter:junit-jupiter-engine <test-framework>
+  + org.junit.jupiter:junit-jupiter-params <test-framework>
+  + org.junit.platform:junit-platform-commons <test-framework>
+  + org.junit.platform:junit-platform-engine <test-framework>
+  + org.opentest4j:opentest4j <test-framework>
+      Locked 9 packages (9 added, 0 changed, 0 removed)
+
+$ jpm build
+    Compiled hello 0.1.0 (<jdk>, release 21)
+    Packaged dist/hello-0.1.0.jar
+
+--- files in dist
+hello-0.1.0.jar
+
+$ jpm start
+Hello from hello!
+
+$ jpm test
+    Compiled hello tests
+     Testing hello
+╷
+└─ JUnit Jupiter ✔
+   └─ AppTest ✔
+      └─ greets() ✔
+
+Test run finished after <n> ms
+[         2 containers found      ]
+[         0 containers skipped    ]
+[         2 containers started    ]
+[         0 containers aborted    ]
+[         2 containers successful ]
+[         0 containers failed     ]
+[         1 tests found           ]
+[         0 tests skipped         ]
+[         1 tests started         ]
+[         0 tests aborted         ]
+[         1 tests successful      ]
+[         0 tests failed          ]
+
+
+$ jpm info
+hello 0.1.0  <project>
+  test  org.junit.jupiter:junit-jupiter * -> <test-framework>
+
+$ jpm clean
+     Cleaned build output
+
+--- files in dist
+
+$ jpm init
+error: project.jsonc already exists here
+[exit 1]
+

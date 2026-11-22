@@ -1,0 +1,9 @@
+{
+  "name": "core",
+  "runtime": {
+    "org.example:money": "^1.0.0"
+  },
+  "test": {
+    "org.junit.jupiter:junit-jupiter": "*"
+  }
+}

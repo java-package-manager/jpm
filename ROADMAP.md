@@ -135,7 +135,7 @@ The goal is code that a new contributor can read top to bottom.
 - [ ] Remove tests that only check implementation details, repeat other tests, or exist for a bug in
       code that no longer exists. Merge grab-bag tests (for example `SmallGapsTest`) into the tests of
       the feature they cover.
-- [ ] Make tests hermetic: serve Maven and Git fixtures from a local server or directory instead of
+- [x] Make tests hermetic: serve Maven and Git fixtures from a local server or directory instead of
       the network (about 10 test classes reach out today). Keep a small, separately run set of live
       tests against Maven Central.
 - [ ] Shared test helpers (temporary projects, fake repositories) in one place.

@@ -1,0 +1,11 @@
+// A workspace whose modules depend on each other and on a library from a Maven repository.
+{
+  "name": "shop",
+  "version": "1.0.0",
+  "group": "org.example.shop",
+  "java": "21",
+  "workspace": ["core", "app"],
+  "scripts": {
+    "hello": "echo hello from a script"
+  }
+}

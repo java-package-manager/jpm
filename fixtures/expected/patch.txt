@@ -1,0 +1,27 @@
+$ jpm start
+   Resolving dependencies
+  + org.example:money 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+    Compiled app 1.0.0 (<jdk>, release 21)
+EUR 12.34
+
+$ jpm patch org.example:money
+    Unpacked org.example:money 1.0.0 to .cache/patch/org.example_money
+Edit the files there, then run `jpm patch --commit org.example:money`.
+
+$ jpm patch --commit org.example:money
+       Saved patches/org.example_money.patch and recorded it in project.jsonc
+
+--- files in patches
+org.example_money.patch
+
+--- project.jsonc
+{ "name": "app", "version": "1.0.0", "java": "21", "main": "app.Main", "runtime": { "org.example:money": "1.0.0" }, "patches": {
+  "org.example:money": "patches/org.example_money.patch"
+} }
+
+$ jpm start
+    Patching org.example:money 1.0.0
+    Compiled app 1.0.0 (<jdk>, release 21)
+USD 12.34
+

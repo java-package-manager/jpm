@@ -1,1 +1,1 @@
-{ "name": "impl", "visibility": "internal", "java": "17", "runtime": { "workspace:api": "*", "org.apache.commons:commons-text": "1.12.0" } }
+{ "name": "impl", "visibility": "internal", "java": "21", "runtime": { "workspace:api": "*", "org.apache.commons:commons-text": "1.12.0" } }

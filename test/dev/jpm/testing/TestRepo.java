@@ -1,7 +1,6 @@
 package dev.jpm.testing;
 
 import dev.jpm.util.Fs;
-import dev.jpm.util.JpmException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,25 +58,56 @@ public final class TestRepo {
     }
 
     /**
-     * Copies whole groups (for example {@code org.junit}) from the Maven cache of the jpm running the tests.
-     * Tests use it for test frameworks, which jpm itself needs to run its tests and so are always cached.
+     * Copies the artifacts on the test JVM's classpath that come from the Maven cache of the jpm running the
+     * tests: JUnit and the console launcher, at exactly the versions jpm's own tests use. Projects in tests
+     * can then run {@code jpm test} without the network, and resolve the same versions on every machine.
+     *
+     * @return the copied artifacts as {@code group:artifact} to version
      */
-    public TestRepo copyFromCache(String... groups) {
-        Path cache = JpmHome.outerRepository();
-        for (String g : groups) {
-            Path from = cache.resolve(g.replace('.', '/'));
-            if (!Files.isDirectory(from)) throw new JpmException(g + " is not in the jpm cache " + cache);
-            copyTree(from, root.resolve(g.replace('.', '/')));
+    public Map<String, String> copyTestClasspath() {
+        Path cache = JpmHome.outerRepository().toAbsolutePath().normalize();
+        Map<String, String> copied = new java.util.TreeMap<>();
+        for (String entry : System.getProperty("java.class.path").split(java.io.File.pathSeparator)) {
+            Path jar = Path.of(entry).toAbsolutePath().normalize();
+            if (!jar.startsWith(cache) || !jar.toString().endsWith(".jar")) continue;
+            Path versionDir = jar.getParent(), artifactDir = versionDir.getParent();
+            Path rel = cache.relativize(artifactDir);
+            String group = rel.getParent().toString().replace(java.io.File.separatorChar, '.');
+            copied.put(group + ":" + artifactDir.getFileName(), versionDir.getFileName().toString());
+            copyVersion(versionDir, root.resolve(cache.relativize(versionDir).toString()));
+            if (group.startsWith("org.junit")) {
+                Path bom = cache.resolve("org/junit/junit-bom").resolve(versionDir.getFileName().toString());
+                if (Files.isDirectory(bom)) copyVersion(bom, root.resolve(cache.relativize(bom).toString()));
+            }
         }
-        return this;
+        try (Stream<Path> s = Files.walk(root)) {
+            for (Path d : s.filter(p -> Files.isDirectory(p) && hasVersionDirs(p)).toList()) {
+                Path rel = root.relativize(d);
+                String group = rel.getParent().toString().replace(java.io.File.separatorChar, '.');
+                new Artifact(group, d.getFileName().toString(), "").writeMetadata(d);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return copied;
     }
 
-    private static void copyTree(Path from, Path to) {
-        try (Stream<Path> s = Files.walk(from)) {
+    private static boolean hasVersionDirs(Path dir) {
+        try (Stream<Path> s = Files.list(dir)) {
+            return s.anyMatch(v -> Files.isDirectory(v) && Files.exists(v.resolve(dir.getFileName() + "-" + v.getFileName() + ".pom")));
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static void copyVersion(Path from, Path to) {
+        try (Stream<Path> s = Files.list(from)) {
+            Files.createDirectories(to);
             for (Path f : (Iterable<Path>) s::iterator) {
-                Path target = to.resolve(from.relativize(f).toString());
-                if (Files.isDirectory(f)) Files.createDirectories(target);
-                else if (!f.getFileName().toString().startsWith(".")) Files.copy(f, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                String n = f.getFileName().toString();
+                if (Files.isRegularFile(f) && !n.startsWith(".") && (n.endsWith(".jar") || n.endsWith(".pom") || n.endsWith(".module"))) {
+                    Files.copy(f, to.resolve(n), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -88,6 +118,7 @@ public final class TestRepo {
     public final class Artifact {
         private final String group, name, version;
         private final Map<String, byte[]> entries = new LinkedHashMap<>();
+        private final Map<String, byte[]> sources = new LinkedHashMap<>();
         private final List<String> dependencies = new ArrayList<>();
         private String pomExtra = "";
 
@@ -112,6 +143,33 @@ public final class TestRepo {
                     throw new UncheckedIOException(e);
                 }
             }
+            return this;
+        }
+
+        /**
+         * A class compiled from {@code source} for Java 11, for stubs of real libraries: only the members a
+         * test uses, so the test needs no network.
+         */
+        public Artifact javaClass(String className, String source) {
+            try {
+                Path tmp = Files.createTempDirectory("stub");
+                Path src = tmp.resolve("src").resolve(className.replace('.', '/') + ".java");
+                Fs.write(src, source);
+                Path out = tmp.resolve("classes");
+                int code = javax.tools.ToolProvider.getSystemJavaCompiler()
+                        .run(null, null, null, "--release", "11", "-d", out.toString(), src.toString());
+                if (code != 0) throw new IllegalStateException("could not compile the stub " + className);
+                entries(out);
+                Fs.deleteTree(tmp);
+                return this;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        /** A file in the sources jar ({@code -sources.jar}), which is written when there is at least one. */
+        public Artifact source(String path, String text) {
+            sources.put(path, text.getBytes(StandardCharsets.UTF_8));
             return this;
         }
 
@@ -141,17 +199,23 @@ public final class TestRepo {
             Fs.write(v.resolve(name + "-" + version + ".pom"), "<project><modelVersion>4.0.0</modelVersion><groupId>" + group
                     + "</groupId><artifactId>" + name + "</artifactId><version>" + version + "</version>" + pomExtra
                     + "<dependencies>" + String.join("", dependencies) + "</dependencies></project>");
-            try (OutputStream out = Files.newOutputStream(v.resolve(name + "-" + version + ".jar"));
-                 JarOutputStream jar = new JarOutputStream(out)) {
-                for (Map.Entry<String, byte[]> e : entries.entrySet()) {
-                    jar.putNextEntry(new ZipEntry(e.getKey()));
+            writeJar(v.resolve(name + "-" + version + ".jar"), entries);
+            if (!sources.isEmpty()) writeJar(v.resolve(name + "-" + version + "-sources.jar"), sources);
+            writeMetadata(dir);
+        }
+
+        private static void writeJar(Path file, Map<String, byte[]> files) {
+            try (OutputStream out = Files.newOutputStream(file); JarOutputStream jar = new JarOutputStream(out)) {
+                for (Map.Entry<String, byte[]> e : files.entrySet()) {
+                    ZipEntry entry = new ZipEntry(e.getKey());
+                    entry.setTimeLocal(java.time.LocalDateTime.of(2000, 1, 1, 0, 0));
+                    jar.putNextEntry(entry);
                     jar.write(e.getValue());
                     jar.closeEntry();
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-            writeMetadata(dir);
         }
 
         private void writeMetadata(Path dir) {

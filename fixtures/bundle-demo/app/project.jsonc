@@ -1,6 +1,6 @@
 {
   "name": "app",
-  "java": "17",
+  "java": "21",
   "main": "demo.app.Main",
   "package": "bundle",
   "runtime": {
