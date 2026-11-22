@@ -49,14 +49,14 @@ public record GitModule(DepKey key, String commit, Manifest root, Manifest manif
             read = imported::get;
             rootText = read.apply("");
         }
-        Manifest root = Manifest.parse(Path.of(key.repoKey() + "@" + commit.substring(0, 7), Manifest.FILE), rootText);
+        Manifest root = Manifest.parse(Path.of(label(key, commit), Manifest.FILE), rootText);
         Map<String, String> siblings = new LinkedHashMap<>();
         Map<String, Manifest> manifests = new LinkedHashMap<>();
         if (root.isWorkspaceRoot()) {
             for (String rel : root.workspace) {
                 String text = read.apply(rel);
                 if (text == null) throw new JpmException(key.repoKey() + ": workspace module \"" + rel + "\" has no " + Manifest.FILE);
-                Manifest m = Manifest.parse(Path.of(key.repoKey() + "@" + commit.substring(0, 7), rel, Manifest.FILE), text, root);
+                Manifest m = Manifest.parse(Path.of(label(key, commit), rel, Manifest.FILE), text, root);
                 siblings.put(m.name, rel);
                 manifests.put(m.name, m);
             }
@@ -84,5 +84,9 @@ public record GitModule(DepKey key, String commit, Manifest root, Manifest manif
     public Path checkout() {
         Path dir = GitRepo.of(key).checkout(commit);
         return subdir.isEmpty() ? dir : dir.resolve(subdir);
+    }
+
+    private static String label(DepKey key, String commit) {
+        return key.repoKey().toString().replace(':', '/') + "@" + commit.substring(0, 7);
     }
 }
