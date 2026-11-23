@@ -180,14 +180,17 @@ compiled classes or from the manifest.
 
 **Needs:** API shape (Phase 0), layering (Phase 2).
 
-- [ ] Public API covering what `jpm info --json/--ide/--classpath` and `jpm schema` give today:
+- [x] Public API covering what `jpm info --json/--ide/--classpath` and `jpm schema` give today:
       project model, modules, folders, scripts, dependencies with scopes and sources, every classpath,
-      resolved defines, and the manifest schema.
+      resolved defines, and the manifest schema: `project/load`, `project/classpaths` and
+      `schema/manifest` of the protocol ([docs/protocol.md](docs/protocol.md)), and `JpmClient`.
 - [x] Publish the API with Javadoc and sources: as `dev.jpm:jpm-api` to
       `https://repo.thenextlvl.net/releases` (and `/snapshots`), not Maven Central.
-- [ ] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output.
-- [ ] **jpm-publish:** use the public API instead of `jpm info --json`.
-- [ ] Extensions get a documented way to use the API (for example a template project).
+- [x] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output
+      (`JpmApi.kt`, with `JpmClient`).
+- [x] **jpm-publish:** use the public API instead of `jpm info --json` (`JpmClient.load` and `classpaths`).
+- [x] Extensions get a documented way to use the API:
+      [jpm-extension-template](https://github.com/java-package-manager/jpm-extension-template).
 - [x] Remove `jpm info --json/--ide/--classpath` and `jpm schema` in the release that ships the API,
       with no deprecation period. Plain `jpm info` stays as a human-readable summary.
 
