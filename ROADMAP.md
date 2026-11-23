@@ -362,7 +362,7 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 - [x] Move reference material (manifest fields, version syntax, environment variables, how resolution
       works) into `docs/`, generated from the schema and command registry where possible.
       `docs/commands.md` and the field reference in `docs/manifest.md` are generated (CommandsTest, DocsTest).
-- [ ] Move release and CI details into `CONTRIBUTING.md`.
+- [x] Move release and CI details into `CONTRIBUTING.md`.
 - [ ] Keep `MIGRATION.md`, linked from the README.
 - [ ] A docs site built from `docs/` (optional, once the content has settled).
 
