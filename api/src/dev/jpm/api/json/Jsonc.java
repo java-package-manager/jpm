@@ -17,17 +17,29 @@ import java.util.Map;
  */
 public final class Jsonc {
 
-    /** A parsed value with its source span. */
+    /**
+     * A parsed value with its source span.
+     */
     public static final class Node {
-        /** The value, as {@link Jsonc#parse(String)} returns it. */
+        /**
+         * The value, as {@link Jsonc#parse(String)} returns it.
+         */
         public final Object value;
-        /** Offset of the value's first character in the source. */
+        /**
+         * Offset of the value's first character in the source.
+         */
         public final int start;
-        /** Offset just after the value's last character in the source. */
+        /**
+         * Offset just after the value's last character in the source.
+         */
         public final int end;
-        /** For objects: member name to node, in order. */
+        /**
+         * For objects: member name to node, in order.
+         */
         public final Map<String, Member> members;
-        /** For arrays. */
+        /**
+         * For arrays.
+         */
         public final List<Node> items;
 
         Node(Object value, int start, int end, Map<String, Member> members, List<Node> items) {
@@ -55,31 +67,46 @@ public final class Jsonc {
          *
          * @return true for a JSON object
          */
-        public boolean isObject() { return members != null; }
+        public boolean isObject() {
+            return members != null;
+        }
 
         /**
          * Whether this is an array.
          *
          * @return true for a JSON array
          */
-        public boolean isArray() { return items != null; }
+        public boolean isArray() {
+            return items != null;
+        }
 
         /**
          * Whether this is a string.
          *
          * @return true for a JSON string
          */
-        public boolean isString() { return value instanceof String; }
+        public boolean isString() {
+            return value instanceof String;
+        }
     }
 
-    /** An object member: key span plus value node. */
+    /**
+     * An object member: key span plus value node.
+     */
     public static final class Member {
-        /** The member's name. */
+        /**
+         * The member's name.
+         */
         public final String key;
-        /** Offset of the opening quote of the member's name in the source. */
+        /**
+         * Offset of the opening quote of the member's name in the source.
+         */
         public final int keyStart;
-        /** The member's value. */
+        /**
+         * The member's value.
+         */
         public final Node value;
+
         Member(String key, int keyStart, Node value) {
             this.key = key;
             this.keyStart = keyStart;
@@ -87,11 +114,17 @@ public final class Jsonc {
         }
     }
 
-    /** Text that is not valid JSONC, with the position where reading stopped. */
+    /**
+     * Text that is not valid JSONC, with the position where reading stopped.
+     */
     public static final class ParseException extends RuntimeException {
-        /** The 1-based line of the problem. */
+        /**
+         * The 1-based line of the problem.
+         */
         public final int line;
-        /** The 1-based column of the problem. */
+        /**
+         * The 1-based column of the problem.
+         */
         public final int column;
 
         /**
@@ -158,7 +191,10 @@ public final class Jsonc {
     private ParseException error(String msg) {
         int line = 1, col = 1;
         for (int i = 0; i < pos && i < src.length(); i++) {
-            if (src.charAt(i) == '\n') { line++; col = 1; } else col++;
+            if (src.charAt(i) == '\n') {
+                line++;
+                col = 1;
+            } else col++;
         }
         return new ParseException(msg, line, col);
     }
@@ -185,15 +221,23 @@ public final class Jsonc {
         char c = src.charAt(pos);
         int start = pos;
         switch (c) {
-            case '{': return parseObject();
-            case '[': return parseArray();
+            case '{':
+                return parseObject();
+            case '[':
+                return parseArray();
             case '"': {
                 String s = parseString();
                 return new Node(s, start, pos, null, null);
             }
-            case 't': expect("true"); return new Node(Boolean.TRUE, start, pos, null, null);
-            case 'f': expect("false"); return new Node(Boolean.FALSE, start, pos, null, null);
-            case 'n': expect("null"); return new Node(null, start, pos, null, null);
+            case 't':
+                expect("true");
+                return new Node(Boolean.TRUE, start, pos, null, null);
+            case 'f':
+                expect("false");
+                return new Node(Boolean.FALSE, start, pos, null, null);
+            case 'n':
+                expect("null");
+                return new Node(null, start, pos, null, null);
             default:
                 if (c == '-' || (c >= '0' && c <= '9')) return parseNumber();
                 throw error("Unexpected character '" + c + "'");
@@ -229,20 +273,37 @@ public final class Jsonc {
                 if (pos >= src.length()) throw error("Unterminated string");
                 char e = src.charAt(pos++);
                 switch (e) {
-                    case '"': sb.append('"'); break;
-                    case '\\': sb.append('\\'); break;
-                    case '/': sb.append('/'); break;
-                    case 'b': sb.append('\b'); break;
-                    case 'f': sb.append('\f'); break;
-                    case 'n': sb.append('\n'); break;
-                    case 'r': sb.append('\r'); break;
-                    case 't': sb.append('\t'); break;
+                    case '"':
+                        sb.append('"');
+                        break;
+                    case '\\':
+                        sb.append('\\');
+                        break;
+                    case '/':
+                        sb.append('/');
+                        break;
+                    case 'b':
+                        sb.append('\b');
+                        break;
+                    case 'f':
+                        sb.append('\f');
+                        break;
+                    case 'n':
+                        sb.append('\n');
+                        break;
+                    case 'r':
+                        sb.append('\r');
+                        break;
+                    case 't':
+                        sb.append('\t');
+                        break;
                     case 'u':
                         if (pos + 4 > src.length()) throw error("Bad unicode escape");
                         sb.append((char) Integer.parseInt(src.substring(pos, pos + 4), 16));
                         pos += 4;
                         break;
-                    default: throw error("Bad escape \\" + e);
+                    default:
+                        throw error("Bad escape \\" + e);
                 }
             } else {
                 sb.append(c);
@@ -263,7 +324,10 @@ public final class Jsonc {
         }
         while (true) {
             skipWs();
-            if (pos < src.length() && src.charAt(pos) == '}') { pos++; break; }
+            if (pos < src.length() && src.charAt(pos) == '}') {
+                pos++;
+                break;
+            }
             if (pos >= src.length() || src.charAt(pos) != '"') throw error("Expected property name");
             int keyStart = pos;
             String key = parseString();
@@ -281,8 +345,14 @@ public final class Jsonc {
             skipWs();
             if (pos >= src.length()) throw error("Unterminated object");
             char c = src.charAt(pos);
-            if (c == ',') { pos++; continue; }
-            if (c == '}') { pos++; break; }
+            if (c == ',') {
+                pos++;
+                continue;
+            }
+            if (c == '}') {
+                pos++;
+                break;
+            }
             throw error("Expected ',' or '}'");
         }
         return new Node(map, start, pos, members, null);
@@ -295,15 +365,24 @@ public final class Jsonc {
         List<Node> items = new ArrayList<>();
         while (true) {
             skipWs();
-            if (pos < src.length() && src.charAt(pos) == ']') { pos++; break; }
+            if (pos < src.length() && src.charAt(pos) == ']') {
+                pos++;
+                break;
+            }
             Node v = parseValue();
             list.add(v.value);
             items.add(v);
             skipWs();
             if (pos >= src.length()) throw error("Unterminated array");
             char c = src.charAt(pos);
-            if (c == ',') { pos++; continue; }
-            if (c == ']') { pos++; break; }
+            if (c == ',') {
+                pos++;
+                continue;
+            }
+            if (c == ']') {
+                pos++;
+                break;
+            }
             throw error("Expected ',' or ']'");
         }
         return new Node(list, start, pos, null, items);
@@ -320,11 +399,21 @@ public final class Jsonc {
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             switch (c) {
-                case '"': sb.append("\\\""); break;
-                case '\\': sb.append("\\\\"); break;
-                case '\n': sb.append("\\n"); break;
-                case '\r': sb.append("\\r"); break;
-                case '\t': sb.append("\\t"); break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
                 default:
                     if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
                     else sb.append(c);
@@ -354,7 +443,10 @@ public final class Jsonc {
         } else if (v instanceof Boolean || v instanceof Number) {
             sb.append(v instanceof BigDecimal bd ? bd.toPlainString() : v.toString());
         } else if (v instanceof Map<?, ?> m) {
-            if (m.isEmpty()) { sb.append("{}"); return; }
+            if (m.isEmpty()) {
+                sb.append("{}");
+                return;
+            }
             sb.append("{\n");
             String inner = indent + "  ";
             int i = 0;
@@ -366,7 +458,10 @@ public final class Jsonc {
             }
             sb.append(indent).append('}');
         } else if (v instanceof List<?> l) {
-            if (l.isEmpty()) { sb.append("[]"); return; }
+            if (l.isEmpty()) {
+                sb.append("[]");
+                return;
+            }
             boolean simple = l.stream().allMatch(x -> x instanceof String || x instanceof Number);
             if (simple) {
                 sb.append('[');

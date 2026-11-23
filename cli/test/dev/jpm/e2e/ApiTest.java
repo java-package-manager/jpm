@@ -22,9 +22,12 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** {@code jpm api} spoken to over its real stdin and stdout, as docs/protocol.md specifies it. */
+/**
+ * {@code jpm api} spoken to over its real stdin and stdout, as docs/protocol.md specifies it.
+ */
 @SuppressWarnings("unchecked")
 class ApiTest {
     private Process process;
@@ -101,7 +104,7 @@ class ApiTest {
         assertEquals(Protocol.VERSION, ok.get("protocolVersion"));
         assertTrue(((List<?>) ok.get("methods")).contains("project/load"));
         assertEquals(-32601, ((Number) error(call("no/such", Map.of())).get("code")).intValue());
-        assertEquals(null, call("shutdown", Map.of()).get("result"));
+        assertNull(call("shutdown", Map.of()).get("result"));
         send(Map.of("jsonrpc", "2.0", "method", "exit"));
         assertTrue(process.waitFor(30, TimeUnit.SECONDS));
         assertEquals(0, process.exitValue());
@@ -124,9 +127,9 @@ class ApiTest {
         Map<String, Object> first = result(call("project/load", Map.of("dir", s.project.toString())));
         assertEquals(true, first.get("lockfileChanged"), "the first load writes project.lock");
         Map<String, Object> p = result(call("project/load", Map.of("dir", s.project.resolve("core").toString())));
-        assertEquals(false, p.get("lockfileChanged"));
+        assertFalse((Boolean) p.get("lockfileChanged"));
         assertEquals("shop", p.get("name"));
-        assertEquals(true, p.get("workspace"));
+        assertTrue((Boolean) p.get("workspace"));
         assertEquals(List.of(Map.of("name", "hello", "run", "echo hello from a script", "kind", "command", "dependencies", Map.of())),
                 p.get("scripts"));
         List<Map<String, Object>> modules = (List<Map<String, Object>>) p.get("modules");

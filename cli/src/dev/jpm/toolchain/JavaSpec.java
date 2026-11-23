@@ -33,22 +33,30 @@ public record JavaSpec(String distribution, String version) {
             Map.entry("jbr", "jetbrains"),
             Map.entry("liberica-nik", "liberica_native"));
 
-    /** Distribution names Foojay knows, plus "openjdk" for JDKs from unrecognized vendors. */
+    /**
+     * Distribution names Foojay knows, plus "openjdk" for JDKs from unrecognized vendors.
+     */
     public static final java.util.Set<String> KNOWN = java.util.Set.of("aoj", "aoj_openj9", "bisheng", "corretto",
             "dragonwell", "gluon_graalvm", "graalvm", "graalvm_community", "jetbrains", "kona", "liberica",
             "liberica_native", "mandrel", "microsoft", "ojdk_build", "openlogic", "oracle", "oracle_open_jdk", "redhat",
             "sap_machine", "semeru", "semeru_certified", "temurin", "trava", "zulu", "openjdk");
 
-    /** Distributions whose JDKs include native-image. */
+    /**
+     * Distributions whose JDKs include native-image.
+     */
     private static final java.util.Set<String> GRAAL = java.util.Set.of("graalvm_community", "graalvm", "mandrel",
             "liberica_native", "gluon_graalvm");
 
-    /** Any JDK. */
+    /**
+     * Any JDK.
+     */
     public static JavaSpec any() {
         return new JavaSpec(null, null);
     }
 
-    /** Parses a spec such as {@code 21}, {@code 21.0.5}, {@code temurin-17} or {@code graalvm}; null or blank is any JDK. */
+    /**
+     * Parses a spec such as {@code 21}, {@code 21.0.5}, {@code temurin-17} or {@code graalvm}; null or blank is any JDK.
+     */
     public static JavaSpec parse(String s) {
         if (s == null || s.isBlank()) return any();
         String t = s.trim().toLowerCase(Locale.ROOT);
@@ -75,39 +83,53 @@ public record JavaSpec(String distribution, String version) {
         return new JavaSpec(dist, version);
     }
 
-    /** The major version, or null for any. */
+    /**
+     * The major version, or null for any.
+     */
     public Integer major() {
         if (version == null) return null;
         return Integer.parseInt(version.split("[.+_-]")[0]);
     }
 
-    /** True for an exact version such as {@code 21.0.5}. */
+    /**
+     * True for an exact version such as {@code 21.0.5}.
+     */
     public boolean exact() {
         return version != null && version.contains(".");
     }
 
-    /** True for a distribution whose JDKs include native-image. */
+    /**
+     * True for a distribution whose JDKs include native-image.
+     */
     public boolean graal() {
         return distribution != null && GRAAL.contains(distribution);
     }
 
-    /** True for a distribution whose JDKs include native-image. */
+    /**
+     * True for a distribution whose JDKs include native-image.
+     */
     public static boolean isGraal(String distribution) {
         return GRAAL.contains(distribution);
     }
 
-    /** The same version with a GraalVM distribution, for native builds. */
+    /**
+     * The same version with a GraalVM distribution, for native builds.
+     */
     public JavaSpec asGraal() {
         return graal() ? this : new JavaSpec(DEFAULT_GRAALVM, version);
     }
 
-    /** The distribution to install: the named one, Temurin when none is named. */
+    /**
+     * The distribution to install: the named one, Temurin when none is named.
+     */
     public String installDistribution() {
         if (distribution == null) return DEFAULT_DISTRIBUTION;
         return distribution.equals("openjdk") ? "oracle_open_jdk" : distribution;
     }
 
-    /** Whether a JDK fits: the same major (or exact) version, and the distribution when one is named. */
+    /**
+     * Whether a JDK fits: the same major (or exact) version, and the distribution when one is named.
+     */
     public boolean matches(Jdk j) {
         if (version != null) {
             if (exact()) {

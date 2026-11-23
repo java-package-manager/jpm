@@ -23,14 +23,19 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** gradle:api: the jars of a Gradle distribution, for Gradle plugins. */
+/**
+ * gradle:api: the jars of a Gradle distribution, for Gradle plugins.
+ */
 class GradleApiTest {
-    /** A distribution as services.gradle.org has it, put where jpm downloads it to. */
+    /**
+     * A distribution as services.gradle.org has it, put where jpm downloads it to.
+     */
     private static Path fakeDistribution(Path home, String version) throws IOException {
         Path zip = home.resolve("gradle/gradle-" + version + "-bin.zip");
         Files.createDirectories(zip.getParent());
@@ -61,7 +66,7 @@ class GradleApiTest {
         assertTrue(GradleDist.validVersion("9.8.0"));
         assertTrue(GradleDist.validVersion("8.14"));
         assertTrue(GradleDist.validVersion("9.0-rc-1"));
-        assertTrue(!GradleDist.validVersion("^9.0"));
+        assertFalse(GradleDist.validVersion("^9.0"));
     }
 
     @Test

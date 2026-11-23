@@ -15,8 +15,8 @@ import java.nio.file.PathMatcher;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -25,7 +25,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Resources {
-    private Resources() {}
+    private Resources() {
+    }
 
     public static TreeMap<String, Path> find(List<Path> roots) {
         TreeMap<String, Path> out = new TreeMap<>();

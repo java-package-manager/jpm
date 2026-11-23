@@ -9,7 +9,8 @@ import java.nio.charset.StandardCharsets;
 final class ManifestSchema {
     static final String RESOURCE = "/dev/jpm/project.schema.json";
 
-    private ManifestSchema() {}
+    private ManifestSchema() {
+    }
 
     static String text() {
         try (InputStream in = ManifestSchema.class.getResourceAsStream(RESOURCE)) {

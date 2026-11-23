@@ -9,11 +9,15 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
-/** SHA-256 helpers. */
+/**
+ * SHA-256 helpers.
+ */
 public final class Hash {
     private final MessageDigest md;
 
-    /** An empty SHA-256 hash. */
+    /**
+     * An empty SHA-256 hash.
+     */
     public Hash() {
         try {
             md = MessageDigest.getInstance("SHA-256");
@@ -22,21 +26,27 @@ public final class Hash {
         }
     }
 
-    /** Adds text, with a separator, so that {@code add("ab")} differs from {@code add("a").add("b")}. */
+    /**
+     * Adds text, with a separator, so that {@code add("ab")} differs from {@code add("a").add("b")}.
+     */
     public Hash add(String s) {
         md.update(s.getBytes(StandardCharsets.UTF_8));
         md.update((byte) 0);
         return this;
     }
 
-    /** Adds bytes, with a separator. */
+    /**
+     * Adds bytes, with a separator.
+     */
     public Hash add(byte[] b) {
         md.update(b);
         md.update((byte) 0);
         return this;
     }
 
-    /** Adds a file's content, with a separator. */
+    /**
+     * Adds a file's content, with a separator.
+     */
     public Hash addFile(Path p) {
         try (InputStream in = Files.newInputStream(p)) {
             byte[] buf = new byte[65536];
@@ -49,17 +59,23 @@ public final class Hash {
         }
     }
 
-    /** The hash as lowercase hex. */
+    /**
+     * The hash as lowercase hex.
+     */
     public String hex() {
         return HexFormat.of().formatHex(md.digest());
     }
 
-    /** The SHA-256 of a file, as lowercase hex. */
+    /**
+     * The SHA-256 of a file, as lowercase hex.
+     */
     public static String sha256(Path file) {
         return new Hash().addFileRaw(file).hex();
     }
 
-    /** The SHA-256 of bytes, as lowercase hex. */
+    /**
+     * The SHA-256 of bytes, as lowercase hex.
+     */
     public static String sha256(byte[] data) {
         Hash h = new Hash();
         h.md.update(data);
@@ -77,7 +93,9 @@ public final class Hash {
         }
     }
 
-    /** A file's hash with another algorithm ({@code sha1}, {@code sha256}, {@code sha512}), as lowercase hex. */
+    /**
+     * A file's hash with another algorithm ({@code sha1}, {@code sha256}, {@code sha512}), as lowercase hex.
+     */
     public static String of(String algorithm, Path file) {
         String name = switch (algorithm) {
             case "sha1" -> "SHA-1";
@@ -98,7 +116,9 @@ public final class Hash {
         }
     }
 
-    /** The SHA-256 of UTF-8 text, as lowercase hex. */
+    /**
+     * The SHA-256 of UTF-8 text, as lowercase hex.
+     */
     public static String sha256(String s) {
         return sha256(s.getBytes(StandardCharsets.UTF_8));
     }

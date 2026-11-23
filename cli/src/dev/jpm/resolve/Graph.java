@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -14,31 +13,43 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/** A resolved dependency graph: one version per package, with typed edges. */
+/**
+ * A resolved dependency graph: one version per package, with typed edges.
+ */
 public final class Graph {
 
-    /** Where a package comes from; LOCAL is a module of this project. */
-    public enum Kind { MAVEN, GIT, LOCAL, GRADLE, EXTENSION }
-
-    /** An edge to another package. {@code runtimeOnly} edges are left off compile classpaths. */
     /**
-     * A dependency. {@code runtimeOnly}: on the runtime classpath only. {@code compileOnly}: on the compile
+     * Where a package comes from; LOCAL is a module of this project.
+     */
+    public enum Kind {
+        MAVEN, GIT, LOCAL, GRADLE, EXTENSION
+    }
+
+    /**
+     * An edge to another package: a dependency. {@code runtimeOnly}: on the runtime classpath only, left off
+     * compile classpaths. {@code compileOnly}: on the compile
      * classpath only, provided at run time by the platform (a library's compileOnlyApi dependencies).
      */
     public record Edge(String target, boolean runtimeOnly, Set<String> exclusions, boolean compileOnly) {
-        /** An edge that is not compile-only. */
+        /**
+         * An edge that is not compile-only.
+         */
         public Edge(String target, boolean runtimeOnly, Set<String> exclusions) {
             this(target, runtimeOnly, exclusions, false);
         }
 
-        /** The edge as {@code project.lock} writes it: its scope, then {@code !exclusion}s. */
+        /**
+         * The edge as {@code project.lock} writes it: its scope, then {@code !exclusion}s.
+         */
         public String encode() {
             StringBuilder sb = new StringBuilder(compileOnly ? "provided" : runtimeOnly ? "runtime" : "compile");
             for (String e : new TreeSet<>(exclusions)) sb.append(" !").append(e);
             return sb.toString();
         }
 
-        /** Reads an edge as {@link #encode()} writes it. */
+        /**
+         * Reads an edge as {@link #encode()} writes it.
+         */
         public static Edge decode(String target, String s) {
             String[] parts = s.trim().split("\\s+");
             Set<String> ex = new LinkedHashSet<>();
@@ -47,43 +58,67 @@ public final class Graph {
         }
     }
 
-    /** A package in the graph: its id, kind, chosen version, edges and where its files are. */
+    /**
+     * A package in the graph: its id, kind, chosen version, edges and where its files are.
+     */
     public static final class Pkg {
         public final String id;
         public final Kind kind;
         public String version;
-        /** Git only. */
+        /**
+         * Git only.
+         */
         public String commit;
+
         public String tag;
-        /** Maven only: checksum of the jar. Null for POM-only packages. */
+        /**
+         * Maven only: checksum of the jar. Null for POM-only packages.
+         */
         public String sha256;
-        /** For Maven packages: the SHA-256 of the POM resolution read, which the lockfile pins too. */
+        /**
+         * For Maven packages: the SHA-256 of the POM resolution read, which the lockfile pins too.
+         */
         public String pomSha256;
-        /** False for packages that have no jar (Maven pom packaging). */
+        /**
+         * False for packages that have no jar (Maven pom packaging).
+         */
         public boolean hasJar = true;
+
         public final Map<String, Edge> deps = new TreeMap<>();
-        /** Git: source directory of the module (transient). Local: module directory. */
+        /**
+         * Git: source directory of the module (transient). Local: module directory.
+         */
         public Path dir;
-        /** Path of the jar or classes directory once fetched or built (transient). */
+        /**
+         * Path of the jar or classes directory once fetched or built (transient).
+         */
         public Path artifact;
 
-        /** A package with nothing chosen yet. */
+        /**
+         * A package with nothing chosen yet.
+         */
         public Pkg(String id, Kind kind) {
             this.id = id;
             this.kind = kind;
         }
 
-        /** Maven group (first part of the id). */
+        /**
+         * Maven group (first part of the id).
+         */
         public String group() {
             return id.split(":")[0];
         }
 
-        /** Maven artifact (second part of the id). */
+        /**
+         * Maven artifact (second part of the id).
+         */
         public String name() {
             return id.split(":")[1];
         }
 
-        /** Maven classifier (third part of the id), or null. */
+        /**
+         * Maven classifier (third part of the id), or null.
+         */
         public String classifier() {
             String[] p = id.split(":");
             return kind == Kind.MAVEN && p.length > 2 ? p[2] : null;
@@ -97,23 +132,33 @@ public final class Graph {
 
     public final Map<String, Pkg> pkgs = new TreeMap<>();
 
-    /** The graphs of isolated workspace modules, by module name; each is resolved on its own. */
+    /**
+     * The graphs of isolated workspace modules, by module name; each is resolved on its own.
+     */
     public final Map<String, Graph> isolated = new TreeMap<>();
 
-    /** The graphs of the extensions declared in the root manifest, by extension name; each is resolved on its own. */
+    /**
+     * The graphs of the extensions declared in the root manifest, by extension name; each is resolved on its own.
+     */
     public final Map<String, Graph> extensions = new TreeMap<>();
 
-    /** The package with this id, or null. */
+    /**
+     * The package with this id, or null.
+     */
     public Pkg get(String id) {
         return pkgs.get(id);
     }
 
-    /** Adds or replaces a package. */
+    /**
+     * Adds or replaces a package.
+     */
     public void put(Pkg p) {
         pkgs.put(p.id, p);
     }
 
-    /** Whether a package is left out by exclusions ({@code group:artifact}, {@code group:*} or {@code group}); classified jars are covered by their {@code group:artifact}. */
+    /**
+     * Whether a package is left out by exclusions ({@code group:artifact}, {@code group:*} or {@code group}); classified jars are covered by their {@code group:artifact}.
+     */
     public static boolean excluded(String id, Set<String> exclusions) {
         if (exclusions.isEmpty()) return false;
         String[] parts = id.split(":");
@@ -153,7 +198,9 @@ public final class Graph {
         return closure(roots, walk, Set.of());
     }
 
-    /** Like {@link #closure(Collection, Walk)}, but neither includes nor walks through the ids in {@code stop}. */
+    /**
+     * Like {@link #closure(Collection, Walk)}, but neither includes nor walks through the ids in {@code stop}.
+     */
     public List<String> closure(Collection<Edge> roots, Walk walk, Set<String> stop) {
         Map<String, List<Set<String>>> seen = new HashMap<>();
         LinkedHashSet<String> order = new LinkedHashSet<>();
@@ -165,12 +212,14 @@ public final class Graph {
         while (!queue.isEmpty()) {
             Object[] item = queue.poll();
             String id = (String) item[0];
-            @SuppressWarnings("unchecked")
-            Set<String> ex = (Set<String>) item[1];
+            @SuppressWarnings("unchecked") Set<String> ex = (Set<String>) item[1];
             if (stop.contains(id)) continue;
             List<Set<String>> prior = seen.computeIfAbsent(id, k -> new ArrayList<>());
             boolean covered = false;
-            for (Set<String> s : prior) if (ex.containsAll(s)) { covered = true; break; }
+            for (Set<String> s : prior) if (ex.containsAll(s)) {
+                covered = true;
+                break;
+            }
             if (covered) continue;
             prior.add(ex);
             order.add(id);
@@ -187,7 +236,9 @@ public final class Graph {
         return new ArrayList<>(order);
     }
 
-    /** All paths (as id lists) from the roots to the target, for `jpm why`. */
+    /**
+     * All paths (as id lists) from the roots to the target, for `jpm why`.
+     */
     public List<List<String>> paths(Map<String, Collection<Edge>> rootsByLabel, String target) {
         List<List<String>> out = new ArrayList<>();
         for (Map.Entry<String, Collection<Edge>> r : rootsByLabel.entrySet()) {
@@ -213,7 +264,9 @@ public final class Graph {
         onPath.remove(id);
     }
 
-    /** Packages in dependency order (dependencies before dependents) restricted to the given ids. */
+    /**
+     * Packages in dependency order (dependencies before dependents) restricted to the given ids.
+     */
     public List<Pkg> topo(Collection<String> ids) {
         Set<String> want = new LinkedHashSet<>(ids);
         List<Pkg> out = new ArrayList<>();

@@ -16,7 +16,9 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-/** The same sources and lockfile give byte-identical output, wherever and whenever they are built. */
+/**
+ * The same sources and lockfile give byte-identical output, wherever and whenever they are built.
+ */
 class ReproducibleBuildTest {
     @Test
     void twoBuildsAreByteIdentical(@TempDir Path tmp) throws Exception {

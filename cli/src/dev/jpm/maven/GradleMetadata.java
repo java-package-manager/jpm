@@ -16,7 +16,9 @@ import java.util.TreeSet;
  * scope, though they are compile time only, provided by the platform at run time.
  */
 public record GradleMetadata(Set<String> api, Set<String> runtime) {
-    /** Reads a .module file; null if it is unusable or its variants live in another component (available-at). */
+    /**
+     * Reads a .module file; null if it is unusable or its variants live in another component (available-at).
+     */
     @SuppressWarnings("unchecked")
     public static GradleMetadata read(Path file) {
         Object parsed;
@@ -81,12 +83,16 @@ public record GradleMetadata(Set<String> api, Set<String> runtime) {
         return jvm != null ? jvm : fallback;
     }
 
-    /** True for a dependency the library compiles against but does not need at run time. */
+    /**
+     * True for a dependency the library compiles against but does not need at run time.
+     */
     public boolean compileOnly(String key) {
         return api.contains(key) && !runtime.contains(key);
     }
 
-    /** True for a dependency the library needs at run time but not to compile against it. */
+    /**
+     * True for a dependency the library needs at run time but not to compile against it.
+     */
     public boolean runtimeOnly(String key) {
         return runtime.contains(key) && !api.contains(key);
     }

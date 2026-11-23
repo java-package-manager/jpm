@@ -1,7 +1,8 @@
 package dev.jpm.build.impl;
 
 public final class BundleLauncher {
-    private BundleLauncher() {}
+    private BundleLauncher() {
+    }
 
     public static final String PACKAGE = "dev.jpm.bundle";
 

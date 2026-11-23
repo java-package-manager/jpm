@@ -4,11 +4,11 @@ import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.json.JsoncEdit;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -75,7 +75,10 @@ final class RemoveCommand extends Command {
             boolean found = false;
             for (Manifest.Scope s : Manifest.Scope.values()) {
                 String next = JsoncEdit.remove(src, List.of(s.key), key.toString());
-                if (!next.equals(src)) { found = true; src = next; }
+                if (!next.equals(src)) {
+                    found = true;
+                    src = next;
+                }
             }
             if (!found) throw new JpmException(key + " is not a dependency in " + m.manifest.file);
             Log.step("Removing", key.toString());

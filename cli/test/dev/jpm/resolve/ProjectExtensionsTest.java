@@ -20,7 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Extensions declared in the root manifest are resolved on their own and pinned in project.lock's "extensions" section. */
+/**
+ * Extensions declared in the root manifest are resolved on their own and pinned in project.lock's "extensions" section.
+ */
 class ProjectExtensionsTest {
     private static String dep(String a, String v) {
         return "<dependency><groupId>g</groupId><artifactId>" + a + "</artifactId><version>" + v + "</version></dependency>";

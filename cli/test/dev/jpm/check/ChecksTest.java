@@ -6,11 +6,11 @@ import dev.jpm.util.Fs;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import javax.tools.ToolProvider;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.tools.ToolProvider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,8 +43,7 @@ class ChecksTest {
                 new CheckResult("paths", "files exist", List.of(Problem.error("paths", "the <gen> folder does not exist", root.resolve("project.jsonc"), 4)), null),
                 new CheckResult("license", "a license", List.of(Problem.warning("license", "no license", null, null).withHint("add one")), null),
                 new CheckResult("tests", "tests pass", List.of(), "an earlier check failed"));
-        @SuppressWarnings("unchecked")
-        Map<String, Object> sarif = (Map<String, Object>) Jsonc.parse(Reports.sarif(results, root, "1.0"));
+        @SuppressWarnings("unchecked") Map<String, Object> sarif = (Map<String, Object>) Jsonc.parse(Reports.sarif(results, root, "1.0"));
         assertEquals("2.1.0", sarif.get("version"));
         String text = Reports.sarif(results, root, "1.0");
         assertTrue(text.contains("\"uri\": \"project.jsonc\"") && text.contains("\"startLine\": 4") && text.contains("\"level\": \"warning\""), text);

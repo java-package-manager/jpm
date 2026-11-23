@@ -13,19 +13,26 @@ import java.nio.file.Path;
  * its {@code "extensions"} section.
  */
 public final class Extensions {
-    private Extensions() {}
+    private Extensions() {
+    }
 
-    /** The folder of a declared extension's own project, in the project's cache. */
+    /**
+     * The folder of a declared extension's own project, in the project's cache.
+     */
     public static Path dir(Project project, Manifest.ExtensionDecl d) {
         return project.dir.resolve(".cache").resolve("extensions").resolve(d.name());
     }
 
-    /** The one-dependency project an extension is resolved and built as; it uses the project's repositories. */
+    /**
+     * The one-dependency project an extension is resolved and built as; it uses the project's repositories.
+     */
     public static Project project(Project project, Manifest.ExtensionDecl d) {
         return Project.load(write(dir(project, d), d.key().toString(), d.spec(), project.root.repositories));
     }
 
-    /** Writes the manifest of an extension's own project into {@code dir} (only when it changed) and returns {@code dir}. */
+    /**
+     * Writes the manifest of an extension's own project into {@code dir} (only when it changed) and returns {@code dir}.
+     */
     public static Path write(Path dir, String key, String spec, java.util.List<String> repositories) {
         StringBuilder sb = new StringBuilder("{\n  \"name\": ").append(Jsonc.quote("jpm-extension-" + dir.getFileName())).append(",\n");
         sb.append("  \"version\": \"0.0.0\",\n");

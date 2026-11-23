@@ -5,11 +5,11 @@ import dev.jpm.build.Builder;
 import dev.jpm.build.Compiler;
 import dev.jpm.build.Env;
 import dev.jpm.build.Scripts;
+import dev.jpm.log.Log;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

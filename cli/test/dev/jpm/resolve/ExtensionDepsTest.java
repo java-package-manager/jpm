@@ -25,7 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** ext:<extension>/<name>: dependencies an extension provides, such as jpm-paperweight's Paper server. */
+/**
+ * ext:<extension>/<name>: dependencies an extension provides, such as jpm-paperweight's Paper server.
+ */
 class ExtensionDepsTest {
     @Test
     void keys() {
@@ -38,7 +40,9 @@ class ExtensionDepsTest {
         assertTrue(DepKey.parse("ext:artifact").isMaven(), "a Maven group named ext is still one");
     }
 
-    /** A fake jpm-<name> in ~/.jpm/bin answering `resolve <name> <version>` with a jar and a Maven dependency. */
+    /**
+     * A fake jpm-<name> in ~/.jpm/bin answering `resolve <name> <version>` with a jar and a Maven dependency.
+     */
     private static void fakeExtension(Path home, String name, Path jar, String deps) throws IOException {
         Path bin = home.resolve("bin/jpm-" + name);
         Fs.write(bin, """

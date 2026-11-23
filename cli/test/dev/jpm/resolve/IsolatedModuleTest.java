@@ -1,10 +1,10 @@
 package dev.jpm.resolve;
 
-import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.build.Builder;
 import dev.jpm.build.Env;
 import dev.jpm.maven.MavenRepo;
+import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 import org.junit.jupiter.api.Test;

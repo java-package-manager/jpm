@@ -1,7 +1,6 @@
 package dev.jpm.build;
 
 import dev.jpm.build.impl.Relocator;
-
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 
@@ -25,11 +24,16 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-/** Writes reproducible jars. */
+/**
+ * Writes reproducible jars.
+ */
 public final class Jars {
-    private Jars() {}
+    private Jars() {
+    }
 
-    /** 1980-02-01, the conventional reproducible-build timestamp. */
+    /**
+     * 1980-02-01, the conventional reproducible-build timestamp.
+     */
     private static final long EPOCH = 315532800000L + 31L * 24 * 3600 * 1000;
 
     /**
@@ -96,7 +100,9 @@ public final class Jars {
         return merge(jar, inputs, attrs, new Relocator(Map.of()));
     }
 
-    /** Like {@link #merge(Path, List, Map)}, with every entry (the app's own included) relocated. */
+    /**
+     * Like {@link #merge(Path, List, Map)}, with every entry (the app's own included) relocated.
+     */
     public static int merge(Path jar, List<Path> inputs, Map<String, String> attrs, Relocator relocator) {
         Map<String, byte[]> entries = new TreeMap<>();
         Map<String, java.util.LinkedHashSet<String>> services = new TreeMap<>();
@@ -189,7 +195,9 @@ public final class Jars {
         }
     }
 
-    /** Copies a jar, dropping entries that match {@code drop} and adding files from {@code overlay}. */
+    /**
+     * Copies a jar, dropping entries that match {@code drop} and adding files from {@code overlay}.
+     */
     public static void rewrite(Path in, Path outJar, Predicate<String> drop, Path overlay) {
         Fs.mkdirs(outJar.getParent());
         Map<String, Path> add = new LinkedHashMap<>();
@@ -207,7 +215,9 @@ public final class Jars {
                 ZipEntry ne = new ZipEntry(n);
                 ne.setTime(EPOCH);
                 out.putNextEntry(ne);
-                if (!e.isDirectory()) try (InputStream is = zf.getInputStream(e)) { is.transferTo(out); }
+                if (!e.isDirectory()) try (InputStream is = zf.getInputStream(e)) {
+                    is.transferTo(out);
+                }
                 out.closeEntry();
             }
             for (Map.Entry<String, Path> e : add.entrySet()) {
@@ -227,7 +237,9 @@ public final class Jars {
         }
     }
 
-    /** Unpacks a jar into a folder, skipping entries that would land outside it. */
+    /**
+     * Unpacks a jar into a folder, skipping entries that would land outside it.
+     */
     public static void extract(Path jar, Path dir) {
         dir = dir.toAbsolutePath().normalize();
         Fs.mkdirs(dir);
@@ -251,7 +263,9 @@ public final class Jars {
         }
     }
 
-    /** Main-Class from a jar's manifest, or null. */
+    /**
+     * Main-Class from a jar's manifest, or null.
+     */
     public static String mainClass(Path jar) {
         try (JarFile jf = new JarFile(jar.toFile())) {
             java.util.jar.Manifest mf = jf.getManifest();

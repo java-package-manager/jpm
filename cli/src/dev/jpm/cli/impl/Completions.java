@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class Completions {
-    private Completions() {}
+    private Completions() {
+    }
 
     static final List<String> SHELLS = List.of("bash", "zsh", "fish", "powershell");
 

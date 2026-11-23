@@ -1,8 +1,7 @@
 package dev.jpm.build;
 
-import dev.jpm.build.impl.Relocator;
-
 import dev.jpm.Project;
+import dev.jpm.build.impl.Relocator;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.toolchain.JavaSpec;
@@ -24,7 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** "relocate": a flat bundle with a dependency moved to another package, which still runs. */
+/**
+ * "relocate": a flat bundle with a dependency moved to another package, which still runs.
+ */
 class RelocateTest {
     @Test
     void rewritesNames() {

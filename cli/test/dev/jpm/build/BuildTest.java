@@ -1,9 +1,8 @@
 package dev.jpm.build;
 
+import dev.jpm.Manifest;
 import dev.jpm.build.impl.BundleLauncher;
 import dev.jpm.build.impl.ClassInfo;
-
-import dev.jpm.Manifest;
 import dev.jpm.toolchain.JavaSpec;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.toolchain.Toolchain;
@@ -22,6 +21,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,7 +66,7 @@ class BuildTest {
         List<Defines.Value> v = Defines.resolve(m, null, null, null, Map.of("N", "7"));
         assertEquals("d", v.get(0).value());
         assertEquals(7, v.get(1).value());
-        assertEquals(true, v.get(2).value());
+        assertTrue((Boolean) v.get(2).value());
         String src = Defines.source("a.b.BuildConfig", v, "lib", "1.0");
         assertTrue(src.contains("public static final int N = 7;"));
         assertTrue(src.contains("package a.b;"));
@@ -236,8 +236,8 @@ class BuildTest {
         assertEquals("--add-exports java.base/sun.nio.ch=ALL-UNNAMED",
                 Compiler.refusedWithRelease(List.of("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED")));
         assertEquals("--system", Compiler.refusedWithRelease(List.of("--system", "/opt/jdk")));
-        assertEquals(null, Compiler.refusedWithRelease(List.of("--add-exports", "my.module/my.pkg=ALL-UNNAMED", "-Xlint:all")));
-        assertEquals(null, Compiler.refusedWithRelease(List.of("-parameters")));
+        assertNull(Compiler.refusedWithRelease(List.of("--add-exports", "my.module/my.pkg=ALL-UNNAMED", "-Xlint:all")));
+        assertNull(Compiler.refusedWithRelease(List.of("-parameters")));
     }
 
     @Test

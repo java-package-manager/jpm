@@ -1,22 +1,21 @@
 package dev.jpm.build;
 
+import dev.jpm.DepKey;
+import dev.jpm.Manifest;
+import dev.jpm.Project;
 import dev.jpm.build.impl.BundleLauncher;
 import dev.jpm.build.impl.JvmLanguages;
 import dev.jpm.build.impl.KotlinCompiler;
 import dev.jpm.build.impl.Relocator;
 import dev.jpm.build.impl.Resources;
-
-
-import dev.jpm.resolve.ResolveInputs;
-import dev.jpm.DepKey;
-import dev.jpm.Manifest;
-import dev.jpm.Project;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.GitModule;
 import dev.jpm.resolve.GradleDist;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
 import dev.jpm.resolve.Lockfile;
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.toolchain.JavaSpec;
 import dev.jpm.toolchain.Jdk;
@@ -24,7 +23,6 @@ import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +43,9 @@ import java.util.zip.ZipFile;
  * (built from source) and patched Maven jars.
  */
 public final class Builder {
-    public enum Cp { COMPILE, PROCESSOR, RUNTIME, TEST_COMPILE, TEST_RUNTIME }
+    public enum Cp {
+        COMPILE, PROCESSOR, RUNTIME, TEST_COMPILE, TEST_RUNTIME
+    }
 
     public final Project project;
     public final Graph graph;
@@ -57,7 +57,9 @@ public final class Builder {
     private final Env.Mode mode;
     private final Map<String, Builder> isolatedBuilders = new HashMap<>();
 
-    /** A builder for a resolved project, with the environment of {@code mode} for defines and hooks. */
+    /**
+     * A builder for a resolved project, with the environment of {@code mode} for defines and hooks.
+     */
     public Builder(Project project, Graph graph, MavenRepo repo, Env.Mode mode) {
         this.project = project;
         this.graph = graph;
@@ -77,12 +79,16 @@ public final class Builder {
         return isolatedBuilders.computeIfAbsent(m.name(), n -> new Builder(project.isolatedView(m), iso, repo, mode));
     }
 
-    /** The environment variables for this build: the project's env files for the mode, where the process environment wins. */
+    /**
+     * The environment variables for this build: the project's env files for the mode, where the process environment wins.
+     */
     public Map<String, String> env() {
         return env;
     }
 
-    /** The JDK a manifest asks for, installed first if it is missing. */
+    /**
+     * The JDK a manifest asks for, installed first if it is missing.
+     */
     public Jdk jdk(Manifest m) {
         try {
             return Toolchain.require(JavaSpec.parse(m.java));
@@ -104,7 +110,10 @@ public final class Builder {
             g = Toolchain.find(spec);
         } else {
             int major = spec.major();
-            for (Jdk j : Jdk.discover()) if (j.major() == major && j.hasNativeImage()) { g = j; break; }
+            for (Jdk j : Jdk.discover()) if (j.major() == major && j.hasNativeImage()) {
+                g = j;
+                break;
+            }
         }
         if (g == null) g = Toolchain.require(spec.asGraal());
         if (!g.hasNativeImage()) {
@@ -114,7 +123,9 @@ public final class Builder {
         return g;
     }
 
-    /** Builds a native executable of a module's main into {@code dist/}. */
+    /**
+     * Builds a native executable of a module's main into {@code dist/}.
+     */
     public Path nativeImage(Project.Module m, String entry) {
         Map<String, String> mains = m.manifest.mains;
         if (mains.isEmpty()) throw new JpmException(m.manifest.file + " has no \"main\", so there is nothing to build natively");
@@ -144,14 +155,18 @@ public final class Builder {
         return built;
     }
 
-    /** One of a module's classpaths: the jars and class folders of its packages, in classpath order. */
+    /**
+     * One of a module's classpaths: the jars and class folders of its packages, in classpath order.
+     */
     public List<Path> classpath(Project.Module m, Cp kind) {
         List<Path> out = new ArrayList<>();
         for (String id : classpathIds(m, kind)) out.addAll(paths(id, m));
         return Compiler.distinct(out);
     }
 
-    /** The packages on one of a module's classpaths, in classpath order, without fetching or building any. */
+    /**
+     * The packages on one of a module's classpaths, in classpath order, without fetching or building any.
+     */
     public List<String> classpathIds(Project.Module m, Cp kind) {
         List<Graph.Edge> runtime = ResolveInputs.rootEdges(m, Manifest.Scope.RUNTIME);
         List<Graph.Edge> dev = ResolveInputs.rootEdges(m, Manifest.Scope.DEV);
@@ -177,12 +192,16 @@ public final class Builder {
         return new ArrayList<>(new LinkedHashSet<>(ids));
     }
 
-    /** Whether a manifest of the project patches this package. */
+    /**
+     * Whether a manifest of the project patches this package.
+     */
     public boolean isPatched(String id) {
         return patchOwner(id) != null;
     }
 
-    /** Runtime dependency classpath without compiling the project's own modules (for scripts). */
+    /**
+     * Runtime dependency classpath without compiling the project's own modules (for scripts).
+     */
     public List<Path> classpathNoBuild(Project.Module m) {
         List<Path> out = new ArrayList<>();
         for (String id : graph.closure(ResolveInputs.rootEdges(m, Manifest.Scope.RUNTIME), Graph.Walk.RUNTIME)) {
@@ -197,7 +216,9 @@ public final class Builder {
         return Compiler.distinct(out);
     }
 
-    /** Jars or directories for one package. */
+    /**
+     * Jars or directories for one package.
+     */
     public List<Path> paths(String id, Project.Module consumer) {
         List<Path> cached = artifacts.get(id);
         if (cached != null) return cached;
@@ -220,28 +241,38 @@ public final class Builder {
         return out;
     }
 
-    /** Where a module's compiled classes go. */
+    /**
+     * Where a module's compiled classes go.
+     */
     public static Path classesDir(Project.Module m) {
         return m.cacheDir().resolve("classes");
     }
 
-    /** Where the native-image tracing agent writes a module's configuration, which native builds read: its resources' META-INF/native-image/<group>/<name>. */
+    /**
+     * Where the native-image tracing agent writes a module's configuration, which native builds read: its resources' META-INF/native-image/<group>/<name>.
+     */
     public static Path nativeConfigDir(Project.Module m) {
         String group = m.manifest.group != null ? m.manifest.group : m.name();
         return m.assetsDir().resolve("META-INF").resolve("native-image").resolve(group).resolve(m.name());
     }
 
-    /** Where a module's compiled tests go. */
+    /**
+     * Where a module's compiled tests go.
+     */
     public static Path testClassesDir(Project.Module m) {
         return m.cacheDir().resolve("test-classes");
     }
 
-    /** The module's jar in {@code dist/}: {@code <name>-<version>.jar}. */
+    /**
+     * The module's jar in {@code dist/}: {@code <name>-<version>.jar}.
+     */
     public Path jarPath(Project.Module m) {
         return m.dir.resolve("dist").resolve(m.name() + "-" + m.version() + ".jar");
     }
 
-    /** Compiles a module's main sources (and its workspace dependencies first). */
+    /**
+     * Compiles a module's main sources (and its workspace dependencies first).
+     */
     public boolean compileMain(Project.Module m) {
         Boolean done = compiledModules.get(m.name());
         if (done != null) return done;
@@ -309,7 +340,9 @@ public final class Builder {
         return false;
     }
 
-    /** Compiles and packages a module into {@code dist/}. */
+    /**
+     * Compiles and packages a module into {@code dist/}.
+     */
     public Path jar(Project.Module m) {
         compileMain(m);
         Path jar = jarPath(m);
@@ -352,7 +385,9 @@ public final class Builder {
         return out;
     }
 
-    /** A module's define values, resolved from the manifest, the environment and .env files. */
+    /**
+     * A module's define values, resolved from the manifest, the environment and .env files.
+     */
     public List<Defines.Value> defineValues(Project.Module m) {
         return Defines.resolve(m.manifest, null, null, null, env);
     }
@@ -382,7 +417,9 @@ public final class Builder {
         return gen;
     }
 
-    /** Compiles test sources. Returns false if the module has no tests. */
+    /**
+     * Compiles test sources. Returns false if the module has no tests.
+     */
     public boolean compileTests(Project.Module m) {
         List<Path> testDirs = m.testDirs();
         List<Path> excludes = List.of(m.testResourcesDir());
@@ -458,7 +495,9 @@ public final class Builder {
         return out;
     }
 
-    /** The classpath the tests run with: test classes, the module's classes, test fixtures of other modules and the test runtime dependencies. */
+    /**
+     * The classpath the tests run with: test classes, the module's classes, test fixtures of other modules and the test runtime dependencies.
+     */
     public List<Path> testRuntimeClasspath(Project.Module m) {
         List<Path> cp = new ArrayList<>();
         cp.add(testClassesDir(m));
@@ -498,7 +537,9 @@ public final class Builder {
         return dir;
     }
 
-    /** The classpath the module runs with: its classes and its runtime dependencies. */
+    /**
+     * The classpath the module runs with: its classes and its runtime dependencies.
+     */
     public List<Path> runtimeClasspath(Project.Module m) {
         List<Path> cp = new ArrayList<>();
         cp.add(classesDir(m));
@@ -523,7 +564,9 @@ public final class Builder {
         return release;
     }
 
-    /** Cache key part for a classpath: jar checksums by path, directories by their content stamp. */
+    /**
+     * Cache key part for a classpath: jar checksums by path, directories by their content stamp.
+     */
     private String inputsKey(List<Path> cp, List<Path> proc) {
         Hash h = new Hash();
         for (Path p : cp) h.add("cp " + p + " " + stamp(p));
@@ -540,7 +583,9 @@ public final class Builder {
         }
     }
 
-    /** Content key of directory trees: relative names, sizes and modification times. */
+    /**
+     * Content key of directory trees: relative names, sizes and modification times.
+     */
     public static String treeKey(List<Path> dirs) {
         Hash h = new Hash();
         for (Path d : dirs) {
@@ -555,7 +600,9 @@ public final class Builder {
         return h.hex();
     }
 
-    /** True for internal implementation modules, which a bundle loads in their own isolated class loader. */
+    /**
+     * True for internal implementation modules, which a bundle loads in their own isolated class loader.
+     */
     private boolean isolatedPkg(Graph.Pkg p) {
         if (p.kind == Graph.Kind.GIT) return !GitModule.locate(DepKey.parse(p.id), p.commit).isPublic();
         if (p.kind == Graph.Kind.LOCAL) {
@@ -565,7 +612,9 @@ public final class Builder {
         return false;
     }
 
-    /** Jars of a package, packaging the project's own modules as jars. */
+    /**
+     * Jars of a package, packaging the project's own modules as jars.
+     */
     private List<Path> bundleJars(String id, Project.Module consumer) {
         Graph.Pkg p = graph.get(id);
         if (p != null && p.kind == Graph.Kind.LOCAL) return List.of(jar(project.module(id.substring("workspace:".length()))));
@@ -703,7 +752,9 @@ public final class Builder {
         }
     }
 
-    /** Java packages that have classes in a jar. */
+    /**
+     * Java packages that have classes in a jar.
+     */
     static Set<String> packagesOf(Path jar) {
         Set<String> out = new java.util.TreeSet<>();
         try (ZipFile zf = new ZipFile(jar.toFile())) {
@@ -828,11 +879,11 @@ public final class Builder {
             } catch (JpmException e) {
                 String hint = options == null || options.dependencies().isEmpty()
                         ? "\nIf the patched classes use other libraries, list them in the patch's \"dependencies\": "
-                        + "\"patches\": { \"" + p.id + "\": { \"file\": \"" + owner.patches.get(p.id) + "\", \"dependencies\": { ... } } }"
+                                + "\"patches\": { \"" + p.id + "\": { \"file\": \"" + owner.patches.get(p.id) + "\", \"dependencies\": { ... } } }"
                         : "";
                 String rel = (options == null || options.release() == null) && release < jdk.major()
                         ? "\nThe patched classes are compiled for Java " + release + " (" + p.id + "'s own level); for newer language"
-                        + " features set the patch's \"release\"."
+                                + " features set the patch's \"release\"."
                         : "";
                 throw new JpmException(e.getMessage() + hint + rel);
             }
@@ -846,7 +897,9 @@ public final class Builder {
         return out;
     }
 
-    /** Bytecode level of the first class in a jar (e.g. 52 gives 8). */
+    /**
+     * Bytecode level of the first class in a jar (e.g. 52 gives 8).
+     */
     private static int classRelease(Path jar) {
         try (ZipFile zf = new ZipFile(jar.toFile())) {
             var en = zf.entries();
@@ -896,7 +949,7 @@ public final class Builder {
             List<Path> proc = List.of();
             List<Manifest.Dependency> devDeps = mod.manifest().deps(Manifest.Scope.DEV);
             if (!devDeps.isEmpty()) {
-                proc = buildToolClasspath(p, mod, devDeps);
+                proc = buildToolClasspath(p, devDeps);
                 cp.addAll(proc);
             }
             cp = Compiler.distinct(cp);
@@ -905,7 +958,11 @@ public final class Builder {
             Map<String, Object> provided = null;
             for (Project.Module m : project.modules) {
                 Map<String, Object> v = m.manifest.libraryDefines.get(p.id);
-                if (v != null) { provided = v; topConsumer = m.manifest; break; }
+                if (v != null) {
+                    provided = v;
+                    topConsumer = m.manifest;
+                    break;
+                }
             }
             if (topConsumer == null && !project.modules.isEmpty()) topConsumer = project.modules.get(0).manifest;
             List<Defines.Value> defs = Defines.resolve(mod.manifest(), p.id, provided, topConsumer, env);
@@ -972,7 +1029,7 @@ public final class Builder {
      * Build-only dependencies of a Git dependency (its {@code dev} scope). They never reach this project's
      * classpath, so they are resolved on their own, preferring the versions in that repository's lockfile.
      */
-    private List<Path> buildToolClasspath(Graph.Pkg p, GitModule mod, List<Manifest.Dependency> devDeps) {
+    private List<Path> buildToolClasspath(Graph.Pkg p, List<Manifest.Dependency> devDeps) {
         List<Resolver.Root> roots = new ArrayList<>();
         for (Manifest.Dependency d : devDeps) roots.add(new Resolver.Root(p.id, d.key(), d.spec(), d.exclusions()));
         Graph prev = null;
@@ -991,7 +1048,9 @@ public final class Builder {
         return resolveTool(roots, prev, Graph.Walk.ALL);
     }
 
-    /** Resolves and fetches a standalone set of dependencies, returning their jars as {@code walk} reaches them. */
+    /**
+     * Resolves and fetches a standalone set of dependencies, returning their jars as {@code walk} reaches them.
+     */
     public List<Path> resolveTool(List<Resolver.Root> roots, Graph prev, Graph.Walk walk) {
         Graph g = new Resolver(roots, repo, prev).resolve();
         Install.fetch(g, repo);

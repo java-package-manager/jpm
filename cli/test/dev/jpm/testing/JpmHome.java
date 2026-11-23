@@ -15,12 +15,16 @@ import java.nio.file.Path;
  * {@code test/assets/META-INF/services}; a test may still point {@code jpm.home} somewhere else.
  */
 public final class JpmHome implements BeforeEachCallback, AfterEachCallback {
-    /** The home of the jpm that runs the tests, read before any test changes {@code jpm.home}. */
+    /**
+     * The home of the jpm that runs the tests, read before any test changes {@code jpm.home}.
+     */
     private static final Path OUTER = Fs.home();
 
     private static final ExtensionContext.Namespace NS = ExtensionContext.Namespace.create(JpmHome.class);
 
-    /** The Maven cache of the jpm running the tests: it holds the test frameworks jpm's own tests use. */
+    /**
+     * The Maven cache of the jpm running the tests: it holds the test frameworks jpm's own tests use.
+     */
     public static Path outerRepository() {
         return OUTER.resolve("repository");
     }

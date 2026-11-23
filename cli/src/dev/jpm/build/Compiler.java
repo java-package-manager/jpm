@@ -1,14 +1,13 @@
 package dev.jpm.build;
 
-import dev.jpm.build.impl.ClassInfo;
-
 import dev.jpm.api.json.Jsonc;
+import dev.jpm.build.impl.ClassInfo;
+import dev.jpm.log.Log;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,13 +35,18 @@ import java.util.TreeSet;
  * </ul>
  */
 public final class Compiler {
-    private Compiler() {}
+    private Compiler() {
+    }
 
-    /** One javac run. */
+    /**
+     * One javac run.
+     */
     public record Request(String label, Jdk jdk, int release, List<Path> sourceRoots, List<Path> classpath,
                           List<Path> processorPath, Path outDir, Path stateFile, List<String> extraArgs,
                           String inputsKey, List<Path> excludes) {
-        /** A request without folders to leave out of the sources. */
+        /**
+         * A request without folders to leave out of the sources.
+         */
         public Request(String label, Jdk jdk, int release, List<Path> sourceRoots, List<Path> classpath,
                        List<Path> processorPath, Path outDir, Path stateFile, List<String> extraArgs, String inputsKey) {
             this(label, jdk, release, sourceRoots, classpath, processorPath, outDir, stateFile, extraArgs, inputsKey, List.of());
@@ -51,21 +55,31 @@ public final class Compiler {
 
     private static final class State {
         String key;
-        /** source key -> hash */
+        /**
+         * source key -> hash
+         */
         final Map<String, String> hashes = new TreeMap<>();
-        /** source key -> class names */
+        /**
+         * source key -> class names
+         */
         final Map<String, Set<String>> classes = new TreeMap<>();
-        /** class name -> info */
+        /**
+         * class name -> info
+         */
         final Map<String, ClassInfo> info = new TreeMap<>();
     }
 
-    /** Sources inside an excluded folder (the assets inside the source folder) are not compiled. */
+    /**
+     * Sources inside an excluded folder (the assets inside the source folder) are not compiled.
+     */
     private static boolean excluded(Request r, Path p) {
         for (Path e : r.excludes) if (p.startsWith(e)) return true;
         return false;
     }
 
-    /** Compiles if needed. Returns true if javac ran. */
+    /**
+     * Compiles if needed. Returns true if javac ran.
+     */
     public static boolean compile(Request r) {
         Map<String, Path> sources = new TreeMap<>();
         for (int i = 0; i < r.sourceRoots.size(); i++) {
@@ -140,7 +154,7 @@ public final class Compiler {
                 st.classes.remove(s);
             }
             List<Path> files = batch.stream().map(sources::get).toList();
-            Map<String, Set<String>> produced = javac(r, files, batch, sources, true);
+            Map<String, Set<String>> produced = javac(r, files, batch, true);
             Set<String> after = new TreeSet<>();
             for (Map.Entry<String, Set<String>> e : produced.entrySet()) {
                 st.classes.put(e.getKey(), e.getValue());
@@ -171,7 +185,9 @@ public final class Compiler {
         return true;
     }
 
-    /** Sources (other than {@code skip}) with a class that refers to any of the affected classes. */
+    /**
+     * Sources (other than {@code skip}) with a class that refers to any of the affected classes.
+     */
     private static Set<String> dependents(State st, Set<String> affected, Set<String> skip) {
         Set<String> out = new TreeSet<>();
         if (affected.isEmpty()) return out;
@@ -197,7 +213,7 @@ public final class Compiler {
         Log.debug(r.label + ": full compile of " + sources.size() + " file(s)");
         Fs.deleteTree(r.outDir);
         Fs.mkdirs(r.outDir);
-        Map<String, Set<String>> produced = javac(r, new ArrayList<>(sources.values()), sources.keySet(), sources, false);
+        Map<String, Set<String>> produced = javac(r, new ArrayList<>(sources.values()), sources.keySet(), false);
         State st = new State();
         st.key = key;
         st.hashes.putAll(hashes);
@@ -208,9 +224,11 @@ public final class Compiler {
         writeState(r.stateFile, st);
     }
 
-    /** Runs javac into a temporary directory, moves the classes into place and maps them to sources. */
+    /**
+     * Runs javac into a temporary directory, moves the classes into place and maps them to sources.
+     */
     private static Map<String, Set<String>> javac(Request r, List<Path> files, Collection<String> keys,
-                                                  Map<String, Path> sources, boolean outDirOnClasspath) {
+                                                  boolean outDirOnClasspath) {
         Path tmp = r.outDir.resolveSibling(r.outDir.getFileName() + ".tmp");
         Fs.deleteTree(tmp);
         Fs.mkdirs(tmp);
@@ -218,7 +236,7 @@ public final class Compiler {
         if (declared != null && r.release < 9) {
             throw JpmException.at(declared, 0, r.label + " is a Java module (module-info.java), and modules need target 9 or newer;"
                     + " the target is " + r.release).withHint("set \"target\" to 9 or newer, or remove module-info.java to build for "
-                    + r.release);
+                            + r.release);
         }
         List<String> args = new ArrayList<>();
         if (r.jdk.major() >= 9) {
@@ -349,11 +367,16 @@ public final class Compiler {
         return s;
     }
 
-    /** Options that javac refuses together with {@code --release}: the JDK's own modules, opened or replaced. */
+    /**
+     * Options that javac refuses together with {@code --release}: the JDK's own modules, opened or replaced.
+     */
     private static final Set<String> SYSTEM_MODULE_OPTIONS = Set.of("--add-exports", "--add-reads", "--patch-module");
+
     private static final Set<String> SYSTEM_OPTIONS = Set.of("--system", "--upgrade-module-path");
 
-    /** The first of {@code args} that javac refuses with {@code --release} (ADR 0002), or null. */
+    /**
+     * The first of {@code args} that javac refuses with {@code --release} (ADR 0002), or null.
+     */
     static String refusedWithRelease(List<String> args) {
         for (int i = 0; i < args.size(); i++) {
             String a = args.get(i), option = a, value = null;
@@ -373,7 +396,9 @@ public final class Compiler {
         return null;
     }
 
-    /** Paths joined with the platform's path separator, for {@code -cp}. */
+    /**
+     * Paths joined with the platform's path separator, for {@code -cp}.
+     */
     public static String join(List<Path> paths) {
         return String.join(File.pathSeparator, paths.stream().map(Path::toString).toList());
     }
@@ -452,7 +477,9 @@ public final class Compiler {
         Fs.write(file, Jsonc.write(root) + "\n");
     }
 
-    /** Helper for callers to collect a set of class directories and jars. */
+    /**
+     * Helper for callers to collect a set of class directories and jars.
+     */
     public static List<Path> distinct(Collection<Path> in) {
         return new ArrayList<>(new LinkedHashSet<>(in));
     }

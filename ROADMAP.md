@@ -180,14 +180,17 @@ compiled classes or from the manifest.
 
 **Needs:** API shape (Phase 0), layering (Phase 2).
 
-- [ ] Public API covering what `jpm info --json/--ide/--classpath` and `jpm schema` give today:
+- [x] Public API covering what `jpm info --json/--ide/--classpath` and `jpm schema` give today:
       project model, modules, folders, scripts, dependencies with scopes and sources, every classpath,
-      resolved defines, and the manifest schema.
+      resolved defines, and the manifest schema: `project/load`, `project/classpaths` and
+      `schema/manifest` of the protocol ([docs/protocol.md](docs/protocol.md)), and `JpmClient`.
 - [x] Publish the API with Javadoc and sources: as `dev.jpm:jpm-api` to
       `https://repo.thenextlvl.net/releases` (and `/snapshots`), not Maven Central.
-- [ ] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output.
-- [ ] **jpm-publish:** use the public API instead of `jpm info --json`.
-- [ ] Extensions get a documented way to use the API (for example a template project).
+- [x] **jpm-intellij:** use the public API instead of running `jpm info --ide` and parsing its output
+      (`JpmApi.kt`, with `JpmClient`).
+- [x] **jpm-publish:** use the public API instead of `jpm info --json` (`JpmClient.load` and `classpaths`).
+- [x] Extensions get a documented way to use the API:
+      [jpm-extension-template](https://github.com/java-package-manager/jpm-extension-template).
 - [x] Remove `jpm info --json/--ide/--classpath` and `jpm schema` in the release that ships the API,
       with no deprecation period. Plain `jpm info` stays as a human-readable summary.
 
@@ -257,7 +260,9 @@ An extension that works like [changesets](https://github.com/changesets/changese
         `jpm format` gives the same result;
   - [ ] linting rules with parity to IntelliJ IDEA's inspections;
   - [ ] a language server (LSP) for formatting and lint diagnostics in VS Code and other editors.
-- [ ] jpm-format adds `format --check` to `jpm check`, and all jpm projects run `jpm check` in CI.
+- [x] jpm-format adds `format --check` to `jpm check`, and all jpm projects run `jpm check` in CI: jpm
+      (in `bin/check`), jpm-changeset, jpm-publish and jpm-extension-template. jpm-intellij builds with Gradle,
+      and setup-jpm and changeset-action have no Java code.
 
 ### jpm-intellij: migration UI
 
@@ -405,7 +410,9 @@ Items that are not in the original list but would pay off.
       Done when a Windows run is green and those are enabled too.
 - [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …) and a template
       repository for writing new ones.
-- [ ] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists.
+- [x] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists. jpm and
+      jpm-format release with changesets and changeset-action (`.changeset/`, the "Version packages" pull
+      request, `CHANGELOG.md`).
 - [x] **Document the versioned schema URL:** every release already ships `project.schema.json`, so
       `releases/download/<version>/project.schema.json` is a stable URL per version. The README only
       mentions `releases/latest/…`; document the pinned form as the replacement for `jpm schema`.

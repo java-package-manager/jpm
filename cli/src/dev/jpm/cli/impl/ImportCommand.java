@@ -2,11 +2,11 @@ package dev.jpm.cli.impl;
 
 import dev.jpm.Manifest;
 import dev.jpm.Project;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

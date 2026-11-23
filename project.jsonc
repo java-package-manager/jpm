@@ -18,6 +18,11 @@
       },
       "javadoc": true
     },
-    "github:java-package-manager/jpm-changeset": "^0.2.0"
+    "github:java-package-manager/jpm-changeset": "^0.2.0",
+    "github:java-package-manager/jpm-format": "^0.3.1",
+    "format": {
+      // the end-to-end tests' projects are inputs whose transcripts are compared byte for byte
+      "ignore": ["fixtures/**"]
+    }
   }
 }

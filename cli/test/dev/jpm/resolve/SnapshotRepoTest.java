@@ -11,7 +11,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/** Snapshot repositories name files with timestamps; jpm finds them through maven-metadata.xml. */
+/**
+ * Snapshot repositories name files with timestamps; jpm finds them through maven-metadata.xml.
+ */
 class SnapshotRepoTest {
     @Test
     void fetchesTimestampedSnapshots(@TempDir Path tmp) {

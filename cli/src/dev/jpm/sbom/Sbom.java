@@ -29,9 +29,12 @@ import java.util.UUID;
  * always gives the same file.
  */
 public final class Sbom {
-    private Sbom() {}
+    private Sbom() {
+    }
 
-    /** The CycloneDX version written. */
+    /**
+     * The CycloneDX version written.
+     */
     public static final String SPEC_VERSION = "1.6";
 
     /**
@@ -205,7 +208,9 @@ public final class Sbom {
         return c;
     }
 
-    /** The package URL of a Maven artifact: {@code pkg:maven/group/artifact@version}, with its classifier. */
+    /**
+     * The package URL of a Maven artifact: {@code pkg:maven/group/artifact@version}, with its classifier.
+     */
     public static String purl(String group, String artifact, String version, String classifier) {
         return "pkg:maven/" + enc(group) + "/" + enc(artifact) + "@" + enc(version)
                 + (classifier == null ? "" : "?classifier=" + enc(classifier));

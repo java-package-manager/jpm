@@ -4,10 +4,10 @@ import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.json.JsoncEdit;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Fs;
-import dev.jpm.log.Log;
 
 import java.nio.file.Path;
 import java.util.LinkedHashSet;

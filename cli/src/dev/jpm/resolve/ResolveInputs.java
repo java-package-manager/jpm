@@ -13,15 +13,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** What resolution starts from: each module's root edges, the hash of everything that feeds resolution, and package ids. */
+/**
+ * What resolution starts from: each module's root edges, the hash of everything that feeds resolution, and package ids.
+ */
 public final class ResolveInputs {
-    private ResolveInputs() {}
+    private ResolveInputs() {
+    }
 
-    /** JUnit added to tests when no test framework is declared. */
+    /**
+     * JUnit added to tests when no test framework is declared.
+     */
     public static final String JUNIT_JUPITER = "org.junit.jupiter:junit-jupiter";
+
     public static final String JUNIT_VERSION = "5.11.4";
 
-    /** The manifests that may hold patches, by the id their patch dependencies are requested from. */
+    /**
+     * The manifests that may hold patches, by the id their patch dependencies are requested from.
+     */
     static Map<String, Manifest> patchManifests(Project project) {
         Map<String, Manifest> out = new LinkedHashMap<>();
         if (project.root.isWorkspaceRoot()) out.put("workspace root", project.root);
@@ -29,21 +37,25 @@ public final class ResolveInputs {
         return out;
     }
 
-    /** Effective dependencies of a module, including implicit ones (JUnit for tests). */
+    /**
+     * Effective dependencies of a module, including implicit ones (JUnit for tests).
+     */
     public static List<Manifest.Dependency> effectiveDeps(Project.Module m) {
         List<Manifest.Dependency> deps = new ArrayList<>(m.manifest.dependencies);
         boolean hasTests = m.testDirs().stream().anyMatch(Files::isDirectory);
         boolean hasFramework = deps.stream().anyMatch(d -> d.scope() == Manifest.Scope.TEST && d.key().isMaven()
                 && (d.key().group().startsWith("org.junit") || d.key().group().equals("junit")
-                || d.key().group().equals("org.testng") || d.key().group().startsWith("io.kotest")
-                || d.key().group().startsWith("net.jqwik")));
+                        || d.key().group().equals("org.testng") || d.key().group().startsWith("io.kotest")
+                        || d.key().group().startsWith("net.jqwik")));
         if (hasTests && !hasFramework) {
             deps.add(new Manifest.Dependency(DepKey.parse(JUNIT_JUPITER), JUNIT_VERSION, Manifest.Scope.TEST, 0));
         }
         return deps;
     }
 
-    /** A hash of everything that feeds resolution; the lockfile is reused while it matches. */
+    /**
+     * A hash of everything that feeds resolution; the lockfile is reused while it matches.
+     */
     public static String inputs(Project project) {
         Hash h = new Hash().add("v1");
         for (String r : project.root.repositories) h.add("repo " + r);
@@ -65,7 +77,9 @@ public final class ResolveInputs {
         return h.hex().substring(0, 32);
     }
 
-    /** Root edges of a module for one scope. Workspace siblings map to their LOCAL packages. */
+    /**
+     * Root edges of a module for one scope. Workspace siblings map to their LOCAL packages.
+     */
     public static List<Graph.Edge> rootEdges(Project.Module m, Manifest.Scope scope) {
         List<Graph.Edge> out = new ArrayList<>();
         for (Manifest.Dependency d : effectiveDeps(m)) {
@@ -75,7 +89,9 @@ public final class ResolveInputs {
         return out;
     }
 
-    /** The package id of a key in the dependency graph. */
+    /**
+     * The package id of a key in the dependency graph.
+     */
     public static String idOf(DepKey k) {
         return k.toString();
     }
@@ -84,7 +100,9 @@ public final class ResolveInputs {
         return k.isGit() ? Graph.Kind.GIT : k.isGradle() ? Graph.Kind.GRADLE : k.isExtension() ? Graph.Kind.EXTENSION : Graph.Kind.MAVEN;
     }
 
-    /** Adds LOCAL packages for the project's own modules so classpaths can be walked through them. */
+    /**
+     * Adds LOCAL packages for the project's own modules so classpaths can be walked through them.
+     */
     public static void addLocal(Graph g, Project project) {
         for (Project.Module m : project.sharedModules()) {
             Graph.Pkg p = new Graph.Pkg(m.id(), Graph.Kind.LOCAL);

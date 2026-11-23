@@ -3,18 +3,22 @@ package dev.jpm.importer;
 import dev.jpm.importer.impl.GradleImport;
 import dev.jpm.importer.impl.GradleScripts;
 import dev.jpm.importer.impl.MavenImport;
-
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.JpmException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Detects the build tool of a directory and imports it. */
+/**
+ * Detects the build tool of a directory and imports it.
+ */
 public final class Importer {
-    private Importer() {}
+    private Importer() {
+    }
 
-    /** "maven", "gradle", or null. */
+    /**
+     * "maven", "gradle", or null.
+     */
     public static String detect(Path dir) {
         if (Files.isRegularFile(dir.resolve("pom.xml"))) return "maven";
         for (String f : new String[]{"settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts"}) {
@@ -38,7 +42,9 @@ public final class Importer {
         return imported;
     }
 
-    /** A build that names no license gets the one its license file is, when jpm recognises the file. */
+    /**
+     * A build that names no license gets the one its license file is, when jpm recognises the file.
+     */
     static void licenseFromFile(Path dir, Imported imported) {
         java.util.Map<String, Object> root = imported.manifests.get("");
         if (root == null || root.containsKey("license")) return;

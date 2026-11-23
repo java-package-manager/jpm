@@ -1,24 +1,23 @@
 package dev.jpm.resolve;
 
-import dev.jpm.resolve.impl.GitVersions;
-
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.maven.Pom;
+import dev.jpm.resolve.impl.GitVersions;
+import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
 import dev.jpm.version.Version;
 import dev.jpm.version.VersionSpec;
 import dev.jpm.version.VersionSpecs;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import dev.jpm.util.Hash;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -40,10 +39,14 @@ import java.util.TreeMap;
  */
 public final class Resolver {
 
-    /** One request for a package: its spec, whether it is a requirement (not a preference), whether the project asks for it directly, and who asks. */
+    /**
+     * One request for a package: its spec, whether it is a requirement (not a preference), whether the project asks for it directly, and who asks.
+     */
     public record Request(String spec, boolean hard, boolean direct, String from) {}
 
-    /** The version chosen for a package, with its commit and tag for Git packages. */
+    /**
+     * The version chosen for a package, with its commit and tag for Git packages.
+     */
     public record Selected(String version, String commit, String tag) {}
 
     private record EdgeReq(String target, Graph.Kind kind, String spec, boolean runtimeOnly, Set<String> exclusions, boolean compileOnly) {
@@ -54,7 +57,9 @@ public final class Resolver {
 
     private record Expanded(List<EdgeReq> edges, boolean hasJar, Boolean isPublic) {}
 
-    /** A top-level requirement: a dependency declared by {@code from}. */
+    /**
+     * A top-level requirement: a dependency declared by {@code from}.
+     */
     public record Root(String from, DepKey key, String spec, Set<String> exclusions) {
         public Root(String from, DepKey key, String spec) {
             this(from, key, spec, Set.of());
@@ -72,7 +77,9 @@ public final class Resolver {
     private final Map<String, Expanded> expandMemo = new HashMap<>();
     private final GitVersions gitVersions;
 
-    /** A resolver for a project. Packages of {@code previous} keep their versions unless they are in {@code unlocked} or {@code unlockAll} is true. */
+    /**
+     * A resolver for a project. Packages of {@code previous} keep their versions unless they are in {@code unlocked} or {@code unlockAll} is true.
+     */
     public Resolver(Project project, MavenRepo repo, Graph previous, Set<String> unlocked, boolean unlockAll) {
         this.project = project;
         this.roots = new ArrayList<>();
@@ -99,7 +106,9 @@ public final class Resolver {
         this.unlockAll = unlockAll;
     }
 
-    /** Resolves explicit roots without a project (tools, a dependency's own build dependencies). */
+    /**
+     * Resolves explicit roots without a project (tools, a dependency's own build dependencies).
+     */
     public Resolver(List<Root> roots, MavenRepo repo, Graph previous) {
         this.project = null;
         this.roots = roots;
@@ -111,7 +120,9 @@ public final class Resolver {
         this.unlockAll = false;
     }
 
-    /** Resolves the whole graph. */
+    /**
+     * Resolves the whole graph.
+     */
     public Graph resolve() {
         Map<String, Selected> selected = new HashMap<>();
         Map<String, List<Request>> requests = null;
@@ -132,11 +143,13 @@ public final class Resolver {
             while (!queue.isEmpty()) {
                 Object[] item = queue.poll();
                 String id = (String) item[0];
-                @SuppressWarnings("unchecked")
-                Set<String> ex = (Set<String>) item[1];
+                @SuppressWarnings("unchecked") Set<String> ex = (Set<String>) item[1];
                 List<Set<String>> prior = seen.computeIfAbsent(id, k -> new ArrayList<>());
                 boolean covered = false;
-                for (Set<String> s : prior) if (ex.containsAll(s)) { covered = true; break; }
+                for (Set<String> s : prior) if (ex.containsAll(s)) {
+                    covered = true;
+                    break;
+                }
                 if (covered) continue;
                 prior.add(ex);
                 visitedFrom.computeIfAbsent(id, k -> new LinkedHashSet<>());
@@ -199,7 +212,7 @@ public final class Resolver {
         if (before != null && p.version.equals(before.version) && before.pomSha256 != null && !before.pomSha256.equals(p.pomSha256)) {
             throw new JpmException("Checksum mismatch for the POM of " + p.id + " " + p.version + ":\n  locked:   " + before.pomSha256
                     + "\n  download: " + p.pomSha256).withHint("the POM the lock was made from is not the one the repository serves now;"
-                    + " if the cached file is corrupt, delete " + pom + " and try again");
+                            + " if the cached file is corrupt, delete " + pom + " and try again");
         }
     }
 
@@ -234,7 +247,9 @@ public final class Resolver {
         };
     }
 
-    /** ext:<extension>/<name>: the extension says which version a spec is; locked versions are kept while the spec is unchanged. */
+    /**
+     * ext:<extension>/<name>: the extension says which version a spec is; locked versions are kept while the spec is unchanged.
+     */
     private Selected chooseExtension(String id, List<Request> reqs) {
         String spec = null;
         for (Request r : reqs) {
@@ -246,7 +261,9 @@ public final class Resolver {
         return new Selected(ExtensionDeps.resolve(DepKey.parse(id), spec).version(), null, null);
     }
 
-    /** gradle:api names one Gradle version; every request must name the same one. */
+    /**
+     * gradle:api names one Gradle version; every request must name the same one.
+     */
     private Selected chooseGradle(String id, List<Request> reqs) {
         String version = null;
         for (Request r : reqs) {
@@ -260,6 +277,7 @@ public final class Resolver {
         }
         return new Selected(version, null, null);
     }
+
     private Selected chooseMaven(String id, List<Request> reqs) {
         List<VersionSpec> hard = new ArrayList<>();
         List<Version> soft = new ArrayList<>();
@@ -304,7 +322,9 @@ public final class Resolver {
         return true;
     }
 
-    /** The error for requirements that no version satisfies, naming who asked for what. */
+    /**
+     * The error for requirements that no version satisfies, naming who asked for what.
+     */
     public static JpmException conflict(String id, List<Request> reqs) {
         StringBuilder sb = new StringBuilder("No version of " + id + " satisfies every requirement:");
         for (Request r : reqs) sb.append("\n  ").append(r.spec).append("  required by ").append(r.from);
@@ -313,12 +333,21 @@ public final class Resolver {
 
     private record AllOf(List<VersionSpec> specs) implements VersionSpec {
         @Override
-        public boolean matches(Version v) { return satisfies(v, specs); }
+        public boolean matches(Version v) {
+            return satisfies(v, specs);
+        }
+
         @Override
-        public String text() { return String.join(" ", specs.stream().map(VersionSpec::text).toList()); }
+        public String text() {
+            return String.join(" ", specs.stream().map(VersionSpec::text).toList());
+        }
+
         @Override
-        public boolean isExact() { return false; }
+        public boolean isExact() {
+            return false;
+        }
     }
+
     private Expanded expand(String id, Selected sel) {
         String memoKey = id + "@" + sel.version + "@" + sel.commit;
         Expanded e = expandMemo.get(memoKey);

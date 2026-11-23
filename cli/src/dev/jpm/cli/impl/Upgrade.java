@@ -1,13 +1,12 @@
 package dev.jpm.cli.impl;
 
 import dev.jpm.cli.Main;
-
+import dev.jpm.log.Log;
 import dev.jpm.toolchain.Foojay;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Http;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 
 import java.io.IOException;
@@ -18,7 +17,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 public final class Upgrade {
-    private Upgrade() {}
+    private Upgrade() {
+    }
 
     static boolean isCanary(String version) {
         return version.contains("-");

@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.lang.module.ModuleDescriptor;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Patches as objects: compile-only dependencies, a release, and patching modular jars. */
+/**
+ * Patches as objects: compile-only dependencies, a release, and patching modular jars.
+ */
 class PatchOptionsTest {
-    /** Compiles {@code sources} (relative path to text) and publishes them as g:name:1.0 with a sources jar. */
+    /**
+     * Compiles {@code sources} (relative path to text) and publishes them as g:name:1.0 with a sources jar.
+     */
     private static void publish(Path repo, Path work, String name, Map<String, String> sources, int release, List<Path> cp) throws Exception {
         Path src = work.resolve(name + "-src"), classes = work.resolve(name + "-classes");
         List<String> args = new ArrayList<>(List.of("--release", Integer.toString(release), "-d", classes.toString()));
@@ -52,7 +55,9 @@ class PatchOptionsTest {
         Jars.write(dir.resolve(name + "-1.0-sources.jar"), List.of(src), Map.of());
     }
 
-    /** A git-style patch turning the files of {@code before} into those of {@code after}. */
+    /**
+     * A git-style patch turning the files of {@code before} into those of {@code after}.
+     */
     private static String diff(Path work, Map<String, String> before, Map<String, String> after) {
         Path a = work.resolve("diff/a"), b = work.resolve("diff/b");
         Fs.deleteTree(work.resolve("diff"));

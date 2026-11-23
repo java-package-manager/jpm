@@ -5,10 +5,10 @@ import dev.jpm.Manifest;
 import dev.jpm.git.GitRepo;
 import dev.jpm.importer.Imported;
 import dev.jpm.importer.Importer;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,7 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 public final class ImportedRepo {
-    private ImportedRepo() {}
+    private ImportedRepo() {
+    }
 
     public static Map<String, String> manifests(DepKey key, String commit) {
         DepKey rk = key.repoKey();

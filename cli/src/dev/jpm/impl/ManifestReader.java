@@ -2,7 +2,6 @@ package dev.jpm.impl;
 
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
-
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.util.JpmException;
 

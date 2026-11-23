@@ -14,9 +14,12 @@ import java.util.Map;
  * {@code JPM_REPO_REPO_EXAMPLE_DEV_USERNAME}. They are sent only over HTTPS, or to this machine.
  */
 public final class Credentials {
-    private Credentials() {}
+    private Credentials() {
+    }
 
-    /** The {@code <HOST>} part of the variables for a repository URL, or null when it has no host. */
+    /**
+     * The {@code <HOST>} part of the variables for a repository URL, or null when it has no host.
+     */
     public static String name(String url) {
         String host;
         try {
@@ -28,18 +31,24 @@ public final class Credentials {
         return host.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "_");
     }
 
-    /** The prefix of the variables for a repository URL, such as {@code JPM_REPO_REPO_EXAMPLE_DEV}, or null. */
+    /**
+     * The prefix of the variables for a repository URL, such as {@code JPM_REPO_REPO_EXAMPLE_DEV}, or null.
+     */
     public static String prefix(String url) {
         String n = name(url);
         return n == null ? null : "JPM_REPO_" + n;
     }
 
-    /** The {@code Authorization} header for a URL from the process environment, or null when there are no credentials. */
+    /**
+     * The {@code Authorization} header for a URL from the process environment, or null when there are no credentials.
+     */
     public static String authorization(String url) {
         return authorization(url, System.getenv());
     }
 
-    /** The {@code Authorization} header for a URL from these variables, or null when there are none or the URL is not safe for them. */
+    /**
+     * The {@code Authorization} header for a URL from these variables, or null when there are none or the URL is not safe for them.
+     */
     public static String authorization(String url, Map<String, String> env) {
         String prefix = prefix(url);
         if (prefix == null || !safe(url)) return null;
@@ -51,7 +60,9 @@ public final class Credentials {
         return "Basic " + Base64.getEncoder().encodeToString(pair.getBytes(StandardCharsets.UTF_8));
     }
 
-    /** Whether credentials may be sent to a URL: HTTPS, or plain HTTP to this machine. */
+    /**
+     * Whether credentials may be sent to a URL: HTTPS, or plain HTTP to this machine.
+     */
     public static boolean safe(String url) {
         URI u = URI.create(url);
         if ("https".equalsIgnoreCase(u.getScheme())) return true;
@@ -60,7 +71,9 @@ public final class Credentials {
                 && (h.equals("localhost") || h.equals("127.0.0.1") || h.equals("[::1]") || h.equals("::1"));
     }
 
-    /** Whether two URLs are on the same scheme, host and port, so credentials for one may follow a redirect to the other. */
+    /**
+     * Whether two URLs are on the same scheme, host and port, so credentials for one may follow a redirect to the other.
+     */
     public static boolean sameOrigin(String a, String b) {
         URI x = URI.create(a), y = URI.create(b);
         return x.getScheme() != null && x.getScheme().equalsIgnoreCase(y.getScheme()) && x.getHost() != null

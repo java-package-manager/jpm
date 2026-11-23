@@ -2,9 +2,12 @@ package dev.jpm.util;
 
 import java.util.Collection;
 
-/** Text helpers. */
+/**
+ * Text helpers.
+ */
 public final class Strings {
-    private Strings() {}
+    private Strings() {
+    }
 
     /**
      * The candidate closest to {@code s} by edit distance, ignoring case, if it is close enough to be a typo

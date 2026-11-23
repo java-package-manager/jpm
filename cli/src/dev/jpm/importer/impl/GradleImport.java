@@ -1,8 +1,7 @@
 package dev.jpm.importer.impl;
 
-import dev.jpm.importer.Imported;
-
 import dev.jpm.api.json.Jsonc;
+import dev.jpm.importer.Imported;
 import dev.jpm.log.Log;
 import dev.jpm.toolchain.JavaSpec;
 import dev.jpm.toolchain.Jdk;
@@ -21,7 +20,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public final class GradleImport {
-    private GradleImport() {}
+    private GradleImport() {
+    }
 
     static final class GProject {
         String path = ":";

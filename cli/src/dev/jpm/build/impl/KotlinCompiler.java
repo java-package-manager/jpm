@@ -1,17 +1,16 @@
 package dev.jpm.build.impl;
 
-import dev.jpm.build.Builder;
-import dev.jpm.build.Compiler;
-
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
+import dev.jpm.build.Builder;
+import dev.jpm.build.Compiler;
+import dev.jpm.log.Log;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,7 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class KotlinCompiler {
-    private KotlinCompiler() {}
+    private KotlinCompiler() {
+    }
 
     public static final String MAIN = "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler";
 

@@ -14,20 +14,30 @@ import java.nio.file.Path;
  * @param check    the id of the check that found it
  */
 public record Problem(Severity severity, String message, Path file, Integer line, String hint, String check) {
-    /** How bad a problem is. */
-    public enum Severity { ERROR, WARNING }
+    /**
+     * How bad a problem is.
+     */
+    public enum Severity {
+        ERROR, WARNING
+    }
 
-    /** An error of a check. */
+    /**
+     * An error of a check.
+     */
     public static Problem error(String check, String message, Path file, Integer line) {
         return new Problem(Severity.ERROR, message, file, line, null, check);
     }
 
-    /** A warning of a check. */
+    /**
+     * A warning of a check.
+     */
     public static Problem warning(String check, String message, Path file, Integer line) {
         return new Problem(Severity.WARNING, message, file, line, null, check);
     }
 
-    /** The same problem with a hint. */
+    /**
+     * The same problem with a hint.
+     */
     public Problem withHint(String hint) {
         return new Problem(severity, message, file, line, hint, check);
     }

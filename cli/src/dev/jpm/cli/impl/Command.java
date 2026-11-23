@@ -3,7 +3,6 @@ package dev.jpm.cli.impl;
 import dev.jpm.Project;
 import dev.jpm.build.Builder;
 import dev.jpm.build.Env;
-import dev.jpm.toolchain.Toolchain;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;

@@ -1,11 +1,11 @@
 package dev.jpm.resolve;
 
 import dev.jpm.build.Jars;
+import dev.jpm.log.Log;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.Http;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,18 +25,23 @@ import java.util.stream.Stream;
  * <p>The SHA-256 of the archive is locked in {@code project.lock}, like a Maven jar's.
  */
 public final class GradleDist {
-    private GradleDist() {}
+    private GradleDist() {
+    }
 
     public static final String ID = "gradle:api";
 
-    /** Where distributions are downloaded from; {@code JPM_GRADLE_DISTRIBUTIONS} points to a mirror. */
+    /**
+     * Where distributions are downloaded from; {@code JPM_GRADLE_DISTRIBUTIONS} points to a mirror.
+     */
     static String base() {
         String b = System.getenv("JPM_GRADLE_DISTRIBUTIONS");
         if (b == null || b.isBlank()) b = "https://services.gradle.org/distributions";
         return b.endsWith("/") ? b.substring(0, b.length() - 1) : b;
     }
 
-    /** The current Gradle release, from services.gradle.org/versions/current (or the mirror's). */
+    /**
+     * The current Gradle release, from services.gradle.org/versions/current (or the mirror's).
+     */
     public static String latest() {
         String url = System.getenv("JPM_GRADLE_VERSIONS");
         if (url == null || url.isBlank()) url = "https://services.gradle.org/versions/current";
@@ -45,15 +50,21 @@ public final class GradleDist {
         throw new JpmException("Could not read the current Gradle version from " + url);
     }
 
-    /** An unpacked distribution: its home directory and the SHA-256 of the archive it came from. */
+    /**
+     * An unpacked distribution: its home directory and the SHA-256 of the archive it came from.
+     */
     public record Installed(Path home, String sha256) {}
 
-    /** Gradle versions as they name their distributions: 9.8.0, 8.14, 9.0-rc-1, 9.1.0-milestone-2. */
+    /**
+     * Gradle versions as they name their distributions: 9.8.0, 8.14, 9.0-rc-1, 9.1.0-milestone-2.
+     */
     public static boolean validVersion(String v) {
         return v != null && v.matches("\\d+\\.\\d+(\\.\\d+)?(-(rc|milestone)-\\d+)?");
     }
 
-    /** The distribution of a Gradle version, downloaded and unpacked if needed and checked against {@code lockedSha}. */
+    /**
+     * The distribution of a Gradle version, downloaded and unpacked if needed and checked against {@code lockedSha}.
+     */
     public static synchronized Installed require(String version, String lockedSha) {
         if (!validVersion(version)) {
             throw new JpmException("gradle:api needs an exact Gradle version such as 9.8.0, not \"" + version + "\"");
@@ -107,7 +118,9 @@ public final class GradleDist {
                 + "\n  download: " + sha + (installed == null ? "" : "\nIf the installed copy is corrupt, delete " + installed + " and try again."));
     }
 
-    /** The distribution's jars: {@code lib/*.jar}, then {@code lib/plugins/*.jar}, each sorted by name. */
+    /**
+     * The distribution's jars: {@code lib/*.jar}, then {@code lib/plugins/*.jar}, each sorted by name.
+     */
     public static List<Path> jars(Path home) {
         List<Path> out = new ArrayList<>();
         for (Path dir : List.of(home.resolve("lib"), home.resolve("lib/plugins"))) {
@@ -122,7 +135,9 @@ public final class GradleDist {
         return out;
     }
 
-    /** TestKit runs the distribution's launcher, which the zip extraction does not mark executable. */
+    /**
+     * TestKit runs the distribution's launcher, which the zip extraction does not mark executable.
+     */
     private static void markExecutable(Path home) {
         for (String f : List.of("bin/gradle")) {
             Path p = home.resolve(f);

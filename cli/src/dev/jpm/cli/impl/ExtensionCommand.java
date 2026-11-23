@@ -1,17 +1,16 @@
 package dev.jpm.cli.impl;
 
-import dev.jpm.cli.Main;
-
 import dev.jpm.Manifest;
 import dev.jpm.Project;
+import dev.jpm.api.json.Jsonc;
+import dev.jpm.cli.Main;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Extensions;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
-import dev.jpm.api.json.Jsonc;
 import dev.jpm.util.Exec;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

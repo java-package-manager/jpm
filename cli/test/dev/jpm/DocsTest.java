@@ -11,7 +11,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The generated parts of docs/: the manifest field reference from the schema (the command reference is CommandsTest's). */
+/**
+ * The generated parts of docs/: the manifest field reference from the schema (the command reference is CommandsTest's).
+ */
 class DocsTest {
     static final String START = "<!-- fields: generated from project.schema.json, `JPM_UPDATE_EXPECTED=1 bin/jpm test dev.jpm.DocsTest` rewrites it -->\n";
     static final String END = "<!-- /fields -->";

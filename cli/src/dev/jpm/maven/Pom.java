@@ -6,8 +6,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * The parts of an effective POM that matter for dependency resolution: parent inheritance, property
@@ -26,8 +26,12 @@ import java.util.regex.Pattern;
 public final class Pom {
     public record Dep(String group, String artifact, String version, String scope, boolean optional,
                       String type, String classifier, Set<String> exclusions) {
-        /** {@code group:artifact}. */
-        public String key() { return group + ":" + artifact; }
+        /**
+         * {@code group:artifact}.
+         */
+        public String key() {
+            return group + ":" + artifact;
+        }
     }
 
     public String group;
@@ -37,35 +41,53 @@ public final class Pom {
     public final Map<String, String> properties = new LinkedHashMap<>();
     public final Map<String, Dep> management = new LinkedHashMap<>();
     public final List<Dep> dependencies = new ArrayList<>();
-    /** Relocation target as group:artifact:version, or null. */
+    /**
+     * Relocation target as group:artifact:version, or null.
+     */
     public String relocation;
-    /** The raw POM elements: this POM first, then its parents. */
+    /**
+     * The raw POM elements: this POM first, then its parents.
+     */
     public final List<Element> chain = new ArrayList<>();
-    /** True if Gradle published this POM next to Gradle Module Metadata (a .module file). */
+    /**
+     * True if Gradle published this POM next to Gradle Module Metadata (a .module file).
+     */
     public boolean gradleMetadata;
-    /** Local file this POM was read from (null for POMs from a repository). */
+    /**
+     * Local file this POM was read from (null for POMs from a repository).
+     */
     public Path file;
-    /** Raw explicit properties of this POM and its parents (no built-ins), for importers. */
+    /**
+     * Raw explicit properties of this POM and its parents (no built-ins), for importers.
+     */
     public final Map<String, String> declaredProperties = new LinkedHashMap<>();
 
-    /** Loads POMs and builds effective models, memoized. */
+    /**
+     * Loads POMs and builds effective models, memoized.
+     */
     public static final class Loader {
         private final MavenRepo repo;
         private final Profiles.Context profiles;
         private final Map<String, Pom> memo = new HashMap<>();
 
-        /** A loader that reads POMs from these repositories, activating profiles for this machine. */
+        /**
+         * A loader that reads POMs from these repositories, activating profiles for this machine.
+         */
         public Loader(MavenRepo repo) {
             this(repo, Profiles.Context.current());
         }
 
-        /** A loader that reads POMs from these repositories, activating profiles against {@code profiles}. */
+        /**
+         * A loader that reads POMs from these repositories, activating profiles against {@code profiles}.
+         */
         public Loader(MavenRepo repo, Profiles.Context profiles) {
             this.repo = repo;
             this.profiles = profiles;
         }
 
-        /** The effective POM of a version: parents, properties and imported BOMs applied, cached per run. */
+        /**
+         * The effective POM of a version: parents, properties and imported BOMs applied, cached per run.
+         */
         public Pom load(String group, String artifact, String version) {
             String key = group + ":" + artifact + ":" + version;
             Pom cached = memo.get(key);
@@ -75,7 +97,9 @@ public final class Pom {
             return p;
         }
 
-        /** Effective model of a POM on disk; parents are found through relativePath first, then the repository. */
+        /**
+         * Effective model of a POM on disk; parents are found through relativePath first, then the repository.
+         */
         public Pom loadFile(Path pomFile) {
             Path f = pomFile.toAbsolutePath().normalize();
             String key = "file:" + f;

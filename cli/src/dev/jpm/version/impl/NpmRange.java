@@ -90,9 +90,17 @@ public final class NpmRange implements VersionSpec {
             return new Part(out, pre);
         }
 
-        int major() { return n[0]; }
-        int minor() { return n[1]; }
-        int patch() { return n[2]; }
+        int major() {
+            return n[0];
+        }
+
+        int minor() {
+            return n[1];
+        }
+
+        int patch() {
+            return n[2];
+        }
 
         Version filled() {
             return version(Math.max(n[0], 0), Math.max(n[1], 0), Math.max(n[2], 0), pre);
@@ -201,14 +209,22 @@ public final class NpmRange implements VersionSpec {
     }
 
     @Override
-    public String text() { return text; }
+    public String text() {
+        return text;
+    }
 
     @Override
-    public boolean isExact() { return exact; }
+    public boolean isExact() {
+        return exact;
+    }
 
     @Override
-    public Version exactVersion() { return exact ? alternatives.get(0).get(0).v : null; }
+    public Version exactVersion() {
+        return exact ? alternatives.get(0).get(0).v : null;
+    }
 
     @Override
-    public String toString() { return text; }
+    public String toString() {
+        return text;
+    }
 }

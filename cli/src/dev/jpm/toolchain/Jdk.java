@@ -29,7 +29,9 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         return System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
     }
 
-    /** A tool in the JDK's {@code bin} folder ({@code .exe} on Windows). */
+    /**
+     * A tool in the JDK's {@code bin} folder ({@code .exe} on Windows).
+     */
     public Path bin(String tool) {
         Path base = home.resolve("bin");
         if (!windows()) return base.resolve(tool);
@@ -40,39 +42,60 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         return base.resolve(tool + ".exe");
     }
 
-    /** The JDK's {@code java}. */
-    public String java() { return bin("java").toString(); }
+    /**
+     * The JDK's {@code java}.
+     */
+    public String java() {
+        return bin("java").toString();
+    }
 
-    /** {@code path} with {@code .exe} appended on Windows. */
+    /**
+     * {@code path} with {@code .exe} appended on Windows.
+     */
     public static Path windowsExe(Path p) {
         return windows() ? p.resolveSibling(p.getFileName() + ".exe") : p;
     }
-    /** The JDK's {@code javac}. */
-    public String javac() { return bin("javac").toString(); }
 
-    /** True when the JDK has native-image (a GraalVM). */
+    /**
+     * The JDK's {@code javac}.
+     */
+    public String javac() {
+        return bin("javac").toString();
+    }
+
+    /**
+     * True when the JDK has native-image (a GraalVM).
+     */
     public boolean hasNativeImage() {
         return Files.exists(bin("native-image"));
     }
 
-    /** A short name such as {@code temurin-21.0.5} or {@code graalvm_community-21.0.2}. */
+    /**
+     * A short name such as {@code temurin-21.0.5} or {@code graalvm_community-21.0.2}.
+     */
     public String id() {
         return distribution + "-" + version;
     }
 
     private static List<Jdk> cached;
 
-    /** Forgets discovered JDKs, after installing or removing one. */
+    /**
+     * Forgets discovered JDKs, after installing or removing one.
+     */
     public static synchronized void reset() {
         cached = null;
     }
 
-    /** Where jpm installs JDKs: {@code ~/.jpm/jdks}. */
+    /**
+     * Where jpm installs JDKs: {@code ~/.jpm/jdks}.
+     */
     public static Path managedRoot() {
         return Fs.home().resolve("jdks");
     }
 
-    /** The JDKs on this machine: JAVA_HOME first, then the ones jpm installed and the usual system locations. */
+    /**
+     * The JDKs on this machine: JAVA_HOME first, then the ones jpm installed and the usual system locations.
+     */
     public static synchronized List<Jdk> discover() {
         if (cached != null) return cached;
         List<Path> homes = new ArrayList<>();
@@ -128,7 +151,9 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         }
     }
 
-    /** Reads a JDK home, or returns null if it is not one. */
+    /**
+     * Reads a JDK home, or returns null if it is not one.
+     */
     public static Jdk probe(Path home) {
         Path release = home.resolve("release");
         if (!Files.exists(home.resolve("bin").resolve(windows() ? "javac.exe" : "javac"))) return null;
@@ -158,7 +183,9 @@ public record Jdk(Path home, int major, String version, boolean graal, String di
         return new Jdk(home, major, version, graal, distribution, managed);
     }
 
-    /** The metadata file for a jpm-installed JDK. */
+    /**
+     * The metadata file for a jpm-installed JDK.
+     */
     private static Path metadataFile(Path home) {
         Path p = home;
         for (int i = 0; i < 4 && p != null; i++, p = p.getParent()) {

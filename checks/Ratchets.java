@@ -23,10 +23,14 @@ import java.util.stream.Stream;
 public final class Ratchets {
     private static final Path BASELINE = Path.of("checks/ratchets.properties");
 
-    /** A ratchet: what it counts, over which files. */
+    /**
+     * A ratchet: what it counts, over which files.
+     */
     record Ratchet(String name, String description, List<String> roots, Function<Source, List<String>> find) {}
 
-    /** A Java file split into code (comments and literals blanked) and its comments. */
+    /**
+     * A Java file split into code (comments and literals blanked) and its comments.
+     */
     record Source(Path path, String text, String code, List<Comment> comments) {}
 
     record Comment(int line, int lines, boolean javadoc, String text) {}
@@ -106,7 +110,9 @@ public final class Ratchets {
         return n;
     }
 
-    /** Splits Java source into code and comments, minding strings, characters and text blocks. */
+    /**
+     * Splits Java source into code and comments, minding strings, characters and text blocks.
+     */
     static Source parse(Path path) throws IOException {
         String t = Files.readString(path, StandardCharsets.UTF_8);
         StringBuilder code = new StringBuilder(t.length());
@@ -177,7 +183,9 @@ public final class Ratchets {
 
     static final String IMPL_ACROSS = "uses of a dev.jpm.<area>.impl class from another area (compiled classes)";
 
-    /** The area of a class: the package after {@code dev.jpm}, or "root" for {@code dev.jpm} and {@code dev.jpm.impl}. */
+    /**
+     * The area of a class: the package after {@code dev.jpm}, or "root" for {@code dev.jpm} and {@code dev.jpm.impl}.
+     */
     static String area(String cls) {
         String[] p = cls.split("\\.");
         if (p.length <= 3 || p[2].equals("impl")) return "root";

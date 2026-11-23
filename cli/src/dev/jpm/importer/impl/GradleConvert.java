@@ -1,7 +1,6 @@
 package dev.jpm.importer.impl;
 
 import dev.jpm.importer.Imported;
-
 import dev.jpm.importer.impl.GradleImport.GDep;
 import dev.jpm.importer.impl.GradleImport.GProject;
 import dev.jpm.util.JpmException;
@@ -14,7 +13,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 final class GradleConvert {
-    private GradleConvert() {}
+    private GradleConvert() {
+    }
 
     static void convert(List<GProject> projects, Imported imp) {
         GProject root = projects.stream().filter(p -> p.path.equals(":")).findFirst().orElse(projects.get(0));

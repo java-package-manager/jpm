@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The client, dev.jpm:jpm-api, against a real jpm api. */
+/**
+ * The client, dev.jpm:jpm-api, against a real jpm api.
+ */
 class ClientTest {
     private static JpmClient connect(Session s) {
         List<String> cmd = new ArrayList<>(Session.binary());

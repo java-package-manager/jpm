@@ -1,10 +1,9 @@
 package dev.jpm.importer;
 
-import dev.jpm.importer.impl.GradleScripts;
-import dev.jpm.importer.impl.MavenImport;
-
 import dev.jpm.Layout;
 import dev.jpm.Manifest;
+import dev.jpm.importer.impl.GradleScripts;
+import dev.jpm.importer.impl.MavenImport;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.Test;
@@ -136,7 +135,9 @@ class ImportTest {
         assertTrue(imp.warnings.stream().noneMatch(w -> w.contains("root project applies")), imp.warnings.toString());
     }
 
-    /** Kotlin DSL builds as a real multi-module project writes them (cases from a migrated server build). */
+    /**
+     * Kotlin DSL builds as a real multi-module project writes them (cases from a migrated server build).
+     */
     @Test
     void readsKotlinBuildsAsText(@TempDir Path dir) {
         Fs.write(dir.resolve("settings.gradle.kts"), """
@@ -200,8 +201,7 @@ class ImportTest {
         assertEquals("org.example", api.get("group"), "a task's group is not the project's");
         assertEquals("org.example", core.get("group"));
         assertEquals(Map.of("com.google.code.gson:gson", "2.15.0"), api.get("runtime"));
-        @SuppressWarnings("unchecked")
-        Map<String, Object> runtime = (Map<String, Object>) core.get("runtime");
+        @SuppressWarnings("unchecked") Map<String, Object> runtime = (Map<String, Object>) core.get("runtime");
         assertEquals(Map.of("version", "*", "exclude", List.of("com.google.code.gson:gson")), runtime.get("workspace:server-api"));
         assertEquals("4.2.19.Final", runtime.get("io.netty:netty-buffer"));
         assertEquals(Map.of("version", "4.2.19.Final", "runtimeOnly", true), runtime.get("io.netty:netty-transport-native-epoll:linux-x86_64"));

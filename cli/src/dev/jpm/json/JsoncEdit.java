@@ -9,9 +9,12 @@ import java.util.List;
  * Each method returns the new document text.
  */
 public final class JsoncEdit {
-    private JsoncEdit() {}
+    private JsoncEdit() {
+    }
 
-    /** Sets {@code path... -> key} to the given raw JSON value, creating parent objects as needed. */
+    /**
+     * Sets {@code path... -> key} to the given raw JSON value, creating parent objects as needed.
+     */
     public static String set(String src, List<String> path, String key, String rawValue) {
         Jsonc.Node root = Jsonc.parseNode(src);
         Jsonc.Node obj = root;
@@ -34,7 +37,9 @@ public final class JsoncEdit {
         return insertMember(src, obj, key, rawValue);
     }
 
-    /** Removes {@code path... -> key} if present. */
+    /**
+     * Removes {@code path... -> key} if present.
+     */
     public static String remove(String src, List<String> path, String key) {
         Jsonc.Node obj = Jsonc.parseNode(src);
         for (String p : path) {
@@ -89,8 +94,9 @@ public final class JsoncEdit {
             char c = src.charAt(i);
             if (c == ' ' || c == '\t' || c == '\r' || c == '\n') i++;
             else if (src.startsWith("/*", i)) i = src.indexOf("*/", i) + 2;
-            else if (src.startsWith("//", i)) { while (i < src.length() && src.charAt(i) != '\n') i++; }
-            else break;
+            else if (src.startsWith("//", i)) {
+                while (i < src.length() && src.charAt(i) != '\n') i++;
+            } else break;
         }
         return i;
     }

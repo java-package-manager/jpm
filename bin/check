@@ -27,6 +27,9 @@ if [ "$run_tests" = 1 ]; then
   bin/jpm test --frozen --exclude-tag live || fail "tests"
 fi
 
+step "jpm check: jpm's project checks and the extensions' (jpm-format's formatting and lint, changesets)"
+bin/jpm check --no-test --frozen || fail "jpm check (\`bin/jpm format\` fixes the formatting)"
+
 step "project.jsonc schema"
 PY=${PYTHON:-$(command -v python3 || command -v python || true)}
 if [ -z "$PY" ] || ! "$PY" -c "import jsonschema" 2>/dev/null; then

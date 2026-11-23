@@ -49,13 +49,17 @@ final class Session {
         }
     }
 
-    /** Sets an environment variable for every command run after this. */
+    /**
+     * Sets an environment variable for every command run after this.
+     */
     Session env(String name, String value) {
         extraEnv.put(name, value);
         return this;
     }
 
-    /** Copies {@code fixtures/<name>} into the project folder. */
+    /**
+     * Copies {@code fixtures/<name>} into the project folder.
+     */
     Session fixture(String name) {
         Path from = FIXTURES.resolve(name);
         try (Stream<Path> s = Files.walk(from)) {
@@ -74,19 +78,25 @@ final class Session {
         return this;
     }
 
-    /** Runs {@code jpm args} in the project folder. */
+    /**
+     * Runs {@code jpm args} in the project folder.
+     */
     String jpm(String... args) {
         return jpmIn(".", args);
     }
 
-    /** Runs {@code jpm args} in a folder relative to the project folder. */
+    /**
+     * Runs {@code jpm args} in a folder relative to the project folder.
+     */
     String jpmIn(String dir, String... args) {
         List<String> cmd = new ArrayList<>(binary());
         cmd.addAll(List.of(args));
         return run(dir, "jpm " + String.join(" ", args), cmd);
     }
 
-    /** Runs {@code jpm args} and records the command and its exit code, but not its output. */
+    /**
+     * Runs {@code jpm args} and records the command and its exit code, but not its output.
+     */
     String jpmUnrecorded(String... args) {
         int mark = transcript.length();
         String out = jpm(args);
@@ -98,7 +108,9 @@ final class Session {
         return out;
     }
 
-    /** Runs another program in a folder relative to the project folder, with the same environment as jpm. */
+    /**
+     * Runs another program in a folder relative to the project folder, with the same environment as jpm.
+     */
     String exec(String dir, String... cmd) {
         return run(dir, String.join(" ", cmd), List.of(cmd));
     }
@@ -128,7 +140,9 @@ final class Session {
         return out;
     }
 
-    /** Adds a file's contents to the transcript. */
+    /**
+     * Adds a file's contents to the transcript.
+     */
     Session show(String path) {
         Path f = project.resolve(path);
         transcript.append("--- ").append(path).append('\n');
@@ -138,7 +152,9 @@ final class Session {
         return this;
     }
 
-    /** Adds the files under a folder (relative to the project folder) to the transcript. */
+    /**
+     * Adds the files under a folder (relative to the project folder) to the transcript.
+     */
     Session tree(String dir) {
         Path root = project.resolve(dir);
         transcript.append("--- files in ").append(dir).append('\n');
@@ -155,7 +171,9 @@ final class Session {
         return this;
     }
 
-    /** Compares the transcript with {@code fixtures/expected/<name>.txt}. */
+    /**
+     * Compares the transcript with {@code fixtures/expected/<name>.txt}.
+     */
     void verify(String name) {
         Path expected = FIXTURES.resolve("expected").resolve(name + ".txt");
         String actual = transcript.toString();

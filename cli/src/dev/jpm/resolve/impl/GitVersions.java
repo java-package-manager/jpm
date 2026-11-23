@@ -1,17 +1,16 @@
 package dev.jpm.resolve.impl;
 
-import dev.jpm.resolve.GitModule;
-import dev.jpm.resolve.Graph;
-import dev.jpm.resolve.Resolver;
-
-import dev.jpm.version.Tags;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.git.GitRepo;
 import dev.jpm.log.Log;
+import dev.jpm.resolve.GitModule;
+import dev.jpm.resolve.Graph;
+import dev.jpm.resolve.Resolver;
 import dev.jpm.resolve.Resolver.Request;
 import dev.jpm.resolve.Resolver.Selected;
 import dev.jpm.util.JpmException;
+import dev.jpm.version.Tags;
 import dev.jpm.version.Version;
 import dev.jpm.version.VersionSpec;
 import dev.jpm.version.VersionSpecs;
@@ -85,7 +84,10 @@ public final class GitVersions {
         if (!pins.isEmpty()) {
             Selected chosen = null;
             for (int i = 0; i < pins.size(); i++) {
-                if (pinReqs.get(i).direct()) { chosen = pins.get(i); break; }
+                if (pinReqs.get(i).direct()) {
+                    chosen = pins.get(i);
+                    break;
+                }
             }
             if (chosen == null) {
                 for (Selected s : pins) {
@@ -124,7 +126,10 @@ public final class GitVersions {
         for (Version v : byVersion.keySet()) {
             boolean ok = true;
             for (VersionSpec r : ranges) {
-                if (!r.matches(v) || (v.isPreRelease() && !r.text().contains("-"))) { ok = false; break; }
+                if (!r.matches(v) || (v.isPreRelease() && !r.text().contains("-"))) {
+                    ok = false;
+                    break;
+                }
             }
             if (ok && (best == null || v.compareTo(best) > 0)) best = v;
         }
@@ -147,6 +152,7 @@ public final class GitVersions {
     Map<String, String> tags(DepKey key) {
         return tagMemo.computeIfAbsent(key.repoKey().toString(), k -> GitRepo.of(key).tags());
     }
+
     Selected tagSelection(DepKey key, String tag, String commit) {
         GitModule mod = GitModule.locate(key, commit);
         String declared = mod.version();

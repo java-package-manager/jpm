@@ -25,7 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** One dependency in two scopes: dev + test is allowed, runtime + test warns, runtime + dev warns or fails. */
+/**
+ * One dependency in two scopes: dev + test is allowed, runtime + test warns, runtime + dev warns or fails.
+ */
 class ScopePairsTest {
     private static final Path FILE = Path.of("project.jsonc");
 
@@ -33,7 +35,9 @@ class ScopePairsTest {
         return "{ \"name\": \"a\", \"version\": \"1.0.0\", " + scopes + " }";
     }
 
-    /** Parses and returns {dependencies as "scope key spec", stderr}. */
+    /**
+     * Parses and returns {dependencies as "scope key spec", stderr}.
+     */
     private static Object[] parse(String scopes) {
         PrintStream old = System.err;
         ByteArrayOutputStream err = new ByteArrayOutputStream();
@@ -84,7 +88,9 @@ class ScopePairsTest {
         assertEquals(List.of("runtime g:a 1.0"), r[0]);
     }
 
-    /** dev + test: compiled against, tests run with it, the program does not. */
+    /**
+     * dev + test: compiled against, tests run with it, the program does not.
+     */
     @Test
     void devAndTestPutItOnTheTestRuntimeClasspathOnly(@TempDir Path tmp) throws IOException {
         System.setProperty("jpm.home", tmp.resolve("home").toString());

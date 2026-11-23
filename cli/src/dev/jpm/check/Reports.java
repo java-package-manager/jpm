@@ -8,11 +8,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Machine-readable reports of {@code jpm check}: SARIF, which GitHub code scanning shows as annotations, and JUnit XML. */
+/**
+ * Machine-readable reports of {@code jpm check}: SARIF, which GitHub code scanning shows as annotations, and JUnit XML.
+ */
 public final class Reports {
-    private Reports() {}
+    private Reports() {
+    }
 
-    /** A SARIF 2.1.0 log: one rule per check, one result per problem, paths relative to {@code root}. */
+    /**
+     * A SARIF 2.1.0 log: one rule per check, one result per problem, paths relative to {@code root}.
+     */
     public static String sarif(List<CheckResult> results, Path root, String jpmVersion) {
         List<Object> rules = new ArrayList<>();
         List<Object> found = new ArrayList<>();
@@ -47,7 +52,9 @@ public final class Reports {
         return Jsonc.write(log) + "\n";
     }
 
-    /** JUnit XML: one test case per check, failing with its errors (and its warnings as system-out). */
+    /**
+     * JUnit XML: one test case per check, failing with its errors (and its warnings as system-out).
+     */
     public static String junit(List<CheckResult> results, Path root) {
         int failures = 0, skipped = 0;
         StringBuilder cases = new StringBuilder();
@@ -76,7 +83,9 @@ public final class Reports {
                 + "\" failures=\"" + failures + "\" errors=\"0\" skipped=\"" + skipped + "\">\n" + cases + "  </testsuite>\n</testsuites>\n";
     }
 
-    /** One line per problem: {@code file:line: severity: message}, as compilers print them. */
+    /**
+     * One line per problem: {@code file:line: severity: message}, as compilers print them.
+     */
     public static String lines(List<Problem> problems, Path root) {
         StringBuilder sb = new StringBuilder();
         for (Problem p : problems) {

@@ -84,7 +84,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      # build, unit and end-to-end tests, the schema check and the ratchets: what bin/check runs locally
+      # build, unit and end-to-end tests, `jpm check` (jpm-format's formatting and lint, changesets), the schema
+      # check and the ratchets: what bin/check runs locally
       - name: Checks
         env:
           PYTHON: ${{ steps.python.outputs.python-path }}

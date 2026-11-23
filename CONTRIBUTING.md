@@ -26,7 +26,8 @@ jpm older than 0.8.1. Set `JAVA_HOME` to a JDK, or upgrade that jpm.
 ## Test
 
 ```sh
-bin/check                       # everything CI runs that can run here: build, tests, schema, ratchets
+bin/check                       # everything CI runs that can run here: build, tests, jpm check, schema, ratchets
+bin/jpm format                  # format the sources with jpm-format, which `jpm check` checks
 bin/jpm test --exclude-tag live # unit and end-to-end tests, no network
 bin/jpm test --tag live         # the few tests that need Maven Central
 bin/jpm test dev.jpm.e2e.EndToEndTest

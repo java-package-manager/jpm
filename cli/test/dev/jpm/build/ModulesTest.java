@@ -84,7 +84,7 @@ class ModulesTest {
         assertEquals(0, rc);
         byte[] compiled = Files.readAllBytes(out.resolve("module-info.class"));
         assertEquals("fr.fidorial.example", Modules.moduleNameFromBytes(compiled));
-        for (int major : new int[] {69, 100}) {
+        for (int major : new int[]{69, 100}) {
             byte[] newer = compiled.clone();
             newer[6] = (byte) (major >> 8);
             newer[7] = (byte) major;
@@ -103,7 +103,7 @@ class ModulesTest {
             }
             assertEquals("fr.fidorial.example", Modules.declaredName(jar));
         }
-        assertNull(Modules.moduleNameFromBytes(new byte[] {(byte) 0xCA, (byte) 0xFE}));
+        assertNull(Modules.moduleNameFromBytes(new byte[]{(byte) 0xCA, (byte) 0xFE}));
         assertNull(Modules.moduleNameFromBytes(Files.readAllBytes(out.resolve("fr/fidorial/example/A.class"))));
     }
 

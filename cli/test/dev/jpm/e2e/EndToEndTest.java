@@ -540,6 +540,7 @@ class EndToEndTest {
                 + "\", new Cart().add(150).add(200).total());\n    }\n}\n";
     }
 
+    @SuppressWarnings("BusyWait")
     private static void waitFor(StringBuffer out, String text, int times) throws InterruptedException {
         long until = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(120);
         while (System.nanoTime() < until) {

@@ -17,7 +17,9 @@ import java.util.Set;
  */
 public final class Project {
 
-    /** One buildable module. */
+    /**
+     * One buildable module.
+     */
     public static final class Module {
         public final Project project;
         public final Path dir;
@@ -29,7 +31,9 @@ public final class Project {
             this.manifest = manifest;
         }
 
-        /** The module's name, from its manifest. */
+        /**
+         * The module's name, from its manifest.
+         */
         public String name() {
             return manifest.name;
         }
@@ -46,37 +50,79 @@ public final class Project {
             return "0.0.0";
         }
 
-        /** The module's package id in the dependency graph: {@code workspace:<name>}. */
+        /**
+         * The module's package id in the dependency graph: {@code workspace:<name>}.
+         */
         public String id() {
             return "workspace:" + name();
         }
 
-        /** The first source folder (the only one unless the manifest lists {@code "sources"}). */
-        public Path srcDir() { return srcDirs().get(0); }
-        /** The first resource folder (the only one unless the manifest lists {@code "resources"}). */
-        public Path assetsDir() { return assetsDirs().get(0); }
-        /** The module's source folders: {@code "sources"}, or the layout's one (and {@code src/main/kotlin} for Kotlin in the Maven layout). */
-        public List<Path> srcDirs() { return manifest.sourceDirs(dir); }
-        /** The module's resource folders: {@code "resources"}, or the layout's one. */
-        public List<Path> assetsDirs() { return manifest.resourceDirs(dir); }
-        /** The layout's test source folder. */
-        public Path testDir() { return manifest.layout.tests(dir); }
-        /** Test source folders: {@link #testDir()}, and {@code src/test/kotlin} for Kotlin in the Maven layout. */
-        public List<Path> testDirs() { return manifest.testSourceDirs(dir); }
-        /** The layout's test resource folder. */
-        public Path testResourcesDir() { return manifest.layout.testResources(dir); }
+        /**
+         * The first source folder (the only one unless the manifest lists {@code "sources"}).
+         */
+        public Path srcDir() {
+            return srcDirs().get(0);
+        }
 
-        /** True unless the module is {@code "visibility": "internal"}. */
+        /**
+         * The first resource folder (the only one unless the manifest lists {@code "resources"}).
+         */
+        public Path assetsDir() {
+            return assetsDirs().get(0);
+        }
+
+        /**
+         * The module's source folders: {@code "sources"}, or the layout's one (and {@code src/main/kotlin} for Kotlin in the Maven layout).
+         */
+        public List<Path> srcDirs() {
+            return manifest.sourceDirs(dir);
+        }
+
+        /**
+         * The module's resource folders: {@code "resources"}, or the layout's one.
+         */
+        public List<Path> assetsDirs() {
+            return manifest.resourceDirs(dir);
+        }
+
+        /**
+         * The layout's test source folder.
+         */
+        public Path testDir() {
+            return manifest.layout.tests(dir);
+        }
+
+        /**
+         * Test source folders: {@link #testDir()}, and {@code src/test/kotlin} for Kotlin in the Maven layout.
+         */
+        public List<Path> testDirs() {
+            return manifest.testSourceDirs(dir);
+        }
+
+        /**
+         * The layout's test resource folder.
+         */
+        public Path testResourcesDir() {
+            return manifest.layout.testResources(dir);
+        }
+
+        /**
+         * True unless the module is {@code "visibility": "internal"}.
+         */
         public boolean isPublic() {
             return "public".equals(manifest.visibility);
         }
 
-        /** Directory name relative to the workspace root ("" for a single-module project). */
+        /**
+         * Directory name relative to the workspace root ("" for a single-module project).
+         */
         public String relDir() {
             return project.dir.relativize(dir).toString().replace('\\', '/');
         }
 
-        /** Where the module's build output and state go: {@code .cache/build/<name>} in the project. */
+        /**
+         * Where the module's build output and state go: {@code .cache/build/<name>} in the project.
+         */
         public Path cacheDir() {
             return project.dir.resolve(".cache").resolve("build").resolve(name());
         }
@@ -87,7 +133,9 @@ public final class Project {
         }
     }
 
-    /** {@code JPM_VERSION_OVERRIDE}, or null. */
+    /**
+     * {@code JPM_VERSION_OVERRIDE}, or null.
+     */
     public static String versionOverride() {
         String v = System.getenv("JPM_VERSION_OVERRIDE");
         return v == null || v.isBlank() ? null : v.trim();
@@ -97,7 +145,9 @@ public final class Project {
     public final Manifest root;
     public final List<Module> modules;
 
-    /** True for {@link #isolatedView}: the one module is resolved on its own. */
+    /**
+     * True for {@link #isolatedView}: the one module is resolved on its own.
+     */
     private final boolean view;
 
     private Project(Path dir, Manifest root, List<Module> modules) {
@@ -111,7 +161,9 @@ public final class Project {
         this.view = view;
     }
 
-    /** Loads the project whose root is exactly {@code dir}. */
+    /**
+     * Loads the project whose root is exactly {@code dir}.
+     */
     public static Project load(Path dir) {
         dir = dir.toAbsolutePath().normalize();
         Manifest root = Manifest.load(dir);
@@ -163,13 +215,17 @@ public final class Project {
         return p;
     }
 
-    /** The modules resolved in a graph of their own ({@code "isolated": true}). */
+    /**
+     * The modules resolved in a graph of their own ({@code "isolated": true}).
+     */
     public List<Module> isolatedModules() {
         if (view) return List.of();
         return modules.stream().filter(m -> m.manifest.isolated && root.isWorkspaceRoot()).toList();
     }
 
-    /** The modules resolved together in the workspace graph. */
+    /**
+     * The modules resolved together in the workspace graph.
+     */
     public List<Module> sharedModules() {
         if (view) return modules;
         return modules.stream().filter(m -> !(m.manifest.isolated && root.isWorkspaceRoot())).toList();
@@ -195,7 +251,10 @@ public final class Project {
         Path d = cwd.toAbsolutePath().normalize();
         Path found = null;
         for (Path p = d; p != null; p = p.getParent()) {
-            if (Files.exists(p.resolve(Manifest.FILE))) { found = p; break; }
+            if (Files.exists(p.resolve(Manifest.FILE))) {
+                found = p;
+                break;
+            }
         }
         if (found == null) {
             throw new JpmException("No " + Manifest.FILE + " found in " + d + " or any parent directory. Run `jpm init` to create one.");
@@ -214,14 +273,18 @@ public final class Project {
         return load(found);
     }
 
-    /** The module with this name, or else in this folder (relative to the root); null when there is none. */
+    /**
+     * The module with this name, or else in this folder (relative to the root); null when there is none.
+     */
     public Module module(String nameOrDir) {
         for (Module m : modules) if (m.name().equals(nameOrDir)) return m;
         for (Module m : modules) if (m.relDir().equals(nameOrDir) || m.dir.getFileName().toString().equals(nameOrDir)) return m;
         return null;
     }
 
-    /** The module containing the path, or the only module. */
+    /**
+     * The module containing the path, or the only module.
+     */
     public Module moduleAt(Path cwd) {
         Path c = cwd.toAbsolutePath().normalize();
         Module best = null;
@@ -232,18 +295,24 @@ public final class Project {
         return modules.size() == 1 ? modules.get(0) : null;
     }
 
-    /** The root manifest as a module, for scripts and hooks declared on a workspace root. */
+    /**
+     * The root manifest as a module, for scripts and hooks declared on a workspace root.
+     */
     public Module rootModule() {
         if (!root.isWorkspaceRoot()) return modules.get(0);
         return new Module(this, dir, root);
     }
 
-    /** The project's {@code project.lock}, next to the root manifest. */
+    /**
+     * The project's {@code project.lock}, next to the root manifest.
+     */
     public Path lockFile() {
         return dir.resolve(Manifest.LOCK);
     }
 
-    /** Workspace modules in build order. */
+    /**
+     * Workspace modules in build order.
+     */
     public List<Module> buildOrder() {
         Map<String, Module> byName = new LinkedHashMap<>();
         for (Module m : modules) byName.put(m.name(), m);

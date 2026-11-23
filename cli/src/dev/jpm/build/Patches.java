@@ -4,15 +4,15 @@ import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.api.json.Jsonc;
-import dev.jpm.json.JsoncEdit;
-import dev.jpm.maven.MavenRepo;
-import dev.jpm.resolve.Graph;
-import dev.jpm.resolve.GitModule;
 import dev.jpm.git.GitRepo;
+import dev.jpm.json.JsoncEdit;
+import dev.jpm.log.Log;
+import dev.jpm.maven.MavenRepo;
+import dev.jpm.resolve.GitModule;
+import dev.jpm.resolve.Graph;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,22 +32,29 @@ import java.util.Set;
  * </ol>
  */
 public final class Patches {
-    private Patches() {}
+    private Patches() {
+    }
 
     private static final List<String> GIT_ID = List.of("-c", "user.name=jpm", "-c", "user.email=jpm@localhost",
             "-c", "commit.gpgsign=false", "-c", "core.autocrlf=false");
 
-    /** A package id as a file name. */
+    /**
+     * A package id as a file name.
+     */
     public static String safeName(String id) {
         return id.replaceAll("[^A-Za-z0-9._-]+", "_");
     }
 
-    /** Where {@code jpm patch} unpacks a dependency's sources for editing. */
+    /**
+     * Where {@code jpm patch} unpacks a dependency's sources for editing.
+     */
     public static Path workDir(Project p, String id) {
         return p.dir.resolve(".cache").resolve("patch").resolve(safeName(id));
     }
 
-    /** Owning module of a dependency, for recording the patch in the right manifest. */
+    /**
+     * Owning module of a dependency, for recording the patch in the right manifest.
+     */
     private static Project.Module owner(Project p, String id) {
         for (Project.Module m : p.modules) {
             for (Manifest.Dependency d : m.manifest.dependencies) if (d.key().toString().equals(id)) return m;
@@ -60,7 +67,9 @@ public final class Patches {
         return m != null ? m.manifest : p.root;
     }
 
-    /** {@code jpm patch <dep>}: unpacks the dependency's sources, with its existing patch applied, for editing. */
+    /**
+     * {@code jpm patch <dep>}: unpacks the dependency's sources, with its existing patch applied, for editing.
+     */
     public static void start(Project p, Graph g, MavenRepo repo, String dep) {
         String id = DepKey.parse(dep).toString();
         Graph.Pkg pkg = g.get(id);
@@ -102,7 +111,9 @@ public final class Patches {
         Log.info("Edit the files there, then run `jpm patch --commit " + id + "`.");
     }
 
-    /** {@code jpm patch --commit <dep>}: saves the edits as a patch file and records it in the manifest. */
+    /**
+     * {@code jpm patch --commit <dep>}: saves the edits as a patch file and records it in the manifest.
+     */
     public static void commit(Project p, String dep) {
         String id = DepKey.parse(dep).toString();
         Path work = workDir(p, id);
@@ -137,7 +148,9 @@ public final class Patches {
         Log.step("Saved", target + " and recorded it in " + owner.dir().relativize(owner.file));
     }
 
-    /** Copies {@code src} to {@code dest} and applies the patch there. */
+    /**
+     * Copies {@code src} to {@code dest} and applies the patch there.
+     */
     public static void applyTo(Path src, Path dest, Path patch, String id, String version) {
         Fs.deleteTree(dest);
         Fs.copyTree(src, dest);
@@ -156,7 +169,9 @@ public final class Patches {
         }
     }
 
-    /** Files a patch touches (new paths), from its {@code +++ b/...} lines. */
+    /**
+     * Files a patch touches (new paths), from its {@code +++ b/...} lines.
+     */
     public static Set<String> touched(Path patch) {
         Set<String> out = new LinkedHashSet<>();
         for (String line : Fs.read(patch).split("\n")) {

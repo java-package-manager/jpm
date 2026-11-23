@@ -38,6 +38,7 @@ final class TestCommand extends Command {
     }
 
     @Override
+    @SuppressWarnings("BusyWait")
     int run(List<String> args) {
         boolean frozen = flag(args, "--frozen");
         boolean watch = flag(args, "--watch");

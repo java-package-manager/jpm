@@ -19,7 +19,8 @@ import java.util.Map;
  * project folder.
  */
 public final class Profiles {
-    private Profiles() {}
+    private Profiles() {
+    }
 
     /**
      * What activation is decided against.
@@ -31,7 +32,9 @@ public final class Profiles {
      * @param properties the properties {@code <property>} activation reads (system properties, and the environment as {@code env.X})
      */
     public record Context(String jdk, String osName, String osArch, String osVersion, Map<String, String> properties) {
-        /** This machine, with the Java version {@code JPM_POM_JDK} names, else jpm's own. */
+        /**
+         * This machine, with the Java version {@code JPM_POM_JDK} names, else jpm's own.
+         */
         public static Context current() {
             Map<String, String> props = new LinkedHashMap<>();
             for (String n : System.getProperties().stringPropertyNames()) props.put(n, System.getProperty(n));
@@ -41,7 +44,9 @@ public final class Profiles {
                     System.getProperty("os.name", ""), System.getProperty("os.arch", ""), System.getProperty("os.version", ""), props);
         }
 
-        /** This machine, with the Java version of a manifest's {@code "java"} (such as {@code temurin-17}), when it names one. */
+        /**
+         * This machine, with the Java version of a manifest's {@code "java"} (such as {@code temurin-17}), when it names one.
+         */
         public static Context forJava(String spec) {
             Context c = current();
             if (System.getenv("JPM_POM_JDK") != null || spec == null) return c;
@@ -50,7 +55,9 @@ public final class Profiles {
         }
     }
 
-    /** The active profiles of a {@code <project>} element. */
+    /**
+     * The active profiles of a {@code <project>} element.
+     */
     public static List<Element> active(Element project, Path pomFile, Context ctx) {
         Element profiles = Pom.child(project, "profiles");
         if (profiles == null) return List.of();
@@ -106,7 +113,7 @@ public final class Profiles {
         if (spec.startsWith("[") || spec.startsWith("(")) {
             StringBuilder ranges = new StringBuilder();
             for (String part : spec.split("(?<=[\\])]),")) {
-                if (ranges.length() > 0) ranges.append(',');
+                if (!ranges.isEmpty()) ranges.append(',');
                 ranges.append(normalizeRange(part.strip()));
             }
             try {

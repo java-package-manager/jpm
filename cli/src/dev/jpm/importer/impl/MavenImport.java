@@ -1,7 +1,6 @@
 package dev.jpm.importer.impl;
 
 import dev.jpm.importer.Imported;
-
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.maven.Pom;
 import dev.jpm.util.JpmException;
@@ -20,7 +19,8 @@ import java.util.Set;
 import java.util.TreeMap;
 
 public final class MavenImport {
-    private MavenImport() {}
+    private MavenImport() {
+    }
 
     private static final Set<String> KNOWN_PLUGINS = Set.of("maven-compiler-plugin", "maven-surefire-plugin",
             "maven-failsafe-plugin", "maven-jar-plugin", "maven-source-plugin", "maven-javadoc-plugin",

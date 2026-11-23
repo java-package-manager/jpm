@@ -9,9 +9,12 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-/** Workspace modules take java, target, group, license, url, layout and flags from the root. */
+/**
+ * Workspace modules take java, target, group, license, url, layout and flags from the root.
+ */
 class WorkspaceInheritanceTest {
     @Test
     void modulesInheritFromTheRoot(@TempDir Path dir) {
@@ -52,7 +55,7 @@ class WorkspaceInheritanceTest {
                 { "name": "solo", "version": "1.0.0" }
                 """);
         Manifest m = Project.load(dir).modules.get(0).manifest;
-        assertEquals(null, m.java);
+        assertNull(m.java);
         assertSame(Layout.JPM, m.layout);
     }
 

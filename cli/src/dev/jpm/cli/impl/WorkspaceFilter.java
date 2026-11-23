@@ -16,7 +16,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 final class WorkspaceFilter {
-    private WorkspaceFilter() {}
+    private WorkspaceFilter() {
+    }
 
     static final String USAGE = "`--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder"
             + " (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves"

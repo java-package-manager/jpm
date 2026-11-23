@@ -1,14 +1,14 @@
 package dev.jpm.build;
 
-import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.DepKey;
 import dev.jpm.Project;
-import dev.jpm.toolchain.Jdk;
+import dev.jpm.log.Log;
 import dev.jpm.resolve.Graph;
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.resolve.Resolver;
+import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 
 import java.nio.file.Path;
@@ -20,7 +20,8 @@ import java.util.List;
  * any other platform engine on the test classpath works too.
  */
 public final class TestRunner {
-    private TestRunner() {}
+    private TestRunner() {
+    }
 
     /**
      * Which tests to run.
@@ -30,7 +31,9 @@ public final class TestRunner {
      * @param excludedTags JUnit tag expressions of tests to leave out
      */
     public record Selection(List<String> filters, List<String> tags, List<String> excludedTags, boolean trace) {
-        /** A selection that does not trace. */
+        /**
+         * A selection that does not trace.
+         */
         public Selection(List<String> filters, List<String> tags, List<String> excludedTags) {
             this(filters, tags, excludedTags, false);
         }
@@ -52,12 +55,16 @@ public final class TestRunner {
         return "{\n  \"rules\": [\n    " + String.join(",\n    ", rules) + "\n  ]\n}\n";
     }
 
-    /** Runs a module's tests. Returns the exit code (0 when no tests exist). */
+    /**
+     * Runs a module's tests. Returns the exit code (0 when no tests exist).
+     */
     public static int run(Builder b, Project.Module m, Selection selection) {
         return run(b, m, selection, null);
     }
 
-    /** Runs a module's tests, writing JUnit XML reports into {@code reports} when it is not null. */
+    /**
+     * Runs a module's tests, writing JUnit XML reports into {@code reports} when it is not null.
+     */
     public static int run(Builder b, Project.Module m, Selection selection, Path reports) {
         if (!b.compileTests(m)) {
             Log.info(m.name() + ": no tests");
@@ -118,7 +125,9 @@ public final class TestRunner {
         return Exec.inherit(m.dir, cmd, Env.forChild(b.project.dir, Env.Mode.DEVELOPMENT));
     }
 
-    /** What {@link #run} returns when the module has none of the test classes the filters name. */
+    /**
+     * What {@link #run} returns when the module has none of the test classes the filters name.
+     */
     public static final int NO_MATCH = -1;
 
     /**
@@ -131,13 +140,17 @@ public final class TestRunner {
         return java.nio.file.Files.exists(Builder.testClassesDir(m).resolve(cls.replace('.', '/') + ".class"));
     }
 
-    /** JVM options from {@code JPM_TEST_JVM_ARGS}, separated by spaces, for example a coverage agent. */
+    /**
+     * JVM options from {@code JPM_TEST_JVM_ARGS}, separated by spaces, for example a coverage agent.
+     */
     static List<String> extraJvmArgs(String value) {
         if (value == null || value.isBlank()) return List.of();
         return List.of(value.strip().split("\\s+"));
     }
 
-    /** What Gradle opens in the JDK for its daemon and workers (JpmsConfiguration in Gradle's sources). */
+    /**
+     * What Gradle opens in the JDK for its daemon and workers (JpmsConfiguration in Gradle's sources).
+     */
     static final List<String> GRADLE_JVM_ARGS = List.of(
             "--add-opens=java.base/java.util=ALL-UNNAMED",
             "--add-opens=java.base/java.lang=ALL-UNNAMED",

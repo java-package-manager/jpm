@@ -18,7 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Downloads are checked against the checksums repositories publish, and project.lock pins POMs too. */
+/**
+ * Downloads are checked against the checksums repositories publish, and project.lock pins POMs too.
+ */
 class ChecksumsTest {
     private static Path project(Path dir, Path repo, String runtime) {
         System.setProperty("jpm.home", dir.resolve("home").toString());

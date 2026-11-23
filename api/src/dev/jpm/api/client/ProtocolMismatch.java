@@ -1,6 +1,8 @@
 package dev.jpm.api.client;
 
-/** The installed jpm speaks another major version of the protocol; the message names both versions. */
+/**
+ * The installed jpm speaks another major version of the protocol; the message names both versions.
+ */
 public final class ProtocolMismatch extends JpmError {
     /**
      * A mismatch.

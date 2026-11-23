@@ -20,6 +20,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -98,10 +99,12 @@ class GradleMetadataTest {
         assertTrue(g.get("test.kmp:mockk").deps.containsKey("test.kmp:mockk-jvm"));
         assertTrue(g.get("test.kmp:mockk-jvm").hasJar);
         assertTrue(g.get("test.kotlin:kotlin-test").hasJar);
-        assertEquals(null, g.get("test.kotlin:kotlin-test-junit5"));
+        assertNull(g.get("test.kotlin:kotlin-test-junit5"));
     }
 
-    /** The other way round: a dev dependency's tree goes on the compile classpath with its compile-only parts. */
+    /**
+     * The other way round: a dev dependency's tree goes on the compile classpath with its compile-only parts.
+     */
     @Test
     void devDependenciesKeepTheirCompileOnlyApiDependencies(@TempDir Path tmp) throws IOException {
         System.setProperty("jpm.home", tmp.resolve("home").toString());
@@ -140,7 +143,9 @@ class GradleMetadataTest {
         assertFalse(runtimeTool.contains("annotations-26.1.0.jar"));
     }
 
-    /** jpm-publish writes "api" dev dependencies as provided in the POM, and compile-only in the .module. */
+    /**
+     * jpm-publish writes "api" dev dependencies as provided in the POM, and compile-only in the .module.
+     */
     @Test
     void providedDependenciesTheModuleListsForCompilingArePassedOn(@TempDir Path tmp) throws IOException {
         System.setProperty("jpm.home", tmp.resolve("home").toString());

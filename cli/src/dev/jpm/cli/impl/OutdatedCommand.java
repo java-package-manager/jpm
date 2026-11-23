@@ -1,11 +1,11 @@
 package dev.jpm.cli.impl;
 
-import dev.jpm.version.Tags;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.git.GitRepo;
-import dev.jpm.resolve.Graph;
 import dev.jpm.log.Log;
+import dev.jpm.resolve.Graph;
+import dev.jpm.version.Tags;
 import dev.jpm.version.Version;
 import dev.jpm.version.VersionSpec;
 import dev.jpm.version.VersionSpecs;
