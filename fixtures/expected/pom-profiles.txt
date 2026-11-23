@@ -1,0 +1,14 @@
+$ jpm install
+   Resolving dependencies
+  + org.example:lib 1.0.0
+  + org.example:modern 1.0.0
+  + org.example:money 1.2.0
+      Locked 3 packages (3 added, 0 changed, 0 removed)
+
+$ jpm install
+   Resolving dependencies
+  + org.example:compat 1.0.0
+  - org.example:modern 1.0.0
+  - org.example:money 1.2.0
+      Locked 2 packages (1 added, 0 changed, 2 removed)
+

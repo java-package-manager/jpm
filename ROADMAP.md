@@ -334,7 +334,7 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 ### More
 
-- [ ] Evaluate POM profiles (activation by JDK, OS and properties) when reading POMs.
+- [x] Evaluate POM profiles (activation by JDK, OS and properties) when reading POMs.
 - [ ] Maven and Gradle features with no manifest equivalent yet: code-generating plugins, and Groovy and
       Scala sources.
 - [ ] Kotlin: compile a module's Kotlin incrementally (per file) instead of as a whole; Kotlin

@@ -92,7 +92,7 @@ public final class Resolver {
             }
         }
         this.repo = repo;
-        this.poms = new Pom.Loader(repo);
+        this.poms = new Pom.Loader(repo, dev.jpm.maven.Profiles.Context.forJava(project.root.java));
         this.previous = previous;
         this.gitVersions = new GitVersions(previous, this::locked);
         this.unlocked = unlocked;

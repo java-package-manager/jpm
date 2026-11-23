@@ -47,6 +47,7 @@ public final class ResolveInputs {
     public static String inputs(Project project) {
         Hash h = new Hash().add("v1");
         for (String r : project.root.repositories) h.add("repo " + r);
+        if (project.root.java != null) h.add("java " + project.root.java);
         for (Project.Module m : project.modules) {
             h.add("module " + m.name() + (m.manifest.isolated ? " isolated" : ""));
             for (Manifest.Dependency d : effectiveDeps(m)) {

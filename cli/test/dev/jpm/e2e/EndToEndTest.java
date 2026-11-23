@@ -484,6 +484,26 @@ class EndToEndTest {
         s.verify("doctor");
     }
 
+    @Test
+    void pomProfiles(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        s.repo.artifact("org.example:compat:1.0.0").publish();
+        s.repo.artifact("org.example:modern:1.0.0").publish();
+        s.repo.artifact("org.example:lib:1.0.0").pom("<profiles>"
+                + "<profile><id>old-jdk</id><activation><jdk>(,17)</jdk></activation><dependencies><dependency><groupId>org.example</groupId>"
+                + "<artifactId>compat</artifactId><version>1.0.0</version></dependency></dependencies></profile>"
+                + "<profile><id>new-jdk</id><activation><jdk>[17,)</jdk></activation><properties><money.version>1.2.0</money.version></properties>"
+                + "<dependencies><dependency><groupId>org.example</groupId><artifactId>modern</artifactId><version>1.0.0</version></dependency>"
+                + "<dependency><groupId>org.example</groupId><artifactId>money</artifactId><version>${money.version}</version></dependency>"
+                + "</dependencies></profile></profiles>").publish();
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \"21\", \"runtime\": { \"org.example:lib\": \"1.0.0\" } }");
+        s.jpm("install");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \"11\", \"runtime\": { \"org.example:lib\": \"1.0.0\" } }");
+        s.jpm("install");
+        s.verify("pom-profiles");
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }

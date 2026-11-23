@@ -307,7 +307,11 @@ both: every hard constraint must hold — anything declared in a manifest, and a
 among the versions that satisfy them the highest wins. Plain versions inside POMs are soft. Locked
 versions are kept while they still satisfy the constraints, so editing one dependency does not move
 others. POMs are read with parent inheritance, property interpolation, `dependencyManagement`, imported
-BOMs, exclusions, optional/provided/test scopes and relocation. For libraries published by Gradle, the
+BOMs, exclusions, optional/provided/test scopes, relocation and profiles: a profile is active by `jdk` (the
+project's `"java"`, or jpm's own when it has none), `os`, `property` (system properties, and the environment
+as `env.X`) and `file` (POMs on disk only), all that it gives holding, or `activeByDefault` when no other
+profile of that POM is; its properties, managed versions and dependencies apply. Changing `"java"` resolves
+again, since it can change which profiles are active. For libraries published by Gradle, the
 Gradle Module Metadata next to the POM decides what is needed when: `compileOnlyApi` dependencies (which
 the POM lists as `compile`) are on the compile classpath only, never at run time or in bundles, and
 `implementation` and `runtimeOnly` dependencies are on the runtime classpath only.

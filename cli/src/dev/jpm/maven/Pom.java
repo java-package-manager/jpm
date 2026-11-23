@@ -51,11 +51,18 @@ public final class Pom {
     /** Loads POMs and builds effective models, memoized. */
     public static final class Loader {
         private final MavenRepo repo;
+        private final Profiles.Context profiles;
         private final Map<String, Pom> memo = new HashMap<>();
 
-        /** A loader that reads POMs from these repositories. */
+        /** A loader that reads POMs from these repositories, activating profiles for this machine. */
         public Loader(MavenRepo repo) {
+            this(repo, Profiles.Context.current());
+        }
+
+        /** A loader that reads POMs from these repositories, activating profiles against {@code profiles}. */
+        public Loader(MavenRepo repo, Profiles.Context profiles) {
             this.repo = repo;
+            this.profiles = profiles;
         }
 
         /** The effective POM of a version: parents, properties and imported BOMs applied, cached per run. */
@@ -145,6 +152,15 @@ public final class Pom {
                     pom.declaredProperties.put(e.getTagName(), e.getTextContent().trim());
                 }
             }
+            List<Element> profiles = Profiles.active(project, localFile, this.profiles);
+            for (Element prof : profiles) {
+                Element pp = child(prof, "properties");
+                if (pp == null) continue;
+                for (Element e : children(pp)) {
+                    pom.properties.put(e.getTagName(), e.getTextContent().trim());
+                    pom.declaredProperties.put(e.getTagName(), e.getTextContent().trim());
+                }
+            }
             pom.properties.put("project.groupId", pom.group);
             pom.properties.put("project.artifactId", pom.artifact);
             pom.properties.put("project.version", pom.version);
@@ -162,9 +178,12 @@ public final class Pom {
             }
 
             if (parent != null) pom.management.putAll(parent.management);
-            Element dm = child(project, "dependencyManagement");
+            List<Element> sections = new ArrayList<>(List.of(project));
+            sections.addAll(profiles);
             List<Dep> imports = new ArrayList<>();
-            if (dm != null) {
+            for (Element section : sections) {
+                Element dm = child(section, "dependencyManagement");
+                if (dm == null) continue;
                 Element deps = child(dm, "dependencies");
                 if (deps != null) {
                     for (Element d : children(deps, "dependency")) {
@@ -182,8 +201,9 @@ public final class Pom {
 
             Map<String, Dep> deps = new LinkedHashMap<>();
             if (parent != null) for (Dep d : parent.dependencies) deps.put(mgmtKey(d), d);
-            Element depsEl = child(project, "dependencies");
-            if (depsEl != null) {
+            for (Element section : sections) {
+                Element depsEl = child(section, "dependencies");
+                if (depsEl == null) continue;
                 for (Element d : children(depsEl, "dependency")) {
                     Dep dep = dep(d, pom.properties);
                     deps.put(mgmtKey(dep), dep);
