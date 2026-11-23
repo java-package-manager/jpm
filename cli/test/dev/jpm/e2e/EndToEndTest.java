@@ -475,7 +475,7 @@ class EndToEndTest {
             waitFor(out, "tick v1", 1);
             Fs.write(greeter, greeter("v2", ""));
             waitFor(out, "tick v2", 1);
-            org.junit.jupiter.api.Assertions.assertTrue(out.toString().contains("Reloaded 1 class"), out.toString());
+            waitFor(out, "Reloaded 1 class", 1);
             org.junit.jupiter.api.Assertions.assertFalse(out.toString().contains("Restarting"), out.toString());
             Fs.write(greeter, greeter("v3", "    public int added() {\n        return 1;\n    }\n"));
             waitFor(out, "tick v3", 1);
