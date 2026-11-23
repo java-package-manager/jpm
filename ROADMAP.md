@@ -378,7 +378,7 @@ Items that are not in the original list but would pay off.
 - [x] **Cache commands:** `jpm cache size` and `jpm cache clean`.
 - [x] **Workspace-wide commands:** run a script or command in every workspace module, with a
       `--filter` like pnpm's.
-- [ ] **Testing:** `jpm test --watch`, and JUnit XML reports for CI.
+- [x] **Testing:** `jpm test --watch`, and JUnit XML reports for CI (`--reports <dir>`).
 - [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest
       errors), and what to do next; no stack traces unless `--verbose`.
 - [x] **Supply-chain checks:** verify checksums of every downloaded artifact against what the repository

@@ -5,6 +5,7 @@ import dev.jpm.build.Builder;
 import dev.jpm.build.Env;
 import dev.jpm.build.Scripts;
 import dev.jpm.build.TestRunner;
+import dev.jpm.log.Log;
 import dev.jpm.util.JpmException;
 
 import java.nio.file.Path;
@@ -33,12 +34,13 @@ final class TestCommand extends Command {
 
     @Override
     List<String> flags() {
-        return List.of("--frozen", "--module", "--tag", "--exclude-tag", "--filter", "--reports");
+        return List.of("--frozen", "--module", "--tag", "--exclude-tag", "--filter", "--reports", "--watch");
     }
 
     @Override
     int run(List<String> args) {
         boolean frozen = flag(args, "--frozen");
+        boolean watch = flag(args, "--watch");
         String module = option(args, "--module");
         List<String> tags = new ArrayList<>();
         for (String t; (t = option(args, "--tag")) != null; ) tags.add(t);
@@ -47,7 +49,33 @@ final class TestCommand extends Command {
         List<String> filters = WorkspaceFilter.options(args);
         String reports = option(args, "--reports");
         noMoreFlags(args);
+        if (watch && frozen) throw new JpmException("--watch and --frozen do not go together: --frozen is for CI", 2);
         TestRunner.Selection selection = new TestRunner.Selection(args, tags, excludedTags);
+        if (!watch) return once(frozen, module, filters, reports, selection);
+        String snapshot = null;
+        while (true) {
+            String now = Watch.snapshot(Project.find(cwd), true);
+            if (!now.equals(snapshot)) {
+                if (snapshot != null) Log.step("Rerunning", "files changed");
+                snapshot = now;
+                try {
+                    int code = once(false, module, filters, reports, selection);
+                    Log.info(Log.dim((code == 0 ? "tests passed" : "tests failed") + "; watching for changes (Ctrl+C to stop)"));
+                } catch (JpmException e) {
+                    dev.jpm.cli.Main.report(e);
+                    Log.info(Log.dim("waiting for changes (Ctrl+C to stop)"));
+                }
+            }
+            try {
+                Thread.sleep(400);
+            } catch (InterruptedException e) {
+                return 130;
+            }
+        }
+    }
+
+    private int once(boolean frozen, String module, List<String> filters, String reports, TestRunner.Selection selection) {
+        List<String> args = selection.filters();
         Ctx c = open(frozen);
         Builder b = c.builder(Env.Mode.DEVELOPMENT);
         List<Project.Module> mods = targets(c.project(), module != null ? List.of(module) : List.of(), filters);

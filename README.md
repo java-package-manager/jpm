@@ -407,7 +407,8 @@ by JUnit tag (`jpm test --exclude-tag live`). In a workspace, a class runs in th
 it; naming a class no module has is an error. `JPM_TEST_JVM_ARGS` adds options to the JVM running the
 tests, for example a coverage agent (`-javaagent:jacocoagent.jar=destfile=jacoco.exec`).
 `jpm test --reports <dir>` writes JUnit XML reports (`TEST-*.xml`) for CI to show, in `<dir>/<module>` in a
-workspace.
+workspace. `jpm test --watch` runs the tests again whenever a source, test, resource or manifest
+changes, until Ctrl+C.
 
 **Scripts** run with `jpm run <name>`. `.java` scripts run on the source launcher with the runtime
 classpath. A script that needs libraries of its own lists them with it:

@@ -2,7 +2,6 @@ package dev.jpm.cli.impl;
 
 import dev.jpm.cli.Main;
 
-import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.build.Builder;
 import dev.jpm.build.Env;
@@ -10,16 +9,10 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
 import dev.jpm.util.Exec;
-import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +32,7 @@ final class DevLoop {
         String snapshot = null;
         while (true) {
             Project project = commands.findProject();
-            String now = snapshot(project);
+            String now = Watch.snapshot(project, false);
             if (!now.equals(snapshot)) {
                 if (snapshot != null) Log.step("Restarting", "files changed");
                 stop(proc);
@@ -84,28 +77,5 @@ final class DevLoop {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-    }
-
-    private static String snapshot(Project p) {
-        List<Path> roots = new ArrayList<>();
-        roots.add(p.dir.resolve(Manifest.FILE));
-        for (String f : List.of(".env", ".env.development", ".env.local")) roots.add(p.dir.resolve(f));
-        for (Project.Module m : p.modules) {
-            roots.add(m.dir.resolve(Manifest.FILE));
-            roots.addAll(m.srcDirs());
-            for (Path a : m.assetsDirs()) if (m.srcDirs().stream().noneMatch(a::startsWith)) roots.add(a);
-            roots.add(m.dir.resolve("patches"));
-        }
-        StringBuilder sb = new StringBuilder();
-        for (Path r : roots) {
-            List<Path> files = Files.isDirectory(r) ? Fs.files(r, null) : Files.exists(r) ? List.of(r) : List.of();
-            for (Path f : files) {
-                try {
-                    sb.append(f).append(' ').append(Files.size(f)).append(' ').append(Files.getLastModifiedTime(f).toMillis()).append('\n');
-                } catch (IOException ignored) {
-                }
-            }
-        }
-        return Integer.toHexString(Objects.hash(sb.toString())) + sb.length();
     }
 }

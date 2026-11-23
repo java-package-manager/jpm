@@ -412,6 +412,58 @@ class EndToEndTest {
         s.verify("test-reports");
     }
 
+    @Test
+    void testWatch(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp).fixture("workspace-demo");
+        money(s.repo);
+        s.jpmUnrecorded("install");
+        List<String> cmd = new java.util.ArrayList<>(Session.binary());
+        cmd.addAll(List.of("test", "--watch"));
+        ProcessBuilder pb = new ProcessBuilder(cmd).directory(s.project.resolve("core").toFile()).redirectErrorStream(true);
+        pb.environment().keySet().removeIf(k -> k.startsWith("JPM_") || k.equals("NO_COLOR") || k.equals("FORCE_COLOR"));
+        pb.environment().putAll(s.env());
+        Process p = pb.start();
+        StringBuffer out = new StringBuffer();
+        Thread reader = new Thread(() -> {
+            try (var in = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                for (String l; (l = in.readLine()) != null; ) out.append(l).append('\n');
+            } catch (java.io.IOException ignored) {
+            }
+        });
+        reader.start();
+        try {
+            waitFor(out, "tests passed; watching for changes", 1);
+            Path test = s.project.resolve("core/test/shop/core/CartTest.java");
+            Fs.write(test, cartTest("EUR 4.00"));
+            waitFor(out, "tests failed; watching for changes", 1);
+            org.junit.jupiter.api.Assertions.assertTrue(out.toString().contains("Rerunning files changed"), out.toString());
+            Fs.write(test, cartTest("EUR 3.50"));
+            waitFor(out, "tests passed; watching for changes", 2);
+        } finally {
+            p.destroy();
+            if (!p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) p.destroyForcibly();
+            reader.join(10_000);
+        }
+    }
+
+    private static String cartTest(String total) {
+        return "package shop.core;\n\nimport org.junit.jupiter.api.Test;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\n\n"
+                + "class CartTest {\n    @Test\n    void addsPrices() {\n        assertEquals(\"" + total
+                + "\", new Cart().add(150).add(200).total());\n    }\n}\n";
+    }
+
+    private static void waitFor(StringBuffer out, String text, int times) throws InterruptedException {
+        long until = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(120);
+        while (System.nanoTime() < until) {
+            String now = out.toString();
+            int n = 0;
+            for (int i = now.indexOf(text); i >= 0; i = now.indexOf(text, i + 1)) n++;
+            if (n >= times) return;
+            Thread.sleep(100);
+        }
+        throw new AssertionError("no \"" + text + "\" (x" + times + ") in:\n" + out);
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }
