@@ -327,16 +327,13 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 ### Renovate
 
-- [ ] A Renovate manager for `project.jsonc` (Maven coordinates, `github:` dependencies, Gradle
-      plugins) that keeps comments and formatting, and updates `project.lock` with
-      `jpm install`. Start with a shareable preset using Renovate's regex manager, then contribute a
-      native manager upstream.
-- [ ] Renovate updates the `"java"` field and the version pins in the install scripts.
-- [ ] Use it on the jpm repositories themselves.
+- [ ] A native Renovate manager for `project.jsonc` (Maven coordinates, `github:` dependencies, Gradle
+      plugins, `"java"`) that keeps comments and formatting and updates `project.lock` with
+      `jpm install`, contributed upstream. No regex-manager preset in between. It is the last item of the
+      plan (*Last: Renovate*).
 
 ### More
 
-- [ ] Dependabot support, or document that Renovate is the supported option.
 - [ ] Evaluate POM profiles (activation by JDK, OS and properties) when reading POMs.
 - [ ] Maven and Gradle features with no manifest equivalent yet: code-generating plugins, and Groovy and
       Scala sources.
@@ -609,41 +606,38 @@ Builds the test and tooling base that the restructure depends on.
 
 **Needs:** Milestone 4 for anything that adds a check or uses the protocol.
 
-The tracks below are independent. Each one is released from its own repository.
+In this order (decided 2026-11-23):
 
-- **jpm-changeset.** The repository is empty. Build in this order: `add`, `status` (with its check),
-  `version`, `publish` through jpm-publish, then prerelease mode and groups. The GitHub Action comes
-  last. Once it works, use it for jpm's own changelog.
-- **jpm-format.**
-  - Formatter parity is measured against IntelliJ on a corpus of real projects, with a stored diff
-    count as a ratchet. Then lint parity, then the LSP.
-  - Add `format --check` to `jpm check`.
-  - Replace the comment-lint script from Milestone 1 with a jpm-format rule.
-- **jpm-intellij.**
-  - The migration UI (editable manifest, warnings first, layout switch, cleanup of old build files,
-    scan for leftover Gradle/Maven use).
-  - Then `project.jsonc` editing: navigation, renames, completion and inlay hints, update inspection,
-    hover docs, and diagnostics from `jpm check` over the protocol.
-  - Then run configurations and the dependency graph.
-  - The `.gitignore` fix is done in `jpm init`/`jpm import`, so it ships with any jpm release.
-- **Licenses.** Generate the SPDX list into the schema at build time from `licenses.json`. Add the
-  check, the import support and license file creation. Do this in jpm, not in an extension.
-- **Renovate.** A regex-manager preset first, used on the jpm repositories, then a native manager
-  upstream. Document Renovate as the supported option, instead of Dependabot.
-- **Remaining suggestions:**
-  - lockfile conflict resolution;
-  - private repository credentials;
-  - `jpm cache size|clean`;
-  - workspace-wide commands with `--filter`;
-  - `jpm test --watch`;
-  - checksums in `project.lock`, then `jpm audit`, then SBOM;
-  - `jpm doctor`;
-  - the full test suite on Windows in CI;
-  - POM profiles, Groovy and Scala sources, code-generating plugins, incremental and Multiplatform
-    Kotlin, the tracing agent in tests, in-process hot reload (Phase 5, *More*).
+1. **Supply chain** (in jpm): checksums of every download checked against what the repository publishes and
+   kept in `project.lock` (POMs too), failing `--frozen` installs on a mismatch; then `jpm audit` (OSV);
+   then an SBOM (CycloneDX) from the lockfile.
+2. **The smaller items:**
+   - lockfile conflict resolution;
+   - private repository credentials;
+   - `jpm cache size|clean`;
+   - workspace-wide commands with `--filter`;
+   - `jpm test --watch`;
+   - `jpm doctor`;
+   - the full test suite on Windows in CI;
+   - POM profiles, Groovy and Scala sources, code-generating plugins, incremental and Multiplatform
+     Kotlin, the tracing agent in tests, in-process hot reload (Phase 5, *More*).
+3. **jpm-intellij.**
+   - The migration UI (editable manifest, warnings first, layout switch, cleanup of old build files,
+     scan for leftover Gradle/Maven use).
+   - Then `project.jsonc` editing: navigation, renames, completion and inlay hints, update inspection,
+     hover docs, and diagnostics from `jpm check` over the protocol.
+   - Then run configurations and the dependency graph.
+   - The `.gitignore` fix is done in `jpm init`/`jpm import`, so it ships with any jpm release.
+4. **jpm-format.**
+   - Formatter parity is measured against IntelliJ on a corpus of real projects, with a stored diff
+     count as a ratchet. Then lint parity, then the LSP.
+   - Replace the comment-lint script from Milestone 1 with a jpm-format rule.
+   - `format --check` in `jpm check`: done (jpm-format's descriptor).
 
-  Order them by user demand. Supply-chain checksums come first, because they change the lockfile
-  format, which is cheaper to do early.
+Done: **jpm-changeset** (add, status and its check, version, publish, prereleases, groups, changeset-action;
+jpm releases with it) and **Licenses** (the SPDX list, `jpm license`, import, the check).
+
+Renovate comes last, after everything else (*Last: Renovate*, at the end of this file).
 
 ### Milestone 6: user documentation (alongside Milestone 5)
 
@@ -663,3 +657,9 @@ can be generated.
   releases.
 - **Restructure without behavior change.** If an end-to-end test changes its expected output during
   Milestone 2, that is a bug, unless the commit message says otherwise and why.
+
+### Last: Renovate
+
+After everything above: a native Renovate manager for `project.jsonc`, contributed upstream (Phase 5,
+*Renovate*), used on the jpm repositories, and documented as the supported way to keep jpm projects up to
+date. No interim preset.
