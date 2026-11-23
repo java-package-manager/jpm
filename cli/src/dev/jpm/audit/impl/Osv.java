@@ -30,7 +30,10 @@ public final class Osv {
                 if (q.commit() != null) {
                     m.put("commit", q.commit());
                 } else {
-                    m.put("package", Map.of("ecosystem", q.ecosystem(), "name", q.name()));
+                    Map<String, Object> pkg = new LinkedHashMap<>();
+                    pkg.put("ecosystem", q.ecosystem());
+                    pkg.put("name", q.name());
+                    m.put("package", pkg);
                     m.put("version", q.version());
                 }
                 qs.add(m);
