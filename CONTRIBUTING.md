@@ -48,7 +48,7 @@ checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/p
 ## Rules for the code
 
 - **No dependencies.** jpm uses the JDK only.
-- **No comments.** `//` and `/* */` comments are not allowed (`checks/Ratchets.java` counts them). A
+- **No comments.** `//` and `/* */` comments are not allowed (jpm-format's `NonJavadocComment`, part of `jpm check`). A
   non-obvious decision goes into an ADR in [docs/adr](docs/adr); `/delete-comment` cleans up comments that
   crept in. Javadoc is not a comment: it is required on public and internal API, unwanted on
   implementations.

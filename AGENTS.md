@@ -39,7 +39,7 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
 ## Rules that must not be broken
 
 - No dependencies in jpm: the JDK only.
-- No `//` or `/* */` comments in `api/` or `cli/` sources and tests. Put decisions in `docs/adr`; Javadoc is fine on API.
+- No `//` or `/* */` comments in `api/` or `cli/` sources and tests (jpm-format's `NonJavadocComment` in `jpm check` reports them). Put decisions in `docs/adr`; Javadoc is fine on API.
 - No `System.out`/`System.err` outside `dev.jpm.log.Log`.
 - jpm never parses `.java`/`.kt` sources itself.
 - Tests never use the network unless tagged `@Tag("live")`, and never touch `~/.jpm`.

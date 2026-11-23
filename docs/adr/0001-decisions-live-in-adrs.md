@@ -10,8 +10,9 @@ the code, and those are hard to find when they are spread over a hundred files.
 
 ## Decision
 
-- jpm's Java sources have no `//` or `/* */` comments. `checks/Ratchets.java` counts them, and the count
-  may only go down (`checks/ratchets.properties`).
+- jpm's Java sources have no `//` or `/* */` comments. jpm-format's `NonJavadocComment` rule, turned on as
+  an error in `project.jsonc`, reports them, so `jpm check` (in `bin/check` and CI) fails on one. It
+  replaced the `comments` and `comment-lines` ratchets.
 - A non-obvious decision goes into an ADR in `docs/adr/`, which names the code it is about.
 - Javadoc (`/** */`) is not a comment. It is required on the public API (`dev.jpm.api`) and on internal
   API (the types areas use to talk to each other), and unwanted on implementations.

@@ -36,11 +36,6 @@ public final class Ratchets {
     record Comment(int line, int lines, boolean javadoc, String text) {}
 
     static final List<Ratchet> RATCHETS = List.of(
-            new Ratchet("comments", "// and /* */ comments (Javadoc is not counted)", List.of("api/src", "api/test", "cli/src", "cli/test"),
-                    s -> s.comments().stream().filter(c -> !c.javadoc()).map(c -> s.path() + ":" + c.line()).toList()),
-            new Ratchet("comment-lines", "lines taken by // and /* */ comments", List.of("api/src", "api/test", "cli/src", "cli/test"),
-                    s -> s.comments().stream().filter(c -> !c.javadoc())
-                            .flatMap(c -> java.util.stream.IntStream.range(0, c.lines()).mapToObj(i -> s.path() + ":" + (c.line() + i))).toList()),
             new Ratchet("system-out", "System.out and System.err outside the logger", List.of("api/src", "cli/src"),
                     s -> isLogger(s.path()) ? List.of() : matches(s, Pattern.compile("\\bSystem\\s*\\.\\s*(out|err)\\b"))),
             new Ratchet("live-tests", "tests that need the network (@Tag(\"live\"))", List.of("api/test", "cli/test"),
