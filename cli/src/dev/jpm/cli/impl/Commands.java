@@ -18,7 +18,7 @@ public final class Commands {
                 new OutdatedCommand(cwd), new AuditCommand(cwd), new SbomCommand(cwd), new WhyCommand(cwd), new InfoCommand(cwd), new ImportCommand(cwd), new LicenseCommand(cwd),
                 new BuildCommand(cwd), new StartCommand(cwd, false), new StartCommand(cwd, true), new TestCommand(cwd), new CheckCommand(cwd),
                 new RunCommand(cwd), new CleanCommand(cwd), new PatchCommand(cwd), new JavaCommand(cwd, false),
-                new JavaCommand(cwd, true), new UpgradeCommand(cwd), new VersionCommand(cwd), new HelpCommand(cwd),
+                new JavaCommand(cwd, true), new CacheCommand(cwd), new UpgradeCommand(cwd), new VersionCommand(cwd), new HelpCommand(cwd),
                 new CompletionsCommand(cwd), new ApiCommand(cwd));
     }
 

@@ -355,6 +355,26 @@ class EndToEndTest {
         s.verify("private-repositories");
     }
 
+    @Test
+    void cacheSizeAndClean(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"runtime\": { \"org.example:money\": \"1.0.0\" } }");
+        s.jpm("install");
+        Fs.write(s.home.resolve("global").resolve("keep.txt"), "an installed extension");
+        String size = s.jpmUnrecorded("cache", "size");
+        org.junit.jupiter.api.Assertions.assertTrue(size.matches("(?s).*\\d+(\\.\\d)? (B|KB|MB)  repository +Maven packages\n.*total.*"), size);
+        String clean = s.jpmUnrecorded("cache", "clean", "repository");
+        org.junit.jupiter.api.Assertions.assertTrue(clean.contains("Cleaned repository: "), clean);
+        org.junit.jupiter.api.Assertions.assertFalse(java.nio.file.Files.exists(s.home.resolve("repository")));
+        s.jpm("cache", "clean", "nothing");
+        s.jpm("cache", "frobnicate");
+        s.jpm("install", "--frozen");
+        s.jpmUnrecorded("cache", "clean");
+        org.junit.jupiter.api.Assertions.assertTrue(java.nio.file.Files.exists(s.home.resolve("global").resolve("keep.txt")));
+        s.verify("cache");
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }

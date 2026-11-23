@@ -110,6 +110,8 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `jvm use <java>` | Choose the JDK that `java` runs outside projects (shims in ~/.jpm/bin) |
 | `jvm current` | Which JDK `java` runs here, and why. `jpm java …` and `jvm …` are the same commands |
 | `jvm exec [java] <cmd>` | Run one command with a JDK |
+| `cache size` | Show how much space each of jpm's caches in `~/.jpm` uses (Maven packages, Git dependencies and their builds, patched jars, Gradle distributions, JDK downloads) |
+| `cache clean [cache...]` | Delete jpm's caches, or only the ones named (`repository`, `git`, `builds`, ...: see `jpm cache size`); what a project needs is downloaded or built again. Installed JDKs, global extensions and shims are kept |
 | `upgrade [version]` | Upgrade jpm itself to the latest release (`--check` only reports, `--canary` also takes prereleases, such as `0.13.0-beta.0`) |
 | `version` | Show jpm's version (also `--version`), and whether a newer one is out |
 | `help` | Show this list of commands (also -h, --help) |
