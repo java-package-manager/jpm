@@ -3,15 +3,19 @@ package dev.jpm.e2e;
 import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Runs the {@code jpm} binary on the projects in {@code fixtures/} and compares everything it prints with
@@ -174,6 +178,44 @@ class EndToEndTest {
             s.jpm("start");
         }
         s.verify("git");
+    }
+
+    /**
+     * A Git dependency that targets an older Java and opens javac with "javacArgs" cannot be built with
+     * {@code --release}, so jpm builds it with a JDK of its target instead of the project's. Needs two JDKs
+     * from {@code JPM_TEST_JDKS}.
+     */
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
+    void gitDependencyThatOpensJavacBuildsWithItsTargetJdk(@TempDir Path tmp) {
+        List<Path> jdks = new ArrayList<>(JavaVersionsTest.jdks());
+        jdks.add(Path.of(System.getProperty("java.home")));
+        jdks.sort(Comparator.comparingInt(JavaVersionsTest::major));
+        Path newer = jdks.get(jdks.size() - 1);
+        Path older = jdks.stream().filter(h -> JavaVersionsTest.major(h) >= 9 && JavaVersionsTest.major(h) < JavaVersionsTest.major(newer))
+                .findFirst().orElse(null);
+        Assumptions.assumeTrue(older != null, "needs a JDK 9+ older than " + newer + " in JPM_TEST_JDKS");
+        int target = JavaVersionsTest.major(older);
+        Session s = new Session(tmp).env("JAVA_HOME", newer.toString());
+        Fs.mkdirs(s.home.resolve("jdks"));
+        Exec.Result link = Exec.capture(tmp, List.of("ln", "-s", older.toString(), s.home.resolve("jdks/older").toString()));
+        assertEquals(0, link.exit(), link.err());
+        Path lib = tmp.resolve("git/me/lib");
+        Fs.write(lib.resolve("src/lib/Lib.java"), "package lib; public class Lib { public static String v() {"
+                + " return com.sun.tools.javac.tree.JCTree.class.getSimpleName(); } }");
+        Fs.write(lib.resolve("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"1.0.0\", \"java\": \"" + target + "\","
+                + " \"javacArgs\": [\"--add-exports\", \"jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED\"] }");
+        git(lib, "init", "-q", "-b", "main");
+        git(lib, "add", "-A");
+        git(lib, "commit", "-qm", "1.0.0");
+        git(lib, "tag", "1.0.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("src/app/Main.java"),
+                "package app; public class Main { public static void main(String[] a) { System.out.println(lib.Lib.v()); } }");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \""
+                + JavaVersionsTest.major(newer) + "\", \"main\": \"app.Main\", \"runtime\": { \"github:me/lib\": \"1.0.0\" } }");
+        String build = s.jpm("build");
+        assertTrue(build.contains("Building github:me/lib 1.0.0") && !build.contains("error:"), build);
     }
 
     @Test

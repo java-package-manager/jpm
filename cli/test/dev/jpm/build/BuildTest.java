@@ -240,6 +240,13 @@ class BuildTest {
         assertEquals(null, Compiler.refusedWithRelease(List.of("-parameters")));
     }
 
+    @Test
+    void sourceDependenciesThatExportJdkModulesBuildWithTheirTargetJdk() {
+        assertEquals(JavaSpec.parse("21"), Builder.targetJdk(25, 21, EXPORT_JAVAC_TREE));
+        assertEquals(null, Builder.targetJdk(21, 21, EXPORT_JAVAC_TREE));
+        assertEquals(null, Builder.targetJdk(25, 21, List.of("-parameters")));
+    }
+
     private static void quietly(Runnable r) {
         java.io.PrintStream err = System.err;
         System.setErr(new java.io.PrintStream(java.io.OutputStream.nullOutputStream()));

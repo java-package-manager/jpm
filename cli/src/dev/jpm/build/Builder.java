@@ -506,6 +506,16 @@ public final class Builder {
         return Compiler.distinct(cp);
     }
 
+    /**
+     * The JDK to build a dependency from source with instead of the project's: one of its target version
+     * when it targets an older Java and its {@code "javacArgs"} have options javac refuses with
+     * {@code --release} (ADR 0002), else null. Its author cannot pick the JDK that consumers build it with.
+     */
+    static JavaSpec targetJdk(int projectJdk, int release, List<String> javacArgs) {
+        if (release >= projectJdk || Compiler.refusedWithRelease(javacArgs) == null) return null;
+        return JavaSpec.parse(Integer.toString(release));
+    }
+
     private static int release(Manifest m, Jdk jdk) {
         Integer t = m.targetMajor();
         int release = t == null ? jdk.major() : t;
@@ -909,6 +919,8 @@ public final class Builder {
             if (release > jdk.major()) {
                 throw new JpmException(p.id + " targets Java " + release + ", but this project builds with " + jdk.id());
             }
+            JavaSpec targetJdk = targetJdk(jdk.major(), release, mod.manifest().javacArgs);
+            if (targetJdk != null) jdk = Toolchain.require(targetJdk);
 
             Hash kh = new Hash().add(p.id).add(p.commit).add(patchHash).add(jdk.id()).add(Integer.toString(release));
             for (Defines.Value v : defs) kh.add(v.name() + "=" + v.value());
