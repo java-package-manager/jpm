@@ -154,6 +154,8 @@ jobs:
           cd "$RUNNER_TEMP/smoke"
           "$JPM" start --trace
           test -f src/assets/META-INF/native-image/smoke/smoke/reflect-config.json
+          "$JPM" test --trace
+          ! grep -q 'org.junit' src/assets/META-INF/native-image/smoke/smoke/reflect-config.json
           "$JPM" build --native
           ./dist/smoke${{ matrix.exe }} | tee native.txt
           grep -q "Hello from smoke! ko App.Pair(a=x, b=y)" native.txt

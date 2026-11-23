@@ -706,7 +706,9 @@ it; `JPM_NO_SHIMS=1` skips the shims) and `jvm setup --remove` takes the shims a
 project's Java version (any installed GraalVM-based JDK, else GraalVM Community, installed) and writes
 `dist/<name>`. Extra flags go in `"nativeArgs"`. `jpm start --trace` runs the app under the tracing
 agent and merges what it records into `src/assets/META-INF/native-image/<group>/<name>/`, which ships in the
-jar and is picked up by native-image automatically.
+jar and is picked up by native-image automatically. `jpm test --trace` does the same for a test run, so the
+tests' coverage of reflection, resources and proxies goes into the configuration too; what JUnit itself does
+and what is done to the test classes is filtered out, since the configuration is for the application.
 
 ## Environment variables
 

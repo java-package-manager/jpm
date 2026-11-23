@@ -79,8 +79,7 @@ final class StartCommand extends Command {
     }
 
     static Path traceDir(Project.Module m) {
-        String group = m.manifest.group != null ? m.manifest.group : m.name();
-        return m.assetsDir().resolve("META-INF").resolve("native-image").resolve(group).resolve(m.name());
+        return Builder.nativeConfigDir(m);
     }
 
     List<String> javaCommand(Builder b, Project.Module m, String entry, List<String> appArgs, boolean trace) {

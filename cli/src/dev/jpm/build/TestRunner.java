@@ -29,7 +29,28 @@ public final class TestRunner {
      * @param tags         JUnit tag expressions a test must match, all tests when empty
      * @param excludedTags JUnit tag expressions of tests to leave out
      */
-    public record Selection(List<String> filters, List<String> tags, List<String> excludedTags) {}
+    public record Selection(List<String> filters, List<String> tags, List<String> excludedTags, boolean trace) {
+        /** A selection that does not trace. */
+        public Selection(List<String> filters, List<String> tags, List<String> excludedTags) {
+            this(filters, tags, excludedTags, false);
+        }
+    }
+
+    /**
+     * The tracing agent's filter for a module's tests: what the test framework does and what is done to the test classes
+     * stays out of the module's configuration, which is for the application.
+     */
+    static String traceFilter(Path testClasses) {
+        List<String> rules = new ArrayList<>(List.of("{ \"includeClasses\": \"**\" }"));
+        for (String pkg : List.of("org.junit.**", "org.opentest4j.**", "org.apiguardian.**", "org.jspecify.**", "jdk.internal.**")) {
+            rules.add("{ \"excludeClasses\": \"" + pkg + "\" }");
+        }
+        for (Path f : dev.jpm.util.Fs.files(testClasses, ".class")) {
+            String name = dev.jpm.util.Fs.slash(testClasses.relativize(f)).replace('/', '.');
+            rules.add("{ \"excludeClasses\": \"" + name.substring(0, name.length() - ".class".length()) + "\" }");
+        }
+        return "{\n  \"rules\": [\n    " + String.join(",\n    ", rules) + "\n  ]\n}\n";
+    }
 
     /** Runs a module's tests. Returns the exit code (0 when no tests exist). */
     public static int run(Builder b, Project.Module m, Selection selection) {
@@ -54,9 +75,18 @@ public final class TestRunner {
                 DepKey.maven("org.junit.platform", "junit-platform-console"), platform)), null, dev.jpm.resolve.Graph.Walk.RUNTIME);
         List<Path> full = new ArrayList<>(launcher);
         full.addAll(cp);
-        Jdk jdk = b.jdk(m.manifest);
+        Jdk jdk = selection.trace() ? b.graalvm(m.manifest) : b.jdk(m.manifest);
         List<String> cmd = new ArrayList<>();
         cmd.add(jdk.java());
+        if (selection.trace()) {
+            Path dir = Builder.nativeConfigDir(m);
+            boolean earlier = java.nio.file.Files.exists(dir.resolve("reflect-config.json")) || java.nio.file.Files.exists(dir.resolve("reachability-metadata.json"));
+            dev.jpm.util.Fs.mkdirs(dir);
+            Path filter = b.project.dir.resolve(".cache").resolve("trace").resolve(m.name() + "-test-filter.json");
+            dev.jpm.util.Fs.write(filter, traceFilter(Builder.testClassesDir(m)));
+            cmd.add("-agentlib:native-image-agent=config-" + (earlier ? "merge" : "output") + "-dir=" + dir
+                    + ",caller-filter-file=" + filter + ",access-filter-file=" + filter);
+        }
         if (m.manifest.dependencies.stream().anyMatch(d -> d.key().isGradle())) cmd.addAll(GRADLE_JVM_ARGS);
         cmd.addAll(m.manifest.testJvmArgs);
         cmd.addAll(extraJvmArgs(System.getenv("JPM_TEST_JVM_ARGS")));

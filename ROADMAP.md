@@ -339,8 +339,9 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
       Scala sources.
 - [ ] Kotlin: compile a module's Kotlin incrementally (per file) instead of as a whole; Kotlin
       Multiplatform builds with targets other than the JVM.
-- [ ] Run the GraalVM tracing agent during tests (open question); today `start --trace` records what one
-      run of the app does.
+- [x] Run the GraalVM tracing agent during tests (open question); today `start --trace` records what one
+      run of the app does. Decided: opt in with `jpm test --trace`, merged into the same configuration,
+      with the test framework and the test classes filtered out.
 - [ ] Hot reload in the running JVM (JetBrains Runtime or similar; open question); today `jpm dev`
       restarts the app.
 

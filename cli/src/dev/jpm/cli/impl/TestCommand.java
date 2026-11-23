@@ -34,13 +34,14 @@ final class TestCommand extends Command {
 
     @Override
     List<String> flags() {
-        return List.of("--frozen", "--module", "--tag", "--exclude-tag", "--filter", "--reports", "--watch");
+        return List.of("--frozen", "--module", "--tag", "--exclude-tag", "--filter", "--reports", "--watch", "--trace");
     }
 
     @Override
     int run(List<String> args) {
         boolean frozen = flag(args, "--frozen");
         boolean watch = flag(args, "--watch");
+        boolean trace = flag(args, "--trace");
         String module = option(args, "--module");
         List<String> tags = new ArrayList<>();
         for (String t; (t = option(args, "--tag")) != null; ) tags.add(t);
@@ -50,7 +51,8 @@ final class TestCommand extends Command {
         String reports = option(args, "--reports");
         noMoreFlags(args);
         if (watch && frozen) throw new JpmException("--watch and --frozen do not go together: --frozen is for CI", 2);
-        TestRunner.Selection selection = new TestRunner.Selection(args, tags, excludedTags);
+        if (watch && trace) throw new JpmException("--watch and --trace do not go together: trace one run", 2);
+        TestRunner.Selection selection = new TestRunner.Selection(args, tags, excludedTags, trace);
         if (!watch) return once(frozen, module, filters, reports, selection);
         String snapshot = null;
         while (true) {
@@ -87,6 +89,10 @@ final class TestCommand extends Command {
             Path dir = reports == null ? null : mods.size() == 1 ? cwd.resolve(reports) : cwd.resolve(reports).resolve(m.name());
             int code = TestRunner.run(mb, m, selection, dir);
             if (code == TestRunner.NO_MATCH) continue;
+            if (selection.trace()) {
+                Log.step("Traced", m.name() + ": what the tests use merged into " + m.dir.relativize(dev.jpm.build.Builder.nativeConfigDir(m))
+                        + "; `jpm build --native` uses it");
+            }
             matched = true;
             if (code != 0) worst = code;
             else Scripts.hooks(mb, m, m.manifest, "post", "test", null, Env.Mode.DEVELOPMENT);

@@ -224,6 +224,12 @@ public final class Builder {
         return m.cacheDir().resolve("classes");
     }
 
+    /** Where the native-image tracing agent writes a module's configuration, which native builds read: its resources' META-INF/native-image/<group>/<name>. */
+    public static Path nativeConfigDir(Project.Module m) {
+        String group = m.manifest.group != null ? m.manifest.group : m.name();
+        return m.assetsDir().resolve("META-INF").resolve("native-image").resolve(group).resolve(m.name());
+    }
+
     /** Where a module's compiled tests go. */
     public static Path testClassesDir(Project.Module m) {
         return m.cacheDir().resolve("test-classes");
