@@ -20,9 +20,12 @@ jobs:
     name: version pull request
     runs-on: ubuntu-latest
     steps:
+      # the same token for git: changeset-action pushes the version branch with the credentials checkout
+      # stores, and a push made with github.token starts no workflows either
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ secrets.CHANGESET_TOKEN || github.token }}
       - uses: java-package-manager/setup-jpm@v1
       - uses: java-package-manager/changeset-action@v1
         with:
