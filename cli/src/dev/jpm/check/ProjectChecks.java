@@ -21,11 +21,16 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** jpm's own checks of a project, each returning what it found. They never throw for what they check. */
+/**
+ * jpm's own checks of a project, each returning what it found. They never throw for what they check.
+ */
 public final class ProjectChecks {
-    private ProjectChecks() {}
+    private ProjectChecks() {
+    }
 
-    /** Every field that names a file or folder names one that exists: sources, resources, patches, script and hook files. */
+    /**
+     * Every field that names a file or folder names one that exists: sources, resources, patches, script and hook files.
+     */
     public static List<Problem> paths(Project p) {
         List<Problem> out = new ArrayList<>();
         for (Project.Module m : p.modules) {
@@ -139,7 +144,7 @@ public final class ProjectChecks {
                 if (provided.stream().noneMatch(refs::contains)) {
                     out.add(Problem.warning("unused-dependencies", m.name() + " does not use " + d.key() + " (" + d.scope().key + ")",
                             m.manifest.file, d.line()).withHint("remove it with `jpm remove " + d.key() + "`, or make it \"runtimeOnly\" if it is"
-                            + " only loaded at run time"));
+                                    + " only loaded at run time"));
                 }
             }
         } catch (IOException | JpmException e) {
@@ -153,7 +158,9 @@ public final class ProjectChecks {
         return sib == null ? List.of() : List.of(Builder.classesDir(sib));
     }
 
-    /** Classes that two entries of the module's runtime classpath both have, so which one loads depends on the order. */
+    /**
+     * Classes that two entries of the module's runtime classpath both have, so which one loads depends on the order.
+     */
     public static List<Problem> duplicateClasses(Builder b, Project.Module m) {
         List<Problem> out = new ArrayList<>();
         try {
@@ -187,7 +194,9 @@ public final class ProjectChecks {
             Pattern.DOTALL);
     private static final Pattern FAILURE = Pattern.compile("<(failure|error)(?:\\s+message=\"([^\"]*)\")?[^>]*>(.*?)</\\1>", Pattern.DOTALL);
 
-    /** The failed tests in a JUnit XML report folder, each at its test class's source line when the stack trace names it. */
+    /**
+     * The failed tests in a JUnit XML report folder, each at its test class's source line when the stack trace names it.
+     */
     public static List<Problem> testFailures(Path reports, Project.Module m) {
         List<Problem> out = new ArrayList<>();
         if (!Files.isDirectory(reports)) return out;
@@ -227,7 +236,9 @@ public final class ProjectChecks {
         return s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&#10;", "\n").replace("&amp;", "&");
     }
 
-    /** The 1-based line of a field in a manifest ({@code "patches", "<dep>"} for a member), or null when it has none. */
+    /**
+     * The 1-based line of a field in a manifest ({@code "patches", "<dep>"} for a member), or null when it has none.
+     */
     static Integer line(Manifest mf, String... keys) {
         Jsonc.Node n = mf.root;
         for (String k : keys) {

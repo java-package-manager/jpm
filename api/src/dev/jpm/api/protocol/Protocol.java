@@ -5,18 +5,29 @@ package dev.jpm.api.protocol;
  * adds methods, optional params, result fields or notifications, or fixes bugs.
  */
 public final class Protocol {
-    private Protocol() {}
+    private Protocol() {
+    }
 
-    /** The protocol version of this jpm and of this client jar. */
+    /**
+     * The protocol version of this jpm and of this client jar.
+     */
     public static final String VERSION = "1.1";
 
-    /** JSON-RPC error code: {@code initialize} with another major version. */
+    /**
+     * JSON-RPC error code: {@code initialize} with another major version.
+     */
     public static final int PROTOCOL_MISMATCH = -32001;
-    /** JSON-RPC error code: a request before {@code initialize}. */
+    /**
+     * JSON-RPC error code: a request before {@code initialize}.
+     */
     public static final int NOT_INITIALIZED = -32002;
-    /** JSON-RPC error code: what jpm reports as an error on the command line; {@code data} is a problem. */
+    /**
+     * JSON-RPC error code: what jpm reports as an error on the command line; {@code data} is a problem.
+     */
     public static final int PROJECT_ERROR = -32003;
-    /** JSON-RPC error code: the client cancelled the request. */
+    /**
+     * JSON-RPC error code: the client cancelled the request.
+     */
     public static final int CANCELLED = -32800;
 
     /**

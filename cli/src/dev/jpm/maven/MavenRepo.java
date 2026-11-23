@@ -1,8 +1,8 @@
 package dev.jpm.maven;
 
+import dev.jpm.log.Log;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 
 import java.io.IOException;
@@ -21,7 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Downloads from Maven repositories into the shared cache {@code ~/.jpm/repository}. */
+/**
+ * Downloads from Maven repositories into the shared cache {@code ~/.jpm/repository}.
+ */
 public final class MavenRepo {
     public static final String CENTRAL = "https://repo.maven.apache.org/maven2/";
     private static final Duration METADATA_TTL = Duration.ofHours(24);
@@ -33,12 +35,16 @@ public final class MavenRepo {
     private final HttpClient http;
     private final ConcurrentHashMap<String, List<Version>> versionsMemo = new ConcurrentHashMap<>();
 
-    /** Maven Central (or {@code JPM_MAVEN_CENTRAL}), then the extra repositories. */
+    /**
+     * Maven Central (or {@code JPM_MAVEN_CENTRAL}), then the extra repositories.
+     */
     public MavenRepo(List<String> extra) {
         this(withCentral(extra), true);
     }
 
-    /** Exactly these repositories, without Maven Central: for tests. */
+    /**
+     * Exactly these repositories, without Maven Central: for tests.
+     */
     MavenRepo(List<String> repositories, boolean exact) {
         List<String> r = new ArrayList<>();
         for (String e : repositories) r.add(slash(e));
@@ -74,36 +80,48 @@ public final class MavenRepo {
         return s.endsWith("/") ? s : s + "/";
     }
 
-    /** Whether to fetch {@code maven-metadata.xml} again even when the cached copy is fresh. */
+    /**
+     * Whether to fetch {@code maven-metadata.xml} again even when the cached copy is fresh.
+     */
     public void setRefreshMetadata(boolean b) {
         this.refreshMetadata = b;
     }
 
-    /** The download cache, {@code ~/.jpm/repository}. */
+    /**
+     * The download cache, {@code ~/.jpm/repository}.
+     */
     public Path cacheDir() {
         return cache;
     }
 
-    /** The path of a file in Maven's repository layout. */
+    /**
+     * The path of a file in Maven's repository layout.
+     */
     public static String path(String group, String artifact, String version, String classifier, String ext) {
         return group.replace('.', '/') + "/" + artifact + "/" + version + "/" + artifact + "-" + version
                 + (classifier == null || classifier.isEmpty() ? "" : "-" + classifier) + "." + ext;
     }
 
-    /** Where a file is in the cache, whether it is there or not. */
+    /**
+     * Where a file is in the cache, whether it is there or not.
+     */
     public Path local(String group, String artifact, String version, String classifier, String ext) {
         return cache.resolve(path(group, artifact, version, classifier, ext));
     }
 
     private static final java.util.regex.Pattern TIMESTAMPED = java.util.regex.Pattern.compile("(.+)-\\d{8}\\.\\d{6}-\\d+");
 
-    /** 0.1-SNAPSHOT for the timestamped snapshot 0.1-20240720.200737-2; null for other versions. */
+    /**
+     * 0.1-SNAPSHOT for the timestamped snapshot 0.1-20240720.200737-2; null for other versions.
+     */
     static String snapshotBase(String version) {
         java.util.regex.Matcher m = TIMESTAMPED.matcher(version);
         return m.matches() ? m.group(1) + "-SNAPSHOT" : null;
     }
 
-    /** Why the last {@link #fetch} of a file found nothing although a repository could not be asked, by cache path. */
+    /**
+     * Why the last {@link #fetch} of a file found nothing although a repository could not be asked, by cache path.
+     */
     private final ConcurrentHashMap<Path, String> failures = new ConcurrentHashMap<>();
 
     /**
@@ -153,7 +171,9 @@ public final class MavenRepo {
         return null;
     }
 
-    /** The checksums a repository may publish next to a file, strongest first (ADR 0017). */
+    /**
+     * The checksums a repository may publish next to a file, strongest first (ADR 0017).
+     */
     private static final List<String> CHECKSUMS = List.of("sha512", "sha256", "sha1");
 
     /**
@@ -183,7 +203,7 @@ public final class MavenRepo {
                 }
                 throw new JpmException("Checksum mismatch for " + url + ":\n  " + algorithm + " published: " + published
                         + "\n  downloaded:       " + actual).withHint("the download or the repository is corrupt or was tampered with;"
-                        + " nothing was kept. Try again, and report it to the repository if it stays");
+                                + " nothing was kept. Try again, and report it to the repository if it stays");
             }
             Log.debug("verified " + url + " (" + algorithm + ")");
             return local;
@@ -221,7 +241,9 @@ public final class MavenRepo {
         return null;
     }
 
-    /** For tests: {@link #snapshotVersion(String, String, String, String)}. */
+    /**
+     * For tests: {@link #snapshotVersion(String, String, String, String)}.
+     */
     public static String snapshotVersionForTests(String metadata, String version, String classifier, String ext) {
         return snapshotVersion(metadata, version, classifier, ext);
     }
@@ -231,7 +253,9 @@ public final class MavenRepo {
         return m.find() ? m.group(1) : null;
     }
 
-    /** A file in the cache, downloaded first if needed; fails when no repository has it (ADR 0005). */
+    /**
+     * A file in the cache, downloaded first if needed; fails when no repository has it (ADR 0005).
+     */
     public Path require(String group, String artifact, String version, String classifier, String ext) {
         Path p = fetch(group, artifact, version, classifier, ext);
         if (p == null) {
@@ -249,7 +273,9 @@ public final class MavenRepo {
         return p;
     }
 
-    /** All published versions of a module, from maven-metadata.xml. */
+    /**
+     * All published versions of a module, from maven-metadata.xml.
+     */
     public List<Version> versions(String group, String artifact) {
         return versionsMemo.computeIfAbsent(group + ":" + artifact, k -> loadVersions(group, artifact));
     }

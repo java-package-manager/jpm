@@ -1,11 +1,11 @@
 package dev.jpm.toolchain;
 
 import dev.jpm.build.Jars;
+import dev.jpm.log.Log;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Http;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 import dev.jpm.version.Version;
 
 import java.io.IOException;
@@ -21,14 +21,19 @@ import java.util.stream.Stream;
  * outside that folder is changed (no PATH or JAVA_HOME edits).
  */
 public final class Toolchain {
-    private Toolchain() {}
+    private Toolchain() {
+    }
 
-    /** True unless automatic installation is switched off with {@code JPM_NO_INSTALL}. */
+    /**
+     * True unless automatic installation is switched off with {@code JPM_NO_INSTALL}.
+     */
     public static boolean autoInstall() {
         return System.getenv("JPM_NO_INSTALL") == null && !Fs.offline();
     }
 
-    /** The best installed JDK for a spec, or null. JAVA_HOME wins among equals; otherwise the newest. */
+    /**
+     * The best installed JDK for a spec, or null. JAVA_HOME wins among equals; otherwise the newest.
+     */
     public static Jdk find(JavaSpec spec) {
         List<Jdk> all = Jdk.discover();
         List<Jdk> matching = all.stream().filter(spec::matches).toList();
@@ -49,7 +54,9 @@ public final class Toolchain {
         }
     }
 
-    /** Finds a JDK for the spec, installing it if needed and allowed. */
+    /**
+     * Finds a JDK for the spec, installing it if needed and allowed.
+     */
     public static Jdk require(JavaSpec spec) {
         Jdk j = find(spec);
         if (j != null) return j;
@@ -70,7 +77,9 @@ public final class Toolchain {
         return String.join(", ", all.stream().map(Jdk::id).toList());
     }
 
-    /** Downloads and installs the newest JDK that fits the spec into {@code ~/.jpm/jdks}. */
+    /**
+     * Downloads and installs the newest JDK that fits the spec into {@code ~/.jpm/jdks}.
+     */
     public static Jdk install(JavaSpec spec) {
         Foojay.Package pkg = Foojay.find(spec);
         Path root = Jdk.managedRoot();
@@ -148,7 +157,7 @@ public final class Toolchain {
             if (!Jdk.windows()) {
                 try (Stream<Path> s = Files.walk(dir)) {
                     s.filter(p -> p.getParent() != null && p.getParent().getFileName() != null
-                                    && (p.getParent().getFileName().toString().equals("bin") || p.toString().contains("/lib/")))
+                            && (p.getParent().getFileName().toString().equals("bin") || p.toString().contains("/lib/")))
                             .filter(Files::isRegularFile)
                             .forEach(p -> p.toFile().setExecutable(true));
                 } catch (IOException e) {
@@ -162,7 +171,9 @@ public final class Toolchain {
         if (!r.ok()) throw new JpmException("Could not extract " + name + ":\n" + r.err().strip());
     }
 
-    /** The single top-level directory of an extracted archive (or the directory itself). */
+    /**
+     * The single top-level directory of an extracted archive (or the directory itself).
+     */
     private static Path topDirectory(Path dir) {
         try (Stream<Path> s = Files.list(dir)) {
             List<Path> entries = s.filter(p -> !p.getFileName().toString().startsWith("._")).toList();
@@ -173,7 +184,9 @@ public final class Toolchain {
         }
     }
 
-    /** Removes installed JDKs matching the spec. Only JDKs jpm installed can be removed. */
+    /**
+     * Removes installed JDKs matching the spec. Only JDKs jpm installed can be removed.
+     */
     public static List<Jdk> remove(JavaSpec spec) {
         List<Jdk> removed = new ArrayList<>();
         for (Jdk j : Jdk.discover()) {

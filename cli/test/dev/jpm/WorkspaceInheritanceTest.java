@@ -11,7 +11,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-/** Workspace modules take java, target, group, license, url, layout and flags from the root. */
+/**
+ * Workspace modules take java, target, group, license, url, layout and flags from the root.
+ */
 class WorkspaceInheritanceTest {
     @Test
     void modulesInheritFromTheRoot(@TempDir Path dir) {

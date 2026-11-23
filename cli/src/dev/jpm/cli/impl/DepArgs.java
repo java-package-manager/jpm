@@ -1,16 +1,17 @@
 package dev.jpm.cli.impl;
 
-import dev.jpm.version.Tags;
 import dev.jpm.DepKey;
 import dev.jpm.git.GitRepo;
 import dev.jpm.maven.MavenRepo;
+import dev.jpm.version.Tags;
 import dev.jpm.version.Version;
 
 import java.util.List;
 import java.util.Map;
 
 final class DepArgs {
-    private DepArgs() {}
+    private DepArgs() {
+    }
 
     record DepArg(DepKey key, String spec) {}
 

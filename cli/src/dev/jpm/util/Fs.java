@@ -13,11 +13,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-/** File helpers that throw unchecked exceptions. */
+/**
+ * File helpers that throw unchecked exceptions.
+ */
 public final class Fs {
-    private Fs() {}
+    private Fs() {
+    }
 
-    /** Global JPM home: {@code $JPM_HOME} or {@code ~/.jpm}. */
+    /**
+     * Global JPM home: {@code $JPM_HOME} or {@code ~/.jpm}.
+     */
     public static Path home() {
         String prop = System.getProperty("jpm.home");
         if (prop != null && !prop.isBlank()) return Path.of(prop).toAbsolutePath().normalize();
@@ -29,12 +34,16 @@ public final class Fs {
         return Path.of(base, ".jpm").toAbsolutePath().normalize();
     }
 
-    /** True with --offline or JPM_OFFLINE: use only what is cached. */
+    /**
+     * True with --offline or JPM_OFFLINE: use only what is cached.
+     */
     public static boolean offline() {
         return System.getenv("JPM_OFFLINE") != null || Boolean.getBoolean("jpm.offline");
     }
 
-    /** A file's text, as UTF-8. */
+    /**
+     * A file's text, as UTF-8.
+     */
     public static String read(Path p) {
         String name = p.getFileName() == null ? "" : p.getFileName().toString();
         if (name.endsWith(".java") || name.endsWith(".kt")) {
@@ -47,7 +56,9 @@ public final class Fs {
         }
     }
 
-    /** Writes text as UTF-8, creating folders, through a temporary file so readers never see half a file. */
+    /**
+     * Writes text as UTF-8, creating folders, through a temporary file so readers never see half a file.
+     */
     public static void write(Path p, String content) {
         try {
             if (p.getParent() != null) Files.createDirectories(p.getParent());
@@ -59,7 +70,9 @@ public final class Fs {
         }
     }
 
-    /** Writes only if the content differs, keeping timestamps stable. */
+    /**
+     * Writes only if the content differs, keeping timestamps stable.
+     */
     public static boolean writeIfChanged(Path p, String content) {
         try {
             if (Files.exists(p) && java.util.Arrays.equals(Files.readAllBytes(p), content.getBytes(StandardCharsets.UTF_8))) return false;
@@ -70,7 +83,9 @@ public final class Fs {
         return true;
     }
 
-    /** Creates a folder and its parents. */
+    /**
+     * Creates a folder and its parents.
+     */
     public static void mkdirs(Path p) {
         try {
             Files.createDirectories(p);
@@ -112,7 +127,9 @@ public final class Fs {
         }
     }
 
-    /** Copies a folder with everything in it. */
+    /**
+     * Copies a folder with everything in it.
+     */
     public static void copyTree(Path from, Path to) {
         try (Stream<Path> s = Files.walk(from)) {
             for (Path p : (Iterable<Path>) s::iterator) {
@@ -130,7 +147,9 @@ public final class Fs {
         }
     }
 
-    /** All regular files under root with the given suffix, sorted. Missing root gives an empty list. */
+    /**
+     * All regular files under root with the given suffix, sorted. Missing root gives an empty list.
+     */
     public static List<Path> files(Path root, String suffix) {
         List<Path> out = new ArrayList<>();
         if (!Files.isDirectory(root)) return out;
@@ -145,7 +164,9 @@ public final class Fs {
         return out;
     }
 
-    /** Path with forward slashes, for stable keys across platforms. */
+    /**
+     * Path with forward slashes, for stable keys across platforms.
+     */
     public static String slash(Path p) {
         return p.toString().replace('\\', '/');
     }

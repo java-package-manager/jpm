@@ -2,9 +2,12 @@ package dev.jpm.version;
 
 import java.util.Collection;
 
-/** Versions named by Git tags (ADR 0007). */
+/**
+ * Versions named by Git tags (ADR 0007).
+ */
 public final class Tags {
-    private Tags() {}
+    private Tags() {
+    }
 
     /**
      * The version a tag names: {@code 1.2.0} or {@code v1.2.0}, or {@code <module>/1.2.0} when the repository

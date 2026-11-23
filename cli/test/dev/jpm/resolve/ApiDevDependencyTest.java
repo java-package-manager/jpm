@@ -1,10 +1,10 @@
 package dev.jpm.resolve;
 
-import dev.jpm.testing.TestRepo;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.build.Builder;
 import dev.jpm.maven.MavenRepo;
+import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** "api": true on a dev dependency: consumers compile against it (Gradle's compileOnlyApi), nothing runs with it. */
+/**
+ * "api": true on a dev dependency: consumers compile against it (Gradle's compileOnlyApi), nothing runs with it.
+ */
 class ApiDevDependencyTest {
     private static void publish(Path repo, String group, String artifact, String version, String cls) {
         new TestRepo(repo).artifact(group + ":" + artifact + ":" + version).entry(cls, "x").publish();

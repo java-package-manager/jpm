@@ -5,7 +5,6 @@ import dev.jpm.build.Builder;
 import dev.jpm.build.Env;
 import dev.jpm.build.Scripts;
 import dev.jpm.log.Log;
-
 import dev.jpm.util.JpmException;
 
 import java.nio.file.Path;
@@ -99,7 +98,7 @@ final class RunCommand extends Command {
             if (code != 0) {
                 Log.error(name + " failed in " + m.name() + " (exit " + code + ")"
                         + (with.indexOf(m) + 1 < with.size() ? "; not run in " + String.join(", ", with.subList(with.indexOf(m) + 1, with.size())
-                        .stream().map(Project.Module::name).toList()) : ""));
+                                .stream().map(Project.Module::name).toList()) : ""));
                 return code;
             }
         }

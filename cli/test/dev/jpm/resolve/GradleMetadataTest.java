@@ -101,7 +101,9 @@ class GradleMetadataTest {
         assertEquals(null, g.get("test.kotlin:kotlin-test-junit5"));
     }
 
-    /** The other way round: a dev dependency's tree goes on the compile classpath with its compile-only parts. */
+    /**
+     * The other way round: a dev dependency's tree goes on the compile classpath with its compile-only parts.
+     */
     @Test
     void devDependenciesKeepTheirCompileOnlyApiDependencies(@TempDir Path tmp) throws IOException {
         System.setProperty("jpm.home", tmp.resolve("home").toString());
@@ -140,7 +142,9 @@ class GradleMetadataTest {
         assertFalse(runtimeTool.contains("annotations-26.1.0.jar"));
     }
 
-    /** jpm-publish writes "api" dev dependencies as provided in the POM, and compile-only in the .module. */
+    /**
+     * jpm-publish writes "api" dev dependencies as provided in the POM, and compile-only in the .module.
+     */
     @Test
     void providedDependenciesTheModuleListsForCompilingArePassedOn(@TempDir Path tmp) throws IOException {
         System.setProperty("jpm.home", tmp.resolve("home").toString());

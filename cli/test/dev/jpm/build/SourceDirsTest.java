@@ -18,7 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** "sources" and "resources": several folders per module, such as committed generated sources beside the rest. */
+/**
+ * "sources" and "resources": several folders per module, such as committed generated sources beside the rest.
+ */
 class SourceDirsTest {
     @Test
     void compilesEverySourceFolder(@TempDir Path dir) throws Exception {

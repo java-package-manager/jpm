@@ -1,8 +1,8 @@
 package dev.jpm.util;
 
+import dev.jpm.log.Log;
 import dev.jpm.util.impl.NetworkSettings;
 
-import dev.jpm.log.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,11 +23,14 @@ import java.util.HexFormat;
  * {@link NetworkSettings}, plain GETs and downloads with progress.
  */
 public final class Http {
-    private Http() {}
+    private Http() {
+    }
 
     private static HttpClient client;
 
-    /** The shared client, with a 20 second connect timeout. */
+    /**
+     * The shared client, with a 20 second connect timeout.
+     */
     public static synchronized HttpClient client() {
         if (client == null) {
             client = client(Duration.ofSeconds(20));
@@ -35,14 +38,18 @@ public final class Http {
         return client;
     }
 
-    /** A new client with another connect timeout, for requests that must give up quickly. */
+    /**
+     * A new client with another connect timeout, for requests that must give up quickly.
+     */
     public static HttpClient client(Duration connectTimeout) {
         return NetworkSettings.client(connectTimeout).build();
     }
 
     private static HttpClient noRedirects;
 
-    /** The shared client that does not follow redirects, for requests that carry credentials and follow them by hand. */
+    /**
+     * The shared client that does not follow redirects, for requests that carry credentials and follow them by hand.
+     */
     public static synchronized HttpClient clientWithoutRedirects() {
         if (noRedirects == null) {
             noRedirects = NetworkSettings.client(Duration.ofSeconds(20)).followRedirects(HttpClient.Redirect.NEVER).build();
@@ -54,7 +61,9 @@ public final class Http {
         return HttpRequest.newBuilder(URI.create(url)).timeout(timeout).header("User-Agent", "jpm").GET().build();
     }
 
-    /** The body of a POST of JSON; fails on any status but 200. */
+    /**
+     * The body of a POST of JSON; fails on any status but 200.
+     */
     public static String postJson(String url, String json) {
         if (Fs.offline()) throw new JpmException("Offline: cannot reach " + url);
         Log.debug("POST " + url);
@@ -72,7 +81,9 @@ public final class Http {
         }
     }
 
-    /** The body of a GET request; fails on any status but 200. */
+    /**
+     * The body of a GET request; fails on any status but 200.
+     */
     public static String getString(String url) {
         if (Fs.offline()) throw new JpmException("Offline: cannot fetch " + url);
         Log.debug("GET " + url);

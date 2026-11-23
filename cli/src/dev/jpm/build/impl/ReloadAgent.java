@@ -1,7 +1,8 @@
 package dev.jpm.build.impl;
 
 public final class ReloadAgent {
-    private ReloadAgent() {}
+    private ReloadAgent() {
+    }
 
     public static final String CLASS = "dev.jpm.reload.Agent";
 

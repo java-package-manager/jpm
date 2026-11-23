@@ -11,7 +11,8 @@ import java.nio.charset.StandardCharsets;
  * many bytes of UTF-8 JSON.
  */
 public final class Frames {
-    private Frames() {}
+    private Frames() {
+    }
 
     /**
      * Reads one message.

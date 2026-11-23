@@ -1,8 +1,8 @@
 package dev.jpm.resolve;
 
-import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
+import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -15,7 +15,9 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** Resolves a project that uses every version syntax against a local Maven repository. */
+/**
+ * Resolves a project that uses every version syntax against a local Maven repository.
+ */
 class VersionSyntaxResolveTest {
     private static void publish(Path repo, String artifact, List<String> versions) {
         for (String v : versions) new TestRepo(repo).artifact("org.example:" + artifact + ":" + v).publish();

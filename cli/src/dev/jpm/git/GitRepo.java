@@ -1,10 +1,10 @@
 package dev.jpm.git;
 
 import dev.jpm.DepKey;
+import dev.jpm.log.Log;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,18 +29,24 @@ public final class GitRepo {
         this.mirror = Fs.home().resolve("git").resolve(repoKey.host()).resolve(repoKey.group()).resolve(repoKey.artifact() + ".git");
     }
 
-    /** The repository of a Git dependency, one per repository for the whole run. */
+    /**
+     * The repository of a Git dependency, one per repository for the whole run.
+     */
     public static synchronized GitRepo of(DepKey key) {
         DepKey rk = key.repoKey();
         return OPEN.computeIfAbsent(rk.toString(), k -> new GitRepo(rk));
     }
 
-    /** The repository's key, without a module. */
+    /**
+     * The repository's key, without a module.
+     */
     public DepKey key() {
         return key;
     }
 
-    /** Fails with a clear message when {@code git} is not on PATH. */
+    /**
+     * Fails with a clear message when {@code git} is not on PATH.
+     */
     public static void requireGit() {
         if (Exec.which("git") == null) {
             throw new JpmException("Git dependencies need the `git` command, which was not found on PATH");
@@ -79,7 +85,9 @@ public final class GitRepo {
         fetched = true;
     }
 
-    /** Ensures the mirror exists and contains the commit, fetching only if needed. */
+    /**
+     * Ensures the mirror exists and contains the commit, fetching only if needed.
+     */
     public void ensureCommit(String commit) {
         if (Files.isDirectory(mirror) && hasCommit(commit)) return;
         fetch();
@@ -90,7 +98,9 @@ public final class GitRepo {
         return Exec.capture(mirror, Exec.cmd("git", "cat-file", "-e", commit + "^{commit}")).ok();
     }
 
-    /** Tag name to commit hash (peeled). */
+    /**
+     * Tag name to commit hash (peeled).
+     */
     public Map<String, String> tags() {
         fetch();
         Exec.Result r = Exec.checked(mirror, Exec.cmd("git", "for-each-ref", "refs/tags",
@@ -104,7 +114,9 @@ public final class GitRepo {
         return out;
     }
 
-    /** The newest commit of a branch, after fetching. */
+    /**
+     * The newest commit of a branch, after fetching.
+     */
     public String branchHead(String branch) {
         fetch();
         Exec.Result r = Exec.capture(mirror, Exec.cmd("git", "rev-parse", "--verify", "refs/heads/" + branch + "^{commit}"));
@@ -112,33 +124,43 @@ public final class GitRepo {
         return r.out().trim();
     }
 
-    /** True if the remote has a branch with that name. */
+    /**
+     * True if the remote has a branch with that name.
+     */
     public boolean hasBranch(String branch) {
         fetch();
         return Exec.capture(mirror, Exec.cmd("git", "rev-parse", "--verify", "--quiet", "refs/heads/" + branch + "^{commit}")).ok();
     }
 
-    /** The remote's default branch. */
+    /**
+     * The remote's default branch.
+     */
     public String defaultBranch() {
         fetch();
         Exec.Result r = Exec.capture(mirror, Exec.cmd("git", "symbolic-ref", "--short", "HEAD"));
         return r.ok() ? r.out().trim() : "main";
     }
 
-    /** Full hash for a (possibly abbreviated) commit, or null. */
+    /**
+     * Full hash for a (possibly abbreviated) commit, or null.
+     */
     public String resolveCommit(String rev) {
         if (!Files.isDirectory(mirror) || !hasCommit(rev)) fetch();
         Exec.Result r = Exec.capture(mirror, Exec.cmd("git", "rev-parse", "--verify", rev + "^{commit}"));
         return r.ok() ? r.out().trim() : null;
     }
 
-    /** Reads a file at a commit, or null if absent. */
+    /**
+     * Reads a file at a commit, or null if absent.
+     */
     public String show(String commit, String path) {
         Exec.Result r = Exec.capture(mirror, Exec.cmd("git", "show", commit + ":" + path));
         return r.ok() ? r.out() : null;
     }
 
-    /** Checks out a commit into the shared source cache and returns the directory. */
+    /**
+     * Checks out a commit into the shared source cache and returns the directory.
+     */
     public Path checkout(String commit) {
         ensureCommit(commit);
         Path dir = Fs.home().resolve("git-src").resolve(key.host()).resolve(key.group()).resolve(key.artifact()).resolve(commit);

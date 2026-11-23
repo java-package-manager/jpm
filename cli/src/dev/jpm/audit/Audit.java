@@ -20,9 +20,12 @@ import java.util.Set;
  * packages by name and version, Git packages by commit.
  */
 public final class Audit {
-    private Audit() {}
+    private Audit() {
+    }
 
-    /** Where OSV is: {@code JPM_OSV_URL}, else https://api.osv.dev. */
+    /**
+     * Where OSV is: {@code JPM_OSV_URL}, else https://api.osv.dev.
+     */
     public static String osvUrl() {
         String v = System.getenv("JPM_OSV_URL");
         return v == null || v.isBlank() ? "https://api.osv.dev" : v;
@@ -43,7 +46,9 @@ public final class Audit {
     public record Finding(String pkg, String version, String id, List<String> aliases, String severity, String summary, String fixed,
                           List<String> path) {}
 
-    /** Every finding for the project's graph (its modules' packages, not tools), without the ignored ids. */
+    /**
+     * Every finding for the project's graph (its modules' packages, not tools), without the ignored ids.
+     */
     @SuppressWarnings("unchecked")
     public static List<Finding> run(Project project, Graph graph, String osvUrl, Set<String> ignore) {
         List<Graph.Pkg> pkgs = new ArrayList<>();

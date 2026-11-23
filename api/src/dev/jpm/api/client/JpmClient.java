@@ -329,7 +329,9 @@ public final class JpmClient implements AutoCloseable {
         pending.values().forEach(f -> f.completeExceptionally(new IOException("jpm api closed the connection")));
     }
 
-    /** Shuts jpm down ({@code shutdown}, then {@code exit}) and waits for it to end. */
+    /**
+     * Shuts jpm down ({@code shutdown}, then {@code exit}) and waits for it to end.
+     */
     @Override
     public void close() {
         try {

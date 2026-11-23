@@ -25,7 +25,8 @@ import java.util.Map;
  */
 @SuppressWarnings("unchecked")
 public final class Results {
-    private Results() {}
+    private Results() {
+    }
 
     /**
      * A {@code project/load} result.

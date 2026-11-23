@@ -1,10 +1,10 @@
 package dev.jpm.build;
 
-import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
+import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,7 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** jpm build --bundle for modules without a main: one flat jar with the runtime dependencies merged in. */
+/**
+ * jpm build --bundle for modules without a main: one flat jar with the runtime dependencies merged in.
+ */
 class FlatBundleTest {
     private static void zip(Path jar, Map<String, String> entries) throws IOException {
         Files.createDirectories(jar.getParent());

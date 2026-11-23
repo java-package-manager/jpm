@@ -24,13 +24,18 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** A rate limit, a server error or a refusal is not "not found": it is reported, never retried, never cached as missing. */
+/**
+ * A rate limit, a server error or a refusal is not "not found": it is reported, never retried, never cached as missing.
+ */
 class TransientFailureTest {
     private HttpServer server;
     private String base;
 
-    /** Statuses the server answers in turn for every request; 200 serves "content". */
+    /**
+     * Statuses the server answers in turn for every request; 200 serves "content".
+     */
     private final List<Integer> statuses = new ArrayList<>();
+
     private final AtomicInteger requests = new AtomicInteger();
 
     @BeforeEach

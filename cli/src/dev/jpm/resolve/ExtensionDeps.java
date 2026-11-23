@@ -2,10 +2,10 @@ package dev.jpm.resolve;
 
 import dev.jpm.DepKey;
 import dev.jpm.api.json.Jsonc;
+import dev.jpm.log.Log;
 import dev.jpm.util.Fs;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,17 +31,22 @@ import java.util.concurrent.ConcurrentHashMap;
  *   "dependencies": { "io.papermc.paper:paper-api": "26.3.build.257-stable", "group:artifact:classifier": "1.0" }
  * }
  * }</pre>
- *
+ * <p>
  * The jars go on the classpaths of the scope the dependency is declared in; the dependencies are Maven packages,
  * resolved and locked with the rest of the graph. The lockfile records the version and a SHA-256 of the jars, so
  * an extension that produced different bytes for the same version fails the install.
  */
 public final class ExtensionDeps {
-    private ExtensionDeps() {}
+    private ExtensionDeps() {
+    }
 
-    /** What an extension provides for an {@code ext:} dependency: the version, jars, optional sources and dependencies. */
+    /**
+     * What an extension provides for an {@code ext:} dependency: the version, jars, optional sources and dependencies.
+     */
     public record Result(String version, List<Path> jars, Path sources, Map<String, String> dependencies) {
-        /** One checksum for all the jars. */
+        /**
+         * One checksum for all the jars.
+         */
         public String sha256() {
             Hash h = new Hash();
             for (Path j : jars) h.add(Hash.sha256(j));
@@ -51,7 +56,9 @@ public final class ExtensionDeps {
 
     private static final Map<String, Result> MEMO = new ConcurrentHashMap<>();
 
-    /** {@code ~/.jpm/bin/jpm-<name>} (as {@code jpm add -g} installs it), else {@code jpm-<name>} on PATH; null if neither. */
+    /**
+     * {@code ~/.jpm/bin/jpm-<name>} (as {@code jpm add -g} installs it), else {@code jpm-<name>} on PATH; null if neither.
+     */
     public static Path executable(String name) {
         boolean win = System.getProperty("os.name").toLowerCase().contains("win");
         for (String ext : win ? new String[]{".cmd", ".exe", ".bat"} : new String[]{""}) {
@@ -61,7 +68,9 @@ public final class ExtensionDeps {
         return dev.jpm.util.Exec.which("jpm-" + name);
     }
 
-    /** What {@code key} is at {@code spec}: runs the extension once per key and spec in this process. */
+    /**
+     * What {@code key} is at {@code spec}: runs the extension once per key and spec in this process.
+     */
     public static Result resolve(DepKey key, String spec) {
         String memoKey = key + "@" + spec;
         Result cached = MEMO.get(memoKey);

@@ -1,7 +1,7 @@
 package dev.jpm.cli.impl;
 
-import dev.jpm.util.Fs;
 import dev.jpm.log.Log;
+import dev.jpm.util.Fs;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.Set;
 
 final class ShellSetup {
-    private ShellSetup() {}
+    private ShellSetup() {
+    }
 
     static final String MARKER = "# Added by the jpm installer";
 

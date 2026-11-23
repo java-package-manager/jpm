@@ -14,11 +14,16 @@ import java.util.Map;
  * into a type-safe constants class such as {@code BuildConfig.API_URL}.
  */
 public final class Defines {
-    private Defines() {}
+    private Defines() {
+    }
 
-    /** A resolved define: its name, type and value. */
+    /**
+     * A resolved define: its name, type and value.
+     */
     public record Value(String name, Manifest.DefineType type, Object value) {
-        /** The value as a Java literal, for the generated class. */
+        /**
+         * The value as a Java literal, for the generated class.
+         */
         public String javaLiteral() {
             return switch (type) {
                 case STRING -> Jsonc.quote((String) value);
@@ -145,7 +150,9 @@ public final class Defines {
         return "aeiou".indexOf(w.charAt(0)) >= 0 ? "an" : "a";
     }
 
-    /** Fully qualified name of the generated class. */
+    /**
+     * Fully qualified name of the generated class.
+     */
     public static String className(Manifest m) {
         if (m.defineClass != null) return m.defineClass;
         String pkg = null;
@@ -208,7 +215,9 @@ public final class Defines {
         return sb.append('"').toString();
     }
 
-    /** The source of the generated defines class {@code fqcn}, with NAME, VERSION and the values as constants. */
+    /**
+     * The source of the generated defines class {@code fqcn}, with NAME, VERSION and the values as constants.
+     */
     public static String source(String fqcn, List<Value> values, String projectName, String version) {
         int dot = fqcn.lastIndexOf('.');
         String pkg = dot > 0 ? fqcn.substring(0, dot) : null;

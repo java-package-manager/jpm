@@ -7,7 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class Commands {
-    private Commands() {}
+    private Commands() {
+    }
 
     private static final int WIDTH = 108;
     private static final int COLUMN = 30;

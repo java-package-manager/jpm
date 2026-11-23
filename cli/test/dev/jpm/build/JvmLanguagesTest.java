@@ -18,7 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** "groovy" and "scala": their sources compiled before javac, seeing the Java sources. */
+/**
+ * "groovy" and "scala": their sources compiled before javac, seeing the Java sources.
+ */
 class JvmLanguagesTest {
     @Test
     void settingsAndMavenLayoutFolders(@TempDir Path dir) {

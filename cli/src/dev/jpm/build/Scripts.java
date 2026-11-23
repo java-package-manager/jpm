@@ -1,16 +1,16 @@
 package dev.jpm.build;
 
-import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
+import dev.jpm.log.Log;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
+import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,9 +32,12 @@ import java.util.Set;
  * platform.
  */
 public final class Scripts {
-    private Scripts() {}
+    private Scripts() {
+    }
 
-    /** Runs a script from {@code "scripts"} and returns its exit code. */
+    /**
+     * Runs a script from {@code "scripts"} and returns its exit code.
+     */
     public static int run(Builder b, Project.Module m, String name, List<String> args, Env.Mode mode) {
         String value = m.manifest.scripts.get(name);
         if (value == null) {
@@ -150,7 +153,9 @@ public final class Scripts {
         return out;
     }
 
-    /** Build information passed to scripts and extensions. */
+    /**
+     * Build information passed to scripts and extensions.
+     */
     public static Map<String, String> info(Builder b, Project.Module m) {
         Map<String, String> env = new LinkedHashMap<>();
         env.put("JPM_EXE", dev.jpm.util.Self.exe());
@@ -181,7 +186,9 @@ public final class Scripts {
         return env;
     }
 
-    /** Runs the hooks for a step: {@code pre<step>} / {@code post<step>} and their {@code :<profile>} variants. */
+    /**
+     * Runs the hooks for a step: {@code pre<step>} / {@code post<step>} and their {@code :<profile>} variants.
+     */
     public static void hooks(Builder b, Project.Module m, Manifest manifest, String phase, String step, String profile, Env.Mode mode) {
         List<String> names = new ArrayList<>();
         names.add(phase + step);

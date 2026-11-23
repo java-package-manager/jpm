@@ -1,6 +1,5 @@
 package dev.jpm.cli.impl;
 
-import dev.jpm.resolve.Install;
 
 import dev.jpm.Manifest;
 import dev.jpm.Project;
@@ -136,6 +135,7 @@ public final class JavaCommand extends Command {
         if (current != null) Log.info(Log.dim("* what `java` runs here: " + reason));
         return 0;
     }
+
     private int install(List<String> args) {
         if (args.isEmpty()) throw new JpmException("Usage: " + self + " install <java>, e.g. 21, temurin-17 or graalvm-21");
         for (String a : args) {
@@ -253,6 +253,7 @@ public final class JavaCommand extends Command {
         checkPathOrder();
         return 0;
     }
+
     static void checkPathOrder() {
         Path ours = Shims.bin().toAbsolutePath().normalize();
         String path = System.getenv("PATH");
@@ -278,7 +279,9 @@ public final class JavaCommand extends Command {
             }
         }
         Log.info(ours + " is not on PATH in this shell yet; open a new terminal, or run:  . " + ShellSetup.envFile());
-    }    private int env(List<String> args) {
+    }
+
+    private int env(List<String> args) {
         if (args.size() != 1) throw new JpmException("Usage: " + self + " env <java>");
         Jdk j = Toolchain.require(JavaSpec.parse(args.get(0)));
         boolean win = System.getProperty("os.name").toLowerCase().contains("win") && System.getenv("SHELL") == null;
@@ -335,4 +338,5 @@ public final class JavaCommand extends Command {
         ShellSetup.ensure(false);
         checkPathOrder();
         return 0;
-    }}
+    }
+}

@@ -1,9 +1,9 @@
 package dev.jpm.resolve;
 
-import dev.jpm.version.Tags;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.util.JpmException;
+import dev.jpm.version.Tags;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;

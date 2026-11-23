@@ -1,12 +1,8 @@
 package dev.jpm.util.impl;
 
+import dev.jpm.log.Log;
 import dev.jpm.util.Fs;
 
-import dev.jpm.log.Log;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -28,9 +24,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 public final class NetworkSettings {
-    private NetworkSettings() {}
+    private NetworkSettings() {
+    }
 
     private static volatile SSLContext ssl;
 

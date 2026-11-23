@@ -15,9 +15,12 @@ import java.util.function.UnaryOperator;
  * Whether to use color is decided here once, see {@link Color}.
  */
 public final class Log {
-    private Log() {}
+    private Log() {
+    }
 
-    /** How much jpm prints, from least to most. */
+    /**
+     * How much jpm prints, from least to most.
+     */
     public enum Level {
         ERROR, WARN, INFO, DEBUG, TRACE;
 
@@ -34,11 +37,15 @@ public final class Log {
         }
     }
 
-    /** When to color output: {@code --color=auto|always|never}. */
+    /**
+     * When to color output: {@code --color=auto|always|never}.
+     */
     public enum Color {
         AUTO, ALWAYS, NEVER;
 
-        /** Parses {@code auto}, {@code always} or {@code never}; null for anything else. */
+        /**
+         * Parses {@code auto}, {@code always} or {@code never}; null for anything else.
+         */
         public static Color parse(String s) {
             if (s == null) return null;
             return switch (s.strip().toLowerCase(Locale.ROOT)) {
@@ -65,7 +72,9 @@ public final class Log {
             return c == ALWAYS;
         }
 
-        /** True when the terminal shows 256 colors: TERM ends in 256color, COLORTERM is set, or Windows Terminal. */
+        /**
+         * True when the terminal shows 256 colors: TERM ends in 256color, COLORTERM is set, or Windows Terminal.
+         */
         public static boolean has256(UnaryOperator<String> env) {
             String term = env.apply("TERM");
             return (term != null && term.contains("256color")) || present(env.apply("COLORTERM")) || present(env.apply("WT_SESSION"));
@@ -90,28 +99,38 @@ public final class Log {
     private static boolean color = Color.decide(null, System::getenv, TERMINAL);
     private static boolean colors256 = Color.has256(System::getenv);
 
-    /** Sets the level and color mode from the command line; a null argument keeps what the environment chose. */
+    /**
+     * Sets the level and color mode from the command line; a null argument keeps what the environment chose.
+     */
     public static void configure(Level newLevel, Color colorFlag) {
         if (newLevel != null) level = newLevel;
         color = Color.decide(colorFlag, System::getenv, TERMINAL);
     }
 
-    /** The level messages are shown at. */
+    /**
+     * The level messages are shown at.
+     */
     public static Level level() {
         return level;
     }
 
-    /** True when messages of this level are shown. */
+    /**
+     * True when messages of this level are shown.
+     */
     public static boolean enabled(Level l) {
         return l.compareTo(level) <= 0;
     }
 
-    /** True with {@code --verbose} or {@code JPM_VERBOSE}: debug messages and stack traces are shown. */
+    /**
+     * True with {@code --verbose} or {@code JPM_VERBOSE}: debug messages and stack traces are shown.
+     */
     public static boolean verbose() {
         return enabled(Level.DEBUG);
     }
 
-    /** True when output is colored. Child processes get {@code JPM_COLOR} from it. */
+    /**
+     * True when output is colored. Child processes get {@code JPM_COLOR} from it.
+     */
     public static boolean color() {
         return color;
     }
@@ -128,7 +147,9 @@ public final class Log {
         return env;
     }
 
-    /** Where messages go instead of the console, for example to a protocol client (see {@link #sink}). */
+    /**
+     * Where messages go instead of the console, for example to a protocol client (see {@link #sink}).
+     */
     public interface Sink {
         /**
          * One message.
@@ -159,12 +180,16 @@ public final class Log {
         return stdout;
     }
 
-    /** stderr, where output that must not reach stdout goes, such as a child's output under {@code jpm api}. */
+    /**
+     * stderr, where output that must not reach stdout goes, such as a child's output under {@code jpm api}.
+     */
     public static PrintStream stderr() {
         return err();
     }
 
-    /** True while a {@link #sink(Sink)} receives the messages: stdout is not jpm's to print on. */
+    /**
+     * True while a {@link #sink(Sink)} receives the messages: stdout is not jpm's to print on.
+     */
     public static boolean sunk() {
         return sink != null;
     }
@@ -176,66 +201,88 @@ public final class Log {
         return true;
     }
 
-    /** An error: always shown, in red. */
+    /**
+     * An error: always shown, in red.
+     */
     public static void error(String msg) {
         if (toSink(Level.ERROR, msg)) return;
         err().println(c("1;31", "error") + ": " + msg);
     }
 
-    /** A warning: shown unless only errors are, in orange (yellow on 16-color terminals). */
+    /**
+     * A warning: shown unless only errors are, in orange (yellow on 16-color terminals).
+     */
     public static void warn(String msg) {
         if (toSink(Level.WARN, msg)) return;
         if (enabled(Level.WARN)) err().println(c(colors256 ? "1;38;5;208" : "1;33", "warning") + ": " + msg);
     }
 
-    /** A plain message, for example a next step. */
+    /**
+     * A plain message, for example a next step.
+     */
     public static void info(String msg) {
         if (toSink(Level.INFO, msg)) return;
         if (enabled(Level.INFO)) err().println(msg);
     }
 
-    /** A status line: {@code verb} right-aligned in green, then the message ("   Compiled app 1.0.0"). */
+    /**
+     * A status line: {@code verb} right-aligned in green, then the message ("   Compiled app 1.0.0").
+     */
     public static void step(String verb, String msg) {
         if (toSink(Level.INFO, verb + " " + msg)) return;
         if (enabled(Level.INFO)) err().println(c("1;32", String.format("%12s", verb)) + " " + msg);
     }
 
-    /** A debug message, in yellow, with {@code --verbose}. */
+    /**
+     * A debug message, in yellow, with {@code --verbose}.
+     */
     public static void debug(String msg) {
         if (toSink(Level.DEBUG, msg)) return;
         if (enabled(Level.DEBUG)) err().println(c("33", "  " + msg));
     }
 
-    /** A trace message, dim, with {@code -vv}. */
+    /**
+     * A trace message, dim, with {@code -vv}.
+     */
     public static void trace(String msg) {
         if (toSink(Level.TRACE, msg)) return;
         if (enabled(Level.TRACE)) err().println(c("2", "  " + msg));
     }
 
-    /** What a command produces, on stdout, at every level: for example {@code jpm info} or the help text. */
+    /**
+     * What a command produces, on stdout, at every level: for example {@code jpm info} or the help text.
+     */
     public static void out(String line) {
         if (toSink(Level.INFO, line)) return;
         out().println(line);
     }
 
-    /** Like {@link #out(String)}, without a line break. */
+    /**
+     * Like {@link #out(String)}, without a line break.
+     */
     public static void print(String text) {
         if (toSink(Level.INFO, text.stripTrailing())) return;
         out().print(text);
     }
 
-    /** Output of a tool jpm ran, such as javac's errors and warnings, on stderr at every level. */
+    /**
+     * Output of a tool jpm ran, such as javac's errors and warnings, on stderr at every level.
+     */
     public static void tool(String text) {
         if (text.isEmpty() || toSink(Level.INFO, text)) return;
         err().println(text);
     }
 
-    /** The stack trace of an unexpected failure, shown with {@code --verbose} only. */
+    /**
+     * The stack trace of an unexpected failure, shown with {@code --verbose} only.
+     */
     public static void stackTrace(Throwable t) {
         if (verbose() && t != null) t.printStackTrace(err());
     }
 
-    /** Flushes stdout and stderr before jpm exits. */
+    /**
+     * Flushes stdout and stderr before jpm exits.
+     */
     public static void flush() {
         out().flush();
         err().flush();
@@ -249,7 +296,9 @@ public final class Log {
         return new Progress(TERMINAL && enabled(Level.INFO), verb, label);
     }
 
-    /** See {@link #progress(String, String)}. */
+    /**
+     * See {@link #progress(String, String)}.
+     */
     public static final class Progress implements AutoCloseable {
         private final boolean draw;
         private final String verb, label;
@@ -262,7 +311,9 @@ public final class Log {
             this.label = label;
         }
 
-        /** Shows {@code done} of {@code total} bytes; does nothing when the total is unknown. */
+        /**
+         * Shows {@code done} of {@code total} bytes; does nothing when the total is unknown.
+         */
         public void update(long done, long total) {
             if (!draw || total <= 0) return;
             int pct = (int) (done * 100 / total);
@@ -272,19 +323,25 @@ public final class Log {
             err().print("\r" + c("1;32", String.format("%12s", verb)) + " " + label + " " + pct + "% of " + (total >> 20) + " MB");
         }
 
-        /** Clears the line. */
+        /**
+         * Clears the line.
+         */
         @Override
         public void close() {
             if (drawn) err().print("\r\u001b[K");
         }
     }
 
-    /** {@code s} in bold, when output is colored. */
+    /**
+     * {@code s} in bold, when output is colored.
+     */
     public static String bold(String s) {
         return c("1", s);
     }
 
-    /** {@code s} dimmed, when output is colored. */
+    /**
+     * {@code s} dimmed, when output is colored.
+     */
     public static String dim(String s) {
         return c("2", s);
     }

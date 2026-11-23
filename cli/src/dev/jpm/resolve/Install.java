@@ -2,10 +2,10 @@ package dev.jpm.resolve;
 
 import dev.jpm.Manifest;
 import dev.jpm.Project;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.util.Hash;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -16,17 +16,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-/** Brings {@code project.lock} and the package cache up to date. */
+/**
+ * Brings {@code project.lock} and the package cache up to date.
+ */
 public final class Install {
-    private Install() {}
-
-    /** How to install: frozen (fail when the lockfile is out of date), update everything, update some packages, quiet. */
-    public record Options(boolean frozen, boolean updateAll, Set<String> update, boolean quiet) {
-        /** Use the lockfile when it is up to date, and say nothing when nothing changes. */
-        public static Options normal() { return new Options(false, false, Set.of(), true); }
+    private Install() {
     }
 
-    /** Brings {@code project.lock} up to date (resolving when it is not) and downloads every package; returns the graph. */
+    /**
+     * How to install: frozen (fail when the lockfile is out of date), update everything, update some packages, quiet.
+     */
+    public record Options(boolean frozen, boolean updateAll, Set<String> update, boolean quiet) {
+        /**
+         * Use the lockfile when it is up to date, and say nothing when nothing changes.
+         */
+        public static Options normal() {
+            return new Options(false, false, Set.of(), true);
+        }
+    }
+
+    /**
+     * Brings {@code project.lock} up to date (resolving when it is not) and downloads every package; returns the graph.
+     */
     public static Graph run(Project project, MavenRepo repo, Options o) {
         warnUndeclared(project);
         Path lockPath = project.lockFile();
@@ -130,7 +141,9 @@ public final class Install {
         }
     }
 
-    /** Downloads Maven jars in parallel, recording or verifying their checksums. */
+    /**
+     * Downloads Maven jars in parallel, recording or verifying their checksums.
+     */
     public static void fetch(Graph graph, MavenRepo repo) {
         List<Graph.Pkg> todo = new ArrayList<>();
         for (Graph.Pkg p : graph.pkgs.values()) {

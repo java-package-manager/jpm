@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** {@code jpm api} spoken to over its real stdin and stdout, as docs/protocol.md specifies it. */
+/**
+ * {@code jpm api} spoken to over its real stdin and stdout, as docs/protocol.md specifies it.
+ */
 @SuppressWarnings("unchecked")
 class ApiTest {
     private Process process;

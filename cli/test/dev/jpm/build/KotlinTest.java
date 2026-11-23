@@ -1,11 +1,10 @@
 package dev.jpm.build;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import dev.jpm.util.Exec;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
+import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 import org.junit.jupiter.api.Tag;
@@ -21,11 +20,14 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** "kotlin": Kotlin sources compiled with kotlinc, mixed with Java. */
+/**
+ * "kotlin": Kotlin sources compiled with kotlinc, mixed with Java.
+ */
 class KotlinTest {
 
     private static Manifest parse(Path dir, String json) {
@@ -81,7 +83,9 @@ class KotlinTest {
         assertTrue(e.getMessage().contains("\"kotlin\""), e.getMessage());
     }
 
-    /** Needs kotlinc and the Kotlin standard library from Maven Central. */
+    /**
+     * Needs kotlinc and the Kotlin standard library from Maven Central.
+     */
     @Test
     @Tag("live")
     void compilesKotlinAndJavaTogether(@TempDir Path dir) throws Exception {

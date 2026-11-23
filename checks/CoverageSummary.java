@@ -1,10 +1,11 @@
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * Turns a JaCoCo XML report into a Markdown table: line coverage per package, the classes with the most

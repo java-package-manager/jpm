@@ -1,9 +1,8 @@
 package dev.jpm;
 
+import dev.jpm.api.json.Jsonc;
 import dev.jpm.impl.ManifestReader;
 import dev.jpm.impl.ScopeChecks;
-
-import dev.jpm.api.json.Jsonc;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 
@@ -17,27 +16,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** The parsed {@code project.jsonc}. */
+/**
+ * The parsed {@code project.jsonc}.
+ */
 public final class Manifest {
     public static final String FILE = "project.jsonc";
     public static final String LOCK = "project.lock";
-    /** The JSON Schema of project.jsonc, src/assets/dev/jpm/project.schema.json, as attached to every release. */
+    /**
+     * The JSON Schema of project.jsonc, src/assets/dev/jpm/project.schema.json, as attached to every release.
+     */
     public static final String SCHEMA_URL = "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json";
 
-    /** The schema of one jpm release, which never changes: what a manifest pins to describe exactly that jpm's fields. */
+    /**
+     * The schema of one jpm release, which never changes: what a manifest pins to describe exactly that jpm's fields.
+     */
     public static String versionedSchemaUrl(String version) {
         return "https://github.com/java-package-manager/jpm/releases/download/" + version + "/project.schema.json";
     }
-    /** Every top-level field jpm reads. The schema describes the same set (SchemaTest checks). */
+
+    /**
+     * Every top-level field jpm reads. The schema describes the same set (SchemaTest checks).
+     */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
             "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "groovy", "scala", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "$schema");
 
-    /** The dependency sections of a manifest; {@link #key} is the section's name in {@code project.jsonc}. */
+    /**
+     * The dependency sections of a manifest; {@link #key} is the section's name in {@code project.jsonc}.
+     */
     public enum Scope {
         RUNTIME("runtime"), DEV("dev"), TEST("test");
         public final String key;
-        Scope(String key) { this.key = key; }
+
+        Scope(String key) {
+            this.key = key;
+        }
     }
 
     /**
@@ -50,12 +63,20 @@ public final class Manifest {
      */
     public record Generator(String name, String kind, List<String> inputs) {}
 
-    /** The type of a define, which is the type of its constant in the generated class. */
-    public enum DefineType { STRING, INT, BOOLEAN }
+    /**
+     * The type of a define, which is the type of its constant in the generated class.
+     */
+    public enum DefineType {
+        STRING, INT, BOOLEAN
+    }
 
-    /** A {@code define} entry. {@code value}/{@code env}/{@code defaultValue} may be null. */
+    /**
+     * A {@code define} entry. {@code value}/{@code env}/{@code defaultValue} may be null.
+     */
     public record Define(String name, DefineType type, Object value, String env, Object defaultValue, int line) {
-        public boolean hasSource() { return value != null || env != null; }
+        public boolean hasSource() {
+            return value != null || env != null;
+        }
     }
 
     /**
@@ -63,6 +84,7 @@ public final class Manifest {
      * {@code {"version": "...", "exclude": [...], "runtimeOnly": true}}. {@code api}: a dev dependency that
      * consumers compile against too (Gradle's compileOnlyApi); never at run time.
      */
+
     /**
      * Options of a patch: {@code dependencies} are compile-only for the patched classes (resolved with the
      * project, never on anyone's runtime classpath); {@code release} compiles them for a newer Java than
@@ -76,17 +98,23 @@ public final class Manifest {
      */
     public record Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api,
                              boolean tests) {
-        /** A dependency with no options. */
+        /**
+         * A dependency with no options.
+         */
         public Dependency(DepKey key, String spec, Scope scope, int line) {
             this(key, spec, scope, line, Set.of(), false, false, false);
         }
 
-        /** A dependency with exclusions, and runtime-only or not. */
+        /**
+         * A dependency with exclusions, and runtime-only or not.
+         */
         public Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly) {
             this(key, spec, scope, line, exclusions, runtimeOnly, false, false);
         }
 
-        /** A dependency with exclusions, runtime-only or not, and {@code "api"} or not. */
+        /**
+         * A dependency with exclusions, runtime-only or not, and {@code "api"} or not.
+         */
         public Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api) {
             this(key, spec, scope, line, exclusions, runtimeOnly, api, false);
         }
@@ -99,11 +127,15 @@ public final class Manifest {
      * {@code args} go to kotlinc, {@code -J} entries to the JVM running it.
      */
     public record Kotlin(String version, List<String> plugins, List<String> args) {
-        /** Kotlin's own compiler plugins, by the short names "plugins" accepts. */
+        /**
+         * Kotlin's own compiler plugins, by the short names "plugins" accepts.
+         */
         public static final Set<String> BUILT_IN = Set.of("assignment", "sam-with-receiver", "allopen", "noarg", "serialization",
                 "lombok", "power-assert", "parcelize", "atomicfu", "js-plain-objects", "compose");
 
-        /** Maven coordinates (group:artifact:version) of each plugin. */
+        /**
+         * Maven coordinates (group:artifact:version) of each plugin.
+         */
         public List<String> pluginCoordinates() {
             List<String> out = new ArrayList<>();
             for (String p : plugins) {
@@ -124,31 +156,52 @@ public final class Manifest {
     public final String group;
     public final String java;
     public final String target;
-    /** Entry points: name to class. A single {@code main} string is stored under "main". */
+    /**
+     * Entry points: name to class. A single {@code main} string is stored under "main".
+     */
     public final Map<String, String> mains;
+
     public final List<Dependency> dependencies;
     public final Map<String, Define> defines;
-    /** Values this project provides for defines declared by its dependencies: dep key to (name to value). */
+    /**
+     * Values this project provides for defines declared by its dependencies: dep key to (name to value).
+     */
     public final Map<String, Map<String, Object>> libraryDefines;
+
     public final Map<String, String> scripts;
-    /** Dependencies of {@code .java} scripts, by script name: dependency key to version, resolved apart from the project. */
+    /**
+     * Dependencies of {@code .java} scripts, by script name: dependency key to version, resolved apart from the project.
+     */
     public final Map<String, Map<String, String>> scriptDependencies;
-    /** Scripts that generate code, by name: run before compiling, their output added to the sources or resources. */
+    /**
+     * Scripts that generate code, by name: run before compiling, their output added to the sources or resources.
+     */
     public final Map<String, Generator> generators;
+
     public final Map<String, String> hooks;
-    /** Patched dependency to its patch file. */
+    /**
+     * Patched dependency to its patch file.
+     */
     public final Map<String, String> patches;
-    /** Patched dependency to the options of its patch (a patch given as an object); absent for a plain path. */
+    /**
+     * Patched dependency to the options of its patch (a patch given as an object); absent for a plain path.
+     */
     public final Map<String, PatchOptions> patchOptions;
+
     public final List<String> workspace;
     public final String visibility;
-    /** Resolved in its own graph, so its dependencies do not move the other modules' versions. */
+    /**
+     * Resolved in its own graph, so its dependencies do not move the other modules' versions.
+     */
     public final boolean isolated;
+
     public final List<String> repositories;
     public final String defineClass;
     public final List<String> javacArgs;
     public final List<String> nativeArgs;
-    /** Options for the JVM that runs the tests, e.g. {@code --add-opens} or {@code -Xmx2g}. */
+    /**
+     * Options for the JVM that runs the tests, e.g. {@code --add-opens} or {@code -Xmx2g}.
+     */
     public final List<String> testJvmArgs;
     /**
      * Packages left out of what this module's {@code runtime} and {@code dev} dependencies bring in, like an exclusion on
@@ -156,42 +209,74 @@ public final class Manifest {
      * dependencies are not affected. A workspace module adds its own to the root's.
      */
     public final Set<String> exclude;
-    /** Kotlin settings, or null for a module without Kotlin. */
+    /**
+     * Kotlin settings, or null for a module without Kotlin.
+     */
     public final Kotlin kotlin;
-    /** {@code "groovy"}: the Groovy version that compiles the module's .groovy sources (joint with its Java), or null. */
+    /**
+     * {@code "groovy"}: the Groovy version that compiles the module's .groovy sources (joint with its Java), or null.
+     */
     public final String groovy;
-    /** {@code "scala"}: the Scala version (2.13 or 3) that compiles the module's .scala sources (seeing its Java), or null. */
+    /**
+     * {@code "scala"}: the Scala version (2.13 or 3) that compiles the module's .scala sources (seeing its Java), or null.
+     */
     public final String scala;
+
     public final Layout layout;
-    /** Resources (globs relative to the resource folder) copied with ${NAME} replaced by define values. */
+    /**
+     * Resources (globs relative to the resource folder) copied with ${NAME} replaced by define values.
+     */
     public final List<String> filter;
-    /** Source folders relative to the module, replacing the layout's one; empty for the layout's. */
+    /**
+     * Source folders relative to the module, replacing the layout's one; empty for the layout's.
+     */
     public final List<String> sources;
-    /** Resource folders relative to the module, replacing the layout's one; empty for the layout's. */
+    /**
+     * Resource folders relative to the module, replacing the layout's one; empty for the layout's.
+     */
     public final List<String> resources;
-    /** Packages moved to new names in flat bundles (Shadow's relocation): package to new package. */
+    /**
+     * Packages moved to new names in flat bundles (Shadow's relocation): package to new package.
+     */
     public final Map<String, String> relocate;
-    /** What `jpm build` produces: "jar" (default) or "bundle" (jar-in-jar with isolated modules). */
+    /**
+     * What `jpm build` produces: "jar" (default) or "bundle" (jar-in-jar with isolated modules).
+     */
     public final String packaging;
+
     public final String description;
     public final String license;
     public final String url;
-    /** Settings for extensions, by extension name (e.g. "publish"); jpm passes them through untouched. */
+    /**
+     * Settings for extensions, by extension name (e.g. "publish"); jpm passes them through untouched.
+     */
     public final Map<String, Object> extensions;
-    /** The extensions this project uses, declared in {@code "extensions"} by dependency key; only in a root manifest. */
+    /**
+     * The extensions this project uses, declared in {@code "extensions"} by dependency key; only in a root manifest.
+     */
     public final List<ExtensionDecl> declaredExtensions;
-    /** True when this manifest is an extension's own ({@code "extension": {...}}), which {@code jpm add} detects. */
+    /**
+     * True when this manifest is an extension's own ({@code "extension": {...}}), which {@code jpm add} detects.
+     */
     public final boolean isExtension;
-    /** What an extension's manifest says it adds ({@code "extension"}); null for other manifests. */
+    /**
+     * What an extension's manifest says it adds ({@code "extension"}); null for other manifests.
+     */
     public final ExtensionDescriptor extension;
 
-    /** An extension's description of itself: its commands with their options, and the checks it adds to {@code jpm check}. */
+    /**
+     * An extension's description of itself: its commands with their options, and the checks it adds to {@code jpm check}.
+     */
     public record ExtensionDescriptor(String description, List<ExtensionCommand> commands, List<ExtensionCheck> checks) {}
 
-    /** A command an extension adds: {@code name} is what follows {@code jpm} ({@code publish}, {@code format check}). */
+    /**
+     * A command an extension adds: {@code name} is what follows {@code jpm} ({@code publish}, {@code format check}).
+     */
     public record ExtensionCommand(String name, String description, List<ExtensionOption> options) {}
 
-    /** An option of an extension's command; {@code argument} names its value, null for a flag. */
+    /**
+     * An option of an extension's command; {@code argument} names its value, null for a flag.
+     */
     public record ExtensionOption(String name, String argument, String description) {}
 
     /**
@@ -200,15 +285,21 @@ public final class Manifest {
      */
     public record ExtensionCheck(String id, String description, List<String> run) {}
 
-    /** An extension declared in {@code "extensions"}: {@code "github:me/jpm-foo": "^1.0"}. */
+    /**
+     * An extension declared in {@code "extensions"}: {@code "github:me/jpm-foo": "^1.0"}.
+     */
     public record ExtensionDecl(DepKey key, String spec, int line) {
-        /** The command it adds: its artifact without the {@code jpm-} prefix ({@code jpm-publish} gives {@code publish}). */
+        /**
+         * The command it adds: its artifact without the {@code jpm-} prefix ({@code jpm-publish} gives {@code publish}).
+         */
         public String name() {
             return nameOf(key);
         }
     }
 
-    /** The command an extension adds, from its dependency key. */
+    /**
+     * The command an extension adds, from its dependency key.
+     */
     public static String nameOf(DepKey key) {
         return key.mavenArtifact().replaceFirst("^jpm-", "");
     }
@@ -223,7 +314,9 @@ public final class Manifest {
         this(file, source, null);
     }
 
-    /** {@code parent}: the workspace root this module belongs to, whose settings it inherits; or null. */
+    /**
+     * {@code parent}: the workspace root this module belongs to, whose settings it inherits; or null.
+     */
     private Manifest(Path file, String source, Manifest parent) {
         this.file = file;
         this.source = source;
@@ -389,8 +482,7 @@ public final class Manifest {
         this.url = inherit(reader.str("url", false), parent == null ? null : parent.url);
         Jsonc.Node ext = root.get("extensions");
         if (ext != null && !ext.isObject()) throw err(ext, "extensions must be an object of extension name to its settings");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> extMap = ext == null ? Map.of() : (Map<String, Object>) ext.value;
+        @SuppressWarnings("unchecked") Map<String, Object> extMap = ext == null ? Map.of() : (Map<String, Object>) ext.value;
         this.extensions = extMap;
         List<ExtensionDecl> decls = new ArrayList<>();
         if (ext != null) {
@@ -450,7 +542,9 @@ public final class Manifest {
         return List.copyOf(out);
     }
 
-    /** Loads {@code project.jsonc} from a folder; fails when there is none. */
+    /**
+     * Loads {@code project.jsonc} from a folder; fails when there is none.
+     */
     public static Manifest load(Path dir) {
         Path f = dir.resolve(FILE);
         if (!Files.exists(f)) {
@@ -460,28 +554,38 @@ public final class Manifest {
         return new Manifest(f, Fs.read(f));
     }
 
-    /** Parses manifest text; {@code file} is only used in messages. */
+    /**
+     * Parses manifest text; {@code file} is only used in messages.
+     */
     public static Manifest parse(Path file, String source) {
         return new Manifest(file, source);
     }
 
-    /** A workspace module's manifest, with the settings it inherits from {@code root} (see {@link #INHERITED}). */
+    /**
+     * A workspace module's manifest, with the settings it inherits from {@code root} (see {@link #INHERITED}).
+     */
     public static Manifest parse(Path file, String source, Manifest root) {
         return new Manifest(file, source, root);
     }
 
-    /** Loads a workspace module's manifest, with the settings it inherits from {@code root}. */
+    /**
+     * Loads a workspace module's manifest, with the settings it inherits from {@code root}.
+     */
     public static Manifest load(Path dir, Manifest root) {
         Manifest plain = load(dir);
         return root == null ? plain : new Manifest(plain.file, plain.source, root);
     }
 
-    /** The folder the manifest is in. */
+    /**
+     * The folder the manifest is in.
+     */
     public Path dir() {
         return file.getParent();
     }
 
-    /** True when the manifest lists {@code "workspace"} modules. */
+    /**
+     * True when the manifest lists {@code "workspace"} modules.
+     */
     public boolean isWorkspaceRoot() {
         return !workspace.isEmpty();
     }
@@ -544,17 +648,23 @@ public final class Manifest {
         return s;
     }
 
-    /** The 1-based line of an offset in the manifest's text. */
+    /**
+     * The 1-based line of an offset in the manifest's text.
+     */
     public int line(int offset) {
         return reader.line(offset);
     }
 
-    /** An error at the line of a value in the manifest. */
+    /**
+     * An error at the line of a value in the manifest.
+     */
     public JpmException err(Jsonc.Node n, String msg) {
         return reader.err(n, msg);
     }
 
-    /** The module's source folders: {@code "sources"}, or the layout's one. */
+    /**
+     * The module's source folders: {@code "sources"}, or the layout's one.
+     */
     public List<Path> sourceDirs(Path moduleDir) {
         if (!sources.isEmpty()) return sources.stream().map(moduleDir::resolve).toList();
         List<Path> out = new java.util.ArrayList<>(List.of(layout.sources(moduleDir)));
@@ -566,7 +676,9 @@ public final class Manifest {
         return List.copyOf(out);
     }
 
-    /** The module's test source folders: the layout's, and {@code src/test/kotlin}, {@code groovy} or {@code scala} for those languages in the Maven layout. */
+    /**
+     * The module's test source folders: the layout's, and {@code src/test/kotlin}, {@code groovy} or {@code scala} for those languages in the Maven layout.
+     */
     public List<Path> testSourceDirs(Path moduleDir) {
         List<Path> out = new java.util.ArrayList<>(List.of(layout.tests(moduleDir)));
         if (layout == Layout.MAVEN) {
@@ -577,13 +689,17 @@ public final class Manifest {
         return List.copyOf(out);
     }
 
-    /** The module's resource folders: {@code "resources"}, or the layout's one. */
+    /**
+     * The module's resource folders: {@code "resources"}, or the layout's one.
+     */
     public List<Path> resourceDirs(Path moduleDir) {
         if (resources.isEmpty()) return List.of(layout.resources(moduleDir));
         return resources.stream().map(moduleDir::resolve).toList();
     }
 
-    /** Major Java version requested ("graalvm-21" gives 21), or null for "any". */
+    /**
+     * Major Java version requested ("graalvm-21" gives 21), or null for "any".
+     */
     public Integer javaMajor() {
         if (java == null) return null;
         String digits = java.replaceAll(".*?(\\d+).*", "$1");
@@ -594,7 +710,9 @@ public final class Manifest {
         }
     }
 
-    /** Bytecode target, defaults to the java version. */
+    /**
+     * Bytecode target, defaults to the java version.
+     */
     public Integer targetMajor() {
         if (target != null) {
             try {
@@ -606,7 +724,9 @@ public final class Manifest {
         return javaMajor();
     }
 
-    /** The dependencies of one section. */
+    /**
+     * The dependencies of one section.
+     */
     public List<Dependency> deps(Scope s) {
         return dependencies.stream().filter(d -> d.scope == s).toList();
     }

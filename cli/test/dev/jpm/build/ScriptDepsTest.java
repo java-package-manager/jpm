@@ -1,10 +1,10 @@
 package dev.jpm.build;
 
 import dev.jpm.Manifest;
-import dev.jpm.testing.TestRepo;
 import dev.jpm.Project;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
+import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 import org.junit.jupiter.api.Test;
@@ -12,13 +12,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** A .java script's own dependencies, listed with the script in the manifest and resolved apart from the project. */
+/**
+ * A .java script's own dependencies, listed with the script in the manifest and resolved apart from the project.
+ */
 class ScriptDepsTest {
     @Test
     void scriptsGetTheirDeps(@TempDir Path dir) throws Exception {

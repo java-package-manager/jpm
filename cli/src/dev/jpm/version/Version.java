@@ -18,13 +18,17 @@ public final class Version implements Comparable<Version> {
         this.items = tokenize(raw);
     }
 
-    /** Parses a version; any text is a version (ADR 0006). */
+    /**
+     * Parses a version; any text is a version (ADR 0006).
+     */
     public static Version of(String s) {
         return new Version(s.trim());
     }
 
     @Override
-    public String toString() { return raw; }
+    public String toString() {
+        return raw;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -32,13 +36,17 @@ public final class Version implements Comparable<Version> {
     }
 
     @Override
-    public int hashCode() { return normalized().hashCode(); }
+    public int hashCode() {
+        return normalized().hashCode();
+    }
 
     private String normalized() {
         return items.toString();
     }
 
-    /** True if this looks like a pre-release (alpha, beta, rc, snapshot, milestone). */
+    /**
+     * True if this looks like a pre-release (alpha, beta, rc, snapshot, milestone).
+     */
     public boolean isPreRelease() {
         for (Object o : items) {
             if (o instanceof String s && qualifierRank(s) < 5) return true;
@@ -46,7 +54,9 @@ public final class Version implements Comparable<Version> {
         return false;
     }
 
-    /** True for {@code -SNAPSHOT} versions. */
+    /**
+     * True for {@code -SNAPSHOT} versions.
+     */
     public boolean isSnapshot() {
         return raw.toUpperCase(Locale.ROOT).endsWith("SNAPSHOT");
     }
@@ -90,7 +100,11 @@ public final class Version implements Comparable<Version> {
 
     private static Object item(String s, Boolean digit) {
         if (Boolean.TRUE.equals(digit)) {
-            try { return Long.parseLong(s); } catch (NumberFormatException e) { return Long.MAX_VALUE; }
+            try {
+                return Long.parseLong(s);
+            } catch (NumberFormatException e) {
+                return Long.MAX_VALUE;
+            }
         }
         String q = s.toLowerCase(Locale.ROOT);
         return switch (q) {
@@ -103,7 +117,9 @@ public final class Version implements Comparable<Version> {
         };
     }
 
-    /** alpha < beta < milestone < rc < snapshot < (release) < sp < unknown. */
+    /**
+     * alpha < beta < milestone < rc < snapshot < (release) < sp < unknown.
+     */
     private static int qualifierRank(String q) {
         return switch (q) {
             case "alpha" -> 0;

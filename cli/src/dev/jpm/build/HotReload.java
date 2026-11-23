@@ -23,12 +23,17 @@ import java.util.TreeMap;
  * takes added and removed members. When redefinition fails, jpm restarts the app.
  */
 public final class HotReload {
-    private HotReload() {}
+    private HotReload() {
+    }
 
-    /** What a reload did: {@code ok} with how many loaded classes were redefined, or not with the JVM's reason. */
+    /**
+     * What a reload did: {@code ok} with how many loaded classes were redefined, or not with the JVM's reason.
+     */
     public record Result(boolean ok, int redefined, String reason) {}
 
-    /** The JVM options that load the agent for a module, with {@code channel} as the folder jpm and the agent talk through. */
+    /**
+     * The JVM options that load the agent for a module, with {@code channel} as the folder jpm and the agent talk through.
+     */
     public static List<String> jvmArgs(Builder b, Project.Module m, Path channel) {
         Jdk jdk = b.jdk(m.manifest);
         Path jar = agentJar(jdk, m);
@@ -40,7 +45,9 @@ public final class HotReload {
         return args;
     }
 
-    /** Whether a JDK can redefine classes with changed members: JetBrains Runtime. */
+    /**
+     * Whether a JDK can redefine classes with changed members: JetBrains Runtime.
+     */
     public static boolean enhanced(Jdk jdk) {
         String d = jdk.distribution() == null ? "" : jdk.distribution().toLowerCase(java.util.Locale.ROOT);
         return d.contains("jetbrains") || d.contains("jbr");
@@ -61,7 +68,9 @@ public final class HotReload {
         return jar;
     }
 
-    /** A hash of every class file under a folder, by class name. */
+    /**
+     * A hash of every class file under a folder, by class name.
+     */
     public static Map<String, String> classes(Path dir) {
         Map<String, String> out = new TreeMap<>();
         if (!Files.isDirectory(dir)) return out;
@@ -76,14 +85,18 @@ public final class HotReload {
         return out;
     }
 
-    /** The classes that are new or different in {@code after}. */
+    /**
+     * The classes that are new or different in {@code after}.
+     */
     public static List<String> changed(Map<String, String> before, Map<String, String> after) {
         List<String> out = new ArrayList<>();
         for (Map.Entry<String, String> e : after.entrySet()) if (!e.getValue().equals(before.get(e.getKey()))) out.add(e.getKey());
         return out;
     }
 
-    /** Asks the agent to redefine these classes from {@code classesDir}, waiting up to ten seconds for its answer. */
+    /**
+     * Asks the agent to redefine these classes from {@code classesDir}, waiting up to ten seconds for its answer.
+     */
     public static Result reload(Path channel, Path classesDir, List<String> classes) throws InterruptedException {
         StringBuilder sb = new StringBuilder();
         for (String c : classes) sb.append(c).append('\t').append(classesDir.resolve(c.replace('.', '/') + ".class").toAbsolutePath()).append('\n');

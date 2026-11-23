@@ -34,24 +34,32 @@ public final class TestRepo {
         }
     }
 
-    /** The repository's directory. */
+    /**
+     * The repository's directory.
+     */
     public Path root() {
         return root;
     }
 
-    /** The repository's {@code file:} URI, ending in a slash. */
+    /**
+     * The repository's {@code file:} URI, ending in a slash.
+     */
     public String uri() {
         return root.toUri().toString();
     }
 
-    /** Starts an artifact with the coordinates {@code group:artifact:version}. */
+    /**
+     * Starts an artifact with the coordinates {@code group:artifact:version}.
+     */
     public Artifact artifact(String coordinates) {
         String[] p = coordinates.split(":");
         if (p.length != 3) throw new IllegalArgumentException("expected group:artifact:version, got " + coordinates);
         return new Artifact(p[0], p[1], p[2]);
     }
 
-    /** Publishes an empty jar with no dependencies. */
+    /**
+     * Publishes an empty jar with no dependencies.
+     */
     public TestRepo publish(String coordinates) {
         artifact(coordinates).publish();
         return this;
@@ -117,6 +125,7 @@ public final class TestRepo {
      * compile against, which a POM cannot say; the POMs make it {@code compile}.
      */
     private static final Map<String, Map<String, String>> LOCKED = new java.util.HashMap<>();
+
     private static final Map<String, String> LOCKED_VERSIONS = new java.util.HashMap<>();
 
     static {
@@ -157,7 +166,9 @@ public final class TestRepo {
         }
     }
 
-    /** One artifact being published: its jar contents, dependencies and POM extras. */
+    /**
+     * One artifact being published: its jar contents, dependencies and POM extras.
+     */
     public final class Artifact {
         private final String group, name, version;
         private final Map<String, byte[]> entries = new LinkedHashMap<>();
@@ -171,13 +182,17 @@ public final class TestRepo {
             this.version = version;
         }
 
-        /** A file in the jar. */
+        /**
+         * A file in the jar.
+         */
         public Artifact entry(String path, String text) {
             entries.put(path, text.getBytes(StandardCharsets.UTF_8));
             return this;
         }
 
-        /** Every file under {@code dir}, for example compiled classes. */
+        /**
+         * Every file under {@code dir}, for example compiled classes.
+         */
         public Artifact entries(Path dir) {
             for (Path f : Fs.files(dir, null)) {
                 try {
@@ -210,24 +225,32 @@ public final class TestRepo {
             }
         }
 
-        /** A file in the sources jar ({@code -sources.jar}), which is written when there is at least one. */
+        /**
+         * A file in the sources jar ({@code -sources.jar}), which is written when there is at least one.
+         */
         public Artifact source(String path, String text) {
             sources.put(path, text.getBytes(StandardCharsets.UTF_8));
             return this;
         }
 
-        /** A compile-scope dependency {@code group:artifact:version}. */
+        /**
+         * A compile-scope dependency {@code group:artifact:version}.
+         */
         public Artifact dependsOn(String coordinates) {
             return dependsOn(coordinates, "compile");
         }
 
-        /** Dependencies as POM XML ({@code <dependency>...</dependency>} elements), as written in a POM. */
+        /**
+         * Dependencies as POM XML ({@code <dependency>...</dependency>} elements), as written in a POM.
+         */
         public Artifact dependenciesXml(String xml) {
             dependencies.add(xml);
             return this;
         }
 
-        /** A dependency {@code group:artifact:version} with a Maven scope. */
+        /**
+         * A dependency {@code group:artifact:version} with a Maven scope.
+         */
         public Artifact dependsOn(String coordinates, String scope) {
             String[] p = coordinates.split(":");
             dependencies.add("<dependency><groupId>" + p[0] + "</groupId><artifactId>" + p[1] + "</artifactId><version>" + p[2]
@@ -235,13 +258,17 @@ public final class TestRepo {
             return this;
         }
 
-        /** XML added inside {@code <project>}, for example {@code <dependencyManagement>}. */
+        /**
+         * XML added inside {@code <project>}, for example {@code <dependencyManagement>}.
+         */
         public Artifact pom(String xml) {
             pomExtra += xml;
             return this;
         }
 
-        /** Writes the POM, the jar and the artifact's {@code maven-metadata.xml}. */
+        /**
+         * Writes the POM, the jar and the artifact's {@code maven-metadata.xml}.
+         */
         public void publish() {
             Path dir = root.resolve(group.replace('.', '/')).resolve(name);
             Path v = dir.resolve(version);

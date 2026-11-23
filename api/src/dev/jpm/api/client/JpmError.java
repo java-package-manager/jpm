@@ -2,7 +2,9 @@ package dev.jpm.api.client;
 
 import dev.jpm.api.model.Problem;
 
-/** An error jpm answered a request with. */
+/**
+ * An error jpm answered a request with.
+ */
 public class JpmError extends RuntimeException {
     private final int code;
     private final transient Problem problem;

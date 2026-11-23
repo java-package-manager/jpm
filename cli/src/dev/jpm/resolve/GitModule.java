@@ -1,35 +1,42 @@
 package dev.jpm.resolve;
 
-import dev.jpm.resolve.impl.ImportedRepo;
-
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.git.GitRepo;
+import dev.jpm.resolve.impl.ImportedRepo;
 import dev.jpm.util.JpmException;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** A module of a Git repository at a given commit, read without checking it out. */
+/**
+ * A module of a Git repository at a given commit, read without checking it out.
+ */
 public record GitModule(DepKey key, String commit, Manifest root, Manifest manifest, String subdir,
                         Map<String, String> siblings) {
 
-    /** The version the module's manifest declares (lockstep: the workspace version). */
+    /**
+     * The version the module's manifest declares (lockstep: the workspace version).
+     */
     public String version() {
         if (manifest.version != null) return manifest.version;
         if (root.version != null) return root.version;
         throw new JpmException(key + " at " + commit.substring(0, 7) + ": " + Manifest.FILE + " has no \"version\"");
     }
 
-    /** True unless the module is {@code "visibility": "internal"}. */
+    /**
+     * True unless the module is {@code "visibility": "internal"}.
+     */
     public boolean isPublic() {
         return "public".equals(manifest.visibility);
     }
 
     private static final Map<String, GitModule> MEMO = new java.util.concurrent.ConcurrentHashMap<>();
 
-    /** The module a Git dependency names, at a commit: its manifest, workspace root and sibling modules. */
+    /**
+     * The module a Git dependency names, at a commit: its manifest, workspace root and sibling modules.
+     */
     public static GitModule locate(DepKey key, String commit) {
         String memoKey = key + "@" + commit;
         GitModule cached = MEMO.get(memoKey);
@@ -80,7 +87,9 @@ public record GitModule(DepKey key, String commit, Manifest root, Manifest manif
         return new GitModule(key, commit, root, m, siblings.get(name), siblings);
     }
 
-    /** The source directory of the module after checkout. */
+    /**
+     * The source directory of the module after checkout.
+     */
     public Path checkout() {
         Path dir = GitRepo.of(key).checkout(commit);
         return subdir.isEmpty() ? dir : dir.resolve(subdir);

@@ -30,12 +30,17 @@ import java.util.zip.ZipEntry;
  * </ul>
  */
 public final class Modules {
-    private Modules() {}
+    private Modules() {
+    }
 
-    /** A module declaration: its name and the modules it requires. */
+    /**
+     * A module declaration: its name and the modules it requires.
+     */
     public record Declaration(String name, Set<String> requires) {}
 
-    /** The module-info.java directly in one of the source roots, or null. */
+    /**
+     * The module-info.java directly in one of the source roots, or null.
+     */
     public static Path moduleInfo(List<Path> sourceRoots) {
         for (Path root : sourceRoots) {
             Path f = root.resolve("module-info.java");
@@ -108,7 +113,9 @@ public final class Modules {
             }
             """;
 
-    /** The module name a jar declares (module-info or Automatic-Module-Name), or null if it is not a module. */
+    /**
+     * The module name a jar declares (module-info or Automatic-Module-Name), or null if it is not a module.
+     */
     public static String declaredName(Path jar) {
         if (Files.isDirectory(jar)) {
             Path mi = jar.resolve("module-info.class");
@@ -120,7 +127,10 @@ public final class Modules {
             if (mi == null) {
                 for (var en = jf.entries(); en.hasMoreElements(); ) {
                     ZipEntry e = en.nextElement();
-                    if (e.getName().matches("META-INF/versions/\\d+/module-info\\.class")) { mi = e; break; }
+                    if (e.getName().matches("META-INF/versions/\\d+/module-info\\.class")) {
+                        mi = e;
+                        break;
+                    }
                 }
             }
             if (mi != null) {
@@ -140,7 +150,9 @@ public final class Modules {
         return null;
     }
 
-    /** The name in a jar's module-info.class (also under META-INF/versions/N/), or null: not an automatic name. */
+    /**
+     * The name in a jar's module-info.class (also under META-INF/versions/N/), or null: not an automatic name.
+     */
     public static String descriptorName(Path jar) {
         if (!Files.isRegularFile(jar)) return null;
         try (JarFile jf = new JarFile(jar.toFile())) {
@@ -148,7 +160,10 @@ public final class Modules {
             if (mi == null) {
                 for (var en = jf.entries(); en.hasMoreElements(); ) {
                     ZipEntry e = en.nextElement();
-                    if (e.getName().matches("META-INF/versions/\\d+/module-info\\.class")) { mi = e; break; }
+                    if (e.getName().matches("META-INF/versions/\\d+/module-info\\.class")) {
+                        mi = e;
+                        break;
+                    }
                 }
             }
             if (mi == null) return null;
@@ -247,7 +262,9 @@ public final class Modules {
         return n;
     }
 
-    /** Splits dependencies into module path and class path for compiling the declared module. */
+    /**
+     * Splits dependencies into module path and class path for compiling the declared module.
+     */
     public static List<List<Path>> split(Declaration module, List<Path> deps) {
         List<Path> modulePath = new ArrayList<>(), classPath = new ArrayList<>();
         Set<String> placed = new LinkedHashSet<>();

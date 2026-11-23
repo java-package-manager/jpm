@@ -19,7 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class JvmLanguages {
-    private JvmLanguages() {}
+    private JvmLanguages() {
+    }
 
     public enum Language {
         GROOVY("Groovy", "groovy", ".groovy"), SCALA("Scala", "scala", ".scala");

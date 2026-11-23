@@ -32,11 +32,20 @@ public record ClassInfo(String name, String sourceFile, Set<String> refs, String
                 case 1 -> pool[i] = in.readUTF();
                 case 3 -> pool[i] = in.readInt();
                 case 4 -> pool[i] = in.readFloat();
-                case 5 -> { pool[i] = in.readLong(); i++; }
-                case 6 -> { pool[i] = in.readDouble(); i++; }
+                case 5 -> {
+                    pool[i] = in.readLong();
+                    i++;
+                }
+                case 6 -> {
+                    pool[i] = in.readDouble();
+                    i++;
+                }
                 case 7, 8, 16, 19, 20 -> refsIdx[i] = new int[]{in.readUnsignedShort()};
                 case 9, 10, 11, 12, 17, 18 -> refsIdx[i] = new int[]{in.readUnsignedShort(), in.readUnsignedShort()};
-                case 15 -> { in.readUnsignedByte(); refsIdx[i] = new int[]{in.readUnsignedShort()}; }
+                case 15 -> {
+                    in.readUnsignedByte();
+                    refsIdx[i] = new int[]{in.readUnsignedShort()};
+                }
                 default -> throw new IOException("bad constant pool tag " + tag);
             }
         }

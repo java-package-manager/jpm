@@ -1,11 +1,11 @@
 package dev.jpm.cli.impl;
 
-import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
-import dev.jpm.resolve.Graph;
-import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
+import dev.jpm.resolve.Graph;
+import dev.jpm.resolve.ResolveInputs;
+import dev.jpm.util.JpmException;
 
 import java.nio.file.Path;
 import java.util.Collection;

@@ -2,7 +2,6 @@ package dev.jpm.impl;
 
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
-
 import dev.jpm.log.Log;
 import dev.jpm.util.JpmException;
 
@@ -17,7 +16,8 @@ import java.util.Set;
 import java.util.TreeMap;
 
 public final class ScopeChecks {
-    private ScopeChecks() {}
+    private ScopeChecks() {
+    }
 
     public static List<Manifest.Dependency> dedupe(Path file, List<Manifest.Dependency> deps) {
         Map<DepKey, Map<Manifest.Scope, Manifest.Dependency>> byKey = new TreeMap<>();

@@ -1,7 +1,6 @@
 package dev.jpm.importer.impl;
 
 import dev.jpm.importer.Imported;
-
 import dev.jpm.importer.impl.GradleImport.GDep;
 import dev.jpm.importer.impl.GradleImport.GProject;
 import dev.jpm.util.Fs;
@@ -17,7 +16,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class GradleScripts {
-    private GradleScripts() {}
+    private GradleScripts() {
+    }
 
     static final Pattern QUOTED = Pattern.compile("[\"']([^\"']+)[\"']");
 
@@ -375,7 +375,7 @@ public final class GradleScripts {
     }
 
     static void readDependency(String conf, String arg, List<String> excludes, GProject p, Catalog catalog,
-                                       Map<String, String> accessors, Imported imp) {
+                               Map<String, String> accessors, Imported imp) {
         List<GDep> list = p.deps.computeIfAbsent(conf, k -> new ArrayList<>());
         String classifier = null;
         Matcher variant = Pattern.compile("^variantOf\\s*\\(\\s*(libs\\.[\\w.]+)\\s*\\)\\s*\\{[^}]*?classifier\\s*\\(?\\s*(?:[\"']([^\"']+)[\"']|(\\w+))").matcher(arg);

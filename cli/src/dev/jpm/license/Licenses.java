@@ -25,9 +25,12 @@ import java.util.regex.Pattern;
  * expressions, finding the id for a license's name, URL or text, and writing a license file from SPDX's text.
  */
 public final class Licenses {
-    private Licenses() {}
+    private Licenses() {
+    }
 
-    /** The files a project's license is in, in the order jpm looks for them. */
+    /**
+     * The files a project's license is in, in the order jpm looks for them.
+     */
     public static final List<String> FILES = List.of("LICENSE", "LICENSE.md", "LICENSE.txt", "COPYING", "COPYING.md");
 
     /**
@@ -43,13 +46,17 @@ public final class Licenses {
     private static Map<String, License> byId;
     private static String listVersion;
 
-    /** Every license, by id. */
+    /**
+     * Every license, by id.
+     */
     public static synchronized Map<String, License> all() {
         if (byId == null) load();
         return byId;
     }
 
-    /** The version of the SPDX license list jpm has, such as {@code 3.29.0}. */
+    /**
+     * The version of the SPDX license list jpm has, such as {@code 3.29.0}.
+     */
     public static synchronized String listVersion() {
         if (byId == null) load();
         return listVersion;
@@ -75,7 +82,9 @@ public final class Licenses {
         }
     }
 
-    /** The license with this id, matched as SPDX does, ignoring case; null when the list has none. */
+    /**
+     * The license with this id, matched as SPDX does, ignoring case; null when the list has none.
+     */
     public static License find(String id) {
         License exact = all().get(id);
         if (exact != null) return exact;
@@ -107,12 +116,16 @@ public final class Licenses {
         return out;
     }
 
-    /** The ids of an expression that are not on the SPDX list. */
+    /**
+     * The ids of an expression that are not on the SPDX list.
+     */
     public static List<String> unknown(String expression) {
         return ids(expression).stream().filter(id -> find(id) == null).toList();
     }
 
-    /** The id on the list closest to {@code id} (a different case, a missing {@code -only}, a small typo), or null. */
+    /**
+     * The id on the list closest to {@code id} (a different case, a missing {@code -only}, a small typo), or null.
+     */
     public static String suggest(String id) {
         String best = null;
         int bestDistance = Integer.MAX_VALUE;
@@ -146,7 +159,9 @@ public final class Licenses {
         return d[a.length()][b.length()];
     }
 
-    /** The id of the license a POM or a build names by {@code name} or {@code url}, or null when neither is on the list. */
+    /**
+     * The id of the license a POM or a build names by {@code name} or {@code url}, or null when neither is on the list.
+     */
     public static String forNameOrUrl(String name, String url) {
         if (name != null) {
             String n = name.strip();
@@ -174,7 +189,9 @@ public final class Licenses {
                 .replaceAll("\\.(html?|txt|php)$", "");
     }
 
-    /** A license family recognised from its text, with the ids that name it. */
+    /**
+     * A license family recognised from its text, with the ids that name it.
+     */
     private record Fingerprint(List<String> ids, List<String> phrases, List<String> absent) {}
 
     private static final List<Fingerprint> FINGERPRINTS = List.of(
@@ -211,13 +228,17 @@ public final class Licenses {
         return List.of();
     }
 
-    /** The license file in {@code dir}, or null when it has none. */
+    /**
+     * The license file in {@code dir}, or null when it has none.
+     */
     public static Path file(Path dir) {
         for (String f : FILES) if (Files.isRegularFile(dir.resolve(f))) return dir.resolve(f);
         return null;
     }
 
-    /** Whether an expression names one of these ids (the license file's), which is what a match means. */
+    /**
+     * Whether an expression names one of these ids (the license file's), which is what a match means.
+     */
     public static boolean names(String expression, List<String> ids) {
         Set<String> wanted = new LinkedHashSet<>();
         for (String i : ids) wanted.add(i.toLowerCase(Locale.ROOT));
@@ -244,7 +265,9 @@ public final class Licenses {
         return fill(s, year, holder);
     }
 
-    /** {@code text} with SPDX's placeholders for the year and the copyright holder replaced. */
+    /**
+     * {@code text} with SPDX's placeholders for the year and the copyright holder replaced.
+     */
     public static String fill(String text, int year, String holder) {
         String out = text.replaceAll("(?i)<\\s*year\\s*>|\\[yyyy\\]|\\{yyyy\\}", Integer.toString(year));
         if (holder != null && !holder.isBlank()) {

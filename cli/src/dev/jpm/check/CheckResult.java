@@ -11,7 +11,9 @@ import java.util.List;
  * @param skipped  why it did not run (an earlier check failed, nothing to check), or null when it ran
  */
 public record CheckResult(String id, String title, List<Problem> problems, String skipped) {
-    /** Whether it found an error. */
+    /**
+     * Whether it found an error.
+     */
     public boolean failed() {
         return problems.stream().anyMatch(p -> p.severity() == Problem.Severity.ERROR);
     }

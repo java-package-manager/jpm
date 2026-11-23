@@ -82,14 +82,22 @@ public final class MavenRange implements VersionSpec {
     }
 
     @Override
-    public String text() { return text; }
+    public String text() {
+        return text;
+    }
 
     @Override
-    public boolean isExact() { return exact; }
+    public boolean isExact() {
+        return exact;
+    }
 
     @Override
-    public Version exactVersion() { return exact ? bounds.get(0).lower : null; }
+    public Version exactVersion() {
+        return exact ? bounds.get(0).lower : null;
+    }
 
     @Override
-    public String toString() { return text; }
+    public String toString() {
+        return text;
+    }
 }

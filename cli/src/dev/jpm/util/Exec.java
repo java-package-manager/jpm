@@ -1,6 +1,7 @@
 package dev.jpm.util;
 
 import dev.jpm.log.Log;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,22 +11,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** Runs external processes. */
+/**
+ * Runs external processes.
+ */
 public final class Exec {
-    private Exec() {}
-
-    /** The exit code and output of a process. */
-    public record Result(int exit, String out, String err) {
-        /** True for exit code 0. */
-        public boolean ok() { return exit == 0; }
+    private Exec() {
     }
 
-    /** Runs and captures output. */
+    /**
+     * The exit code and output of a process.
+     */
+    public record Result(int exit, String out, String err) {
+        /**
+         * True for exit code 0.
+         */
+        public boolean ok() {
+            return exit == 0;
+        }
+    }
+
+    /**
+     * Runs and captures output.
+     */
     public static Result capture(Path dir, List<String> cmd) {
         return capture(dir, cmd, Map.of());
     }
 
-    /** Runs a command with extra environment variables and returns its exit code and output. */
+    /**
+     * Runs a command with extra environment variables and returns its exit code and output.
+     */
     public static Result capture(Path dir, List<String> cmd, Map<String, String> env) {
         Log.debug("$ " + String.join(" ", cmd) + (dir != null ? "  (in " + dir + ")" : ""));
         ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -50,7 +64,9 @@ public final class Exec {
         }
     }
 
-    /** Runs with inherited stdio and returns the exit code. */
+    /**
+     * Runs with inherited stdio and returns the exit code.
+     */
     public static int inherit(Path dir, List<String> cmd, Map<String, String> env) {
         Log.debug("$ " + String.join(" ", cmd));
         ProcessBuilder pb = new ProcessBuilder(cmd).inheritIO();
@@ -71,7 +87,9 @@ public final class Exec {
         }
     }
 
-    /** Starts a process with inherited stdio without waiting. */
+    /**
+     * Starts a process with inherited stdio without waiting.
+     */
     public static Process start(Path dir, List<String> cmd, Map<String, String> env) {
         Log.debug("$ " + String.join(" ", cmd));
         ProcessBuilder pb = new ProcessBuilder(cmd).inheritIO();
@@ -85,7 +103,9 @@ public final class Exec {
         }
     }
 
-    /** Runs a command and fails, with its error output, unless it exits with 0. */
+    /**
+     * Runs a command and fails, with its error output, unless it exits with 0.
+     */
     public static Result checked(Path dir, List<String> cmd) {
         Result r = capture(dir, cmd);
         if (!r.ok()) {
@@ -94,7 +114,9 @@ public final class Exec {
         return r;
     }
 
-    /** A mutable command line. */
+    /**
+     * A mutable command line.
+     */
     public static List<String> cmd(String... parts) {
         return new ArrayList<>(List.of(parts));
     }
@@ -106,17 +128,23 @@ public final class Exec {
         }
     }
 
-    /** Finds an executable on PATH. */
+    /**
+     * Finds an executable on PATH.
+     */
     public static Path which(String name) {
         return which(name, null);
     }
 
-    /** Like {@link #which(String)}, skipping one directory (jpm's own bin folder, which holds the shims). */
+    /**
+     * Like {@link #which(String)}, skipping one directory (jpm's own bin folder, which holds the shims).
+     */
     public static Path which(String name, Path skip) {
         return which(name, skip, p -> false);
     }
 
-    /** Like {@link #which(String, Path)}, also skipping every candidate for which {@code skipFile} is true. */
+    /**
+     * Like {@link #which(String, Path)}, also skipping every candidate for which {@code skipFile} is true.
+     */
     public static Path which(String name, Path skip, java.util.function.Predicate<Path> skipFile) {
         String path = System.getenv("PATH");
         if (path == null) return null;

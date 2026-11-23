@@ -21,13 +21,18 @@ import java.util.TreeSet;
  * {@code JPM_FOOJAY_URL} points it at a mirror.
  */
 public final class Foojay {
-    private Foojay() {}
+    private Foojay() {
+    }
 
-    /** A downloadable JDK package. */
+    /**
+     * A downloadable JDK package.
+     */
     public record Package(String id, String distribution, String javaVersion, int major, String filename,
                           String archiveType, String libc, String infoUri) {}
 
-    /** Where the package lives and how to verify it. */
+    /**
+     * Where the package lives and how to verify it.
+     */
     public record Download(String url, String sha256) {}
 
     static String base() {
@@ -36,7 +41,9 @@ public final class Foojay {
         return b.endsWith("/") ? b.substring(0, b.length() - 1) : b;
     }
 
-    /** This machine's operating system, as Foojay names it. */
+    /**
+     * This machine's operating system, as Foojay names it.
+     */
     public static String os() {
         String n = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         if (n.contains("win")) return "windows";
@@ -45,7 +52,9 @@ public final class Foojay {
         return n.replaceAll("[^a-z]", "");
     }
 
-    /** This machine's architecture, as Foojay names it. */
+    /**
+     * This machine's architecture, as Foojay names it.
+     */
     public static String arch() {
         String a = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
         return switch (a) {
@@ -60,7 +69,9 @@ public final class Foojay {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
-    /** Finds the best package for a spec on this OS and architecture. */
+    /**
+     * Finds the best package for a spec on this OS and architecture.
+     */
     public static Package find(JavaSpec spec) {
         String dist = spec.installDistribution();
         String os = os();
@@ -84,14 +95,19 @@ public final class Foojay {
         return os().equals("windows") ? List.of("zip") : List.of("tar.gz", "tgz", "zip");
     }
 
-    /** Picks the highest matching version, preferring the right C library and no bundled JavaFX. */
+    /**
+     * Picks the highest matching version, preferring the right C library and no bundled JavaFX.
+     */
     static Package choose(List<Package> all, JavaSpec spec, String libc) {
         Package best = null;
         for (Package p : all) {
             if (spec.major() != null && p.major != spec.major()) continue;
             if (spec.exact() && !JavaSpec.versionMatches(p.javaVersion, spec.version())) continue;
             if (libc != null && p.libc.equals(otherLibc(libc))) continue;
-            if (best == null) { best = p; continue; }
+            if (best == null) {
+                best = p;
+                continue;
+            }
             int c = Version.of(p.javaVersion).compareTo(Version.of(best.javaVersion));
             if (c > 0 || (c == 0 && archiveRank(p.archiveType) < archiveRank(best.archiveType))) best = p;
         }
@@ -129,7 +145,9 @@ public final class Foojay {
         return out;
     }
 
-    /** The download URL and checksum of a package. */
+    /**
+     * The download URL and checksum of a package.
+     */
     @SuppressWarnings("unchecked")
     public static Download download(Package p) {
         Map<String, Object> root = (Map<String, Object>) Jsonc.parse(Http.getString(p.infoUri));
@@ -148,7 +166,9 @@ public final class Foojay {
         return new Download(url, sum == null ? null : sum.toLowerCase(Locale.ROOT));
     }
 
-    /** Latest available versions of a distribution, newest first. */
+    /**
+     * Latest available versions of a distribution, newest first.
+     */
     public static List<String> available(String distribution) {
         String os = os();
         StringBuilder url = new StringBuilder(base()).append("/packages?distribution=").append(q(distribution))

@@ -3,22 +3,32 @@ package dev.jpm.version;
 import java.util.Collection;
 import java.util.Optional;
 
-/** A constraint on versions: a Maven range, an npm-style range, or an exact version. */
+/**
+ * A constraint on versions: a Maven range, an npm-style range, or an exact version.
+ */
 public interface VersionSpec {
     boolean matches(Version v);
 
-    /** The spec as written. */
+    /**
+     * The spec as written.
+     */
     String text();
 
-    /** True if only one version can match. */
+    /**
+     * True if only one version can match.
+     */
     boolean isExact();
 
-    /** The one version an exact spec allows, or null. */
+    /**
+     * The one version an exact spec allows, or null.
+     */
     default Version exactVersion() {
         return null;
     }
 
-    /** Highest matching version, preferring releases over pre-releases. */
+    /**
+     * Highest matching version, preferring releases over pre-releases.
+     */
     default Optional<Version> best(Collection<Version> candidates) {
         Version best = null;
         for (Version v : candidates) {

@@ -3,6 +3,7 @@ package dev.jpm.cli.impl;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.GitModule;
 import dev.jpm.resolve.Graph;
@@ -10,7 +11,6 @@ import dev.jpm.resolve.Install;
 import dev.jpm.resolve.Lockfile;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,7 +23,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 final class ExtensionList {
-    private ExtensionList() {}
+    private ExtensionList() {
+    }
 
     static List<Map<String, Object>> list(Project project) {
         List<Map<String, Object>> out = new ArrayList<>();

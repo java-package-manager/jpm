@@ -1,6 +1,5 @@
 package dev.jpm.cli.impl;
 
-import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.api.protocol.Frames;

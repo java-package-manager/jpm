@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Objects;
 
 final class Watch {
-    private Watch() {}
+    private Watch() {
+    }
 
     static String snapshot(Project p, boolean tests) {
         return snapshot(p, tests, f -> false);

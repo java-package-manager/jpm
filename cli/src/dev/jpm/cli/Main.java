@@ -4,24 +4,30 @@ import dev.jpm.cli.impl.Commands;
 import dev.jpm.cli.impl.JavaCommand;
 import dev.jpm.cli.impl.Shims;
 import dev.jpm.cli.impl.Upgrade;
-
-import dev.jpm.util.JpmException;
 import dev.jpm.log.Log;
+import dev.jpm.util.JpmException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** {@code jpm} — the Java package manager and build tool. */
+/**
+ * {@code jpm} — the Java package manager and build tool.
+ */
 public final class Main {
-    /** From project.jsonc, through jpm's own build-time defines. */
+    /**
+     * From project.jsonc, through jpm's own build-time defines.
+     */
     public static final String VERSION = dev.jpm.BuildConfig.VERSION;
 
-    private Main() {}
+    private Main() {
+    }
 
 
-    /** Runs jpm, or a shim when started as {@code java}, {@code javac} and so on, and exits with the command's code. */
+    /**
+     * Runs jpm, or a shim when started as {@code java}, {@code javac} and so on, and exits with the command's code.
+     */
     public static void main(String[] argv) {
         int code;
         try {
@@ -40,14 +46,18 @@ public final class Main {
         System.exit(code);
     }
 
-    /** Prints a failure: what went wrong, where, and what to do next. */
+    /**
+     * Prints a failure: what went wrong, where, and what to do next.
+     */
     public static void report(JpmException e) {
         Log.error(e.getMessage());
         if (e.location() != null) Log.info("  --> " + e.location());
         if (e.hint() != null) Log.info("  hint: " + e.hint());
     }
 
-    /** True when started as {@code jvm} (a link or copy of the binary, or the jvm launcher script). */
+    /**
+     * True when started as {@code jvm} (a link or copy of the binary, or the jvm launcher script).
+     */
     static boolean invokedAsJvm() {
         if ("jvm".equals(System.getenv("JPM_AS"))) return true;
         return isJvmName(invokedName());
@@ -142,9 +152,13 @@ public final class Main {
         }
         while (!args.isEmpty() && args.get(0).startsWith("-")) {
             String a = args.get(0);
-            if (a.equals("--offline")) { System.setProperty("jpm.offline", "true"); args.remove(0); }
-            else if (a.equals("-h") || a.equals("--help")) { Log.print(Commands.help()); return 0; }
-            else if (a.equals("--version")) return Upgrade.version();
+            if (a.equals("--offline")) {
+                System.setProperty("jpm.offline", "true");
+                args.remove(0);
+            } else if (a.equals("-h") || a.equals("--help")) {
+                Log.print(Commands.help());
+                return 0;
+            } else if (a.equals("--version")) return Upgrade.version();
             else if (!logOption(args, 0, true)) break;
         }
         logOptions(args, false);

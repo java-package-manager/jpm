@@ -3,35 +3,36 @@ package dev.jpm.cli.impl;
 import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
+import dev.jpm.api.json.Jsonc;
 import dev.jpm.build.Builder;
 import dev.jpm.build.Compiler;
 import dev.jpm.build.Env;
 import dev.jpm.build.Jars;
-import dev.jpm.toolchain.JavaSpec;
-import dev.jpm.toolchain.Jdk;
-import dev.jpm.toolchain.Toolchain;
-import dev.jpm.api.json.Jsonc;
+import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
-import dev.jpm.resolve.Lockfile;
 import dev.jpm.resolve.GitModule;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
+import dev.jpm.resolve.Lockfile;
+import dev.jpm.toolchain.JavaSpec;
+import dev.jpm.toolchain.Jdk;
+import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
-import dev.jpm.log.Log;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.Objects;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 final class GlobalExtensions {
-    private GlobalExtensions() {}
+    private GlobalExtensions() {
+    }
 
 
     static Path globalBin() {

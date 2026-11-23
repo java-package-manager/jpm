@@ -19,19 +19,24 @@ import java.util.Optional;
  *   <li>npm: {@code ^1.2}, {@code ~1.2.3}, {@code ~1}, {@code >=0.1}, {@code >1.0 <=2.0}, {@code 1.x},
  *       {@code 1.2.*}, {@code *}, {@code 1.0 - 2.0}, {@code ^1 || ^2}.</li>
  * </ul>
- *
+ * <p>
  * A bare version is exact for Maven dependencies; for Git dependencies (versions are tags) it is the npm
  * reading, where {@code 1.2} means {@code 1.2.x}.
  */
 public final class VersionSpecs {
-    private VersionSpecs() {}
+    private VersionSpecs() {
+    }
 
-    /** Reads a requirement of a Maven dependency: a bare version is exact. */
+    /**
+     * Reads a requirement of a Maven dependency: a bare version is exact.
+     */
     public static VersionSpec parse(String text) {
         return parse(text, false);
     }
 
-    /** Reads a requirement; {@code bareIsRange} reads a bare version the npm way (Git tags). */
+    /**
+     * Reads a requirement; {@code bareIsRange} reads a bare version the npm way (Git tags).
+     */
     public static VersionSpec parse(String text, boolean bareIsRange) {
         String s = text.trim();
         int strict = s.indexOf("!!");
@@ -51,14 +56,18 @@ public final class VersionSpecs {
         return bareIsRange && NpmRange.looksLikeRange(s) ? NpmRange.parse(s) : MavenRange.parse(s);
     }
 
-    /** True for a plain version (1.2.3, 33.0-jre), which a POM uses as a preference rather than a requirement. */
+    /**
+     * True for a plain version (1.2.3, 33.0-jre), which a POM uses as a preference rather than a requirement.
+     */
     public static boolean isBareVersion(String s) {
         if (s == null || s.isBlank()) return true;
         s = s.trim();
         return !(s.contains("!!") || MavenRange.isRange(s) || Any.named(s, s) != null || s.endsWith("+") || looksLikeNpm(s));
     }
 
-    /** True if the text is a version requirement in one of the syntaxes (as opposed to a Git tag or branch name). */
+    /**
+     * True if the text is a version requirement in one of the syntaxes (as opposed to a Git tag or branch name).
+     */
     public static boolean looksLikeSpec(String s) {
         s = s.trim();
         if (s.isEmpty()) return false;
@@ -67,14 +76,18 @@ public final class VersionSpecs {
         return NpmRange.looksLikeRange(s);
     }
 
-    /** npm operators, wildcards, hyphen ranges or alternatives: anything a bare Maven version is not. */
+    /**
+     * npm operators, wildcards, hyphen ranges or alternatives: anything a bare Maven version is not.
+     */
     private static boolean looksLikeNpm(String s) {
         if (s.startsWith("^") || s.startsWith("~") || s.startsWith("<") || s.startsWith(">") || s.startsWith("=")) return true;
         if (s.contains("||") || s.contains(" - ") || s.contains(" ")) return true;
         return s.matches("v?\\d+(\\.\\d+)*(\\.[xX*])+") || s.equals("x") || s.equals("X");
     }
 
-    /** A requirement with a preferred version inside it (Gradle's {@code strictly ... prefer}). */
+    /**
+     * A requirement with a preferred version inside it (Gradle's {@code strictly ... prefer}).
+     */
     static final class Preferring implements VersionSpec {
         private final String text;
         private final VersionSpec inner;
@@ -90,7 +103,9 @@ public final class VersionSpecs {
         }
 
         @Override
-        public boolean matches(Version v) { return inner.matches(v); }
+        public boolean matches(Version v) {
+            return inner.matches(v);
+        }
 
         @Override
         public Optional<Version> best(Collection<Version> candidates) {
@@ -99,19 +114,29 @@ public final class VersionSpecs {
         }
 
         @Override
-        public String text() { return text; }
+        public String text() {
+            return text;
+        }
 
         @Override
-        public boolean isExact() { return inner.isExact(); }
+        public boolean isExact() {
+            return inner.isExact();
+        }
 
         @Override
-        public Version exactVersion() { return inner.exactVersion(); }
+        public Version exactVersion() {
+            return inner.exactVersion();
+        }
 
         @Override
-        public String toString() { return text; }
+        public String toString() {
+            return text;
+        }
     }
 
-    /** {@code *}, {@code +}, {@code latest} and the Maven and Gradle keywords: any version, of some kind. */
+    /**
+     * {@code *}, {@code +}, {@code latest} and the Maven and Gradle keywords: any version, of some kind.
+     */
     static final class Any implements VersionSpec {
         private final String text;
         private final boolean preReleases;
@@ -127,7 +152,7 @@ public final class VersionSpecs {
             return switch (s.toLowerCase(Locale.ROOT)) {
                 case "+" -> new Any(text, true, true);
                 case "*", "x", "latest", "latest.release", "release" ->
-                        s.equals("LATEST") ? new Any(text, true, true) : new Any(text, false, false);
+                    s.equals("LATEST") ? new Any(text, true, true) : new Any(text, false, false);
                 case "latest.milestone" -> new Any(text, true, false);
                 case "latest.integration" -> new Any(text, true, true);
                 default -> null;
@@ -147,13 +172,19 @@ public final class VersionSpecs {
         }
 
         @Override
-        public String text() { return text; }
+        public String text() {
+            return text;
+        }
 
         @Override
-        public boolean isExact() { return false; }
+        public boolean isExact() {
+            return false;
+        }
 
         @Override
-        public String toString() { return text; }
+        public String toString() {
+            return text;
+        }
     }
 
     /**
@@ -193,12 +224,18 @@ public final class VersionSpecs {
         }
 
         @Override
-        public String text() { return text; }
+        public String text() {
+            return text;
+        }
 
         @Override
-        public boolean isExact() { return false; }
+        public boolean isExact() {
+            return false;
+        }
 
         @Override
-        public String toString() { return text; }
+        public String toString() {
+            return text;
+        }
     }
 }

@@ -2,9 +2,12 @@ package dev.jpm.util;
 
 import java.nio.file.Path;
 
-/** How child processes (scripts, hooks, extensions) call back into this jpm. */
+/**
+ * How child processes (scripts, hooks, extensions) call back into this jpm.
+ */
 public final class Self {
-    private Self() {}
+    private Self() {
+    }
 
     /**
      * The jpm to run: {@code JPM_EXE} when a launcher set it (the jar build runs as {@code java -jar}, which

@@ -19,7 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Proxies from the environment and certificates from the system, for the native binary. */
+/**
+ * Proxies from the environment and certificates from the system, for the native binary.
+ */
 class NetworkSettingsTest {
     private static String hostPort(List<Proxy> l) {
         Proxy p = l.get(0);
@@ -44,7 +46,9 @@ class NetworkSettingsTest {
         assertEquals("proxy.corp:3128", hostPort(s.select(URI.create("https://notexample.org/"))));
     }
 
-    /** A request goes through the proxy HTTP_PROXY names: a local server stands in for it. */
+    /**
+     * A request goes through the proxy HTTP_PROXY names: a local server stands in for it.
+     */
     @Test
     void clientsUseTheProxyFromTheEnvironment() throws Exception {
         Assumptions.assumeTrue(System.getProperty("https.proxyHost") == null && System.getProperty("http.proxyHost") == null,

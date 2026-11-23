@@ -17,7 +17,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public final class ClassFiles {
-    private ClassFiles() {}
+    private ClassFiles() {
+    }
 
     private static final Pattern DESCRIPTOR_TYPE = Pattern.compile("L([A-Za-z_$][\\w$]*(?:/[A-Za-z_$][\\w$]*)+)[;<]");
 

@@ -1,9 +1,9 @@
 package dev.jpm.importer.impl;
 
-import dev.jpm.Project;
 
 final class GradleModelScript {
-    private GradleModelScript() {}
+    private GradleModelScript() {
+    }
 
     static final String TEXT = """
 // Written by jpm: reports the Gradle build model as JSON for `jpm import`. It does not change the build.

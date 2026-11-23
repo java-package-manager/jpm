@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** Writes docs/manifest.md's field reference from project.schema.json, so the two never disagree. */
+/**
+ * Writes docs/manifest.md's field reference from project.schema.json, so the two never disagree.
+ */
 final class ManifestReference {
     private final Map<String, Object> schema;
 
