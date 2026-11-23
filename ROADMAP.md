@@ -401,6 +401,8 @@ Items that are not in the original list but would pay off.
 - [ ] **Minimum release age for `jpm update`:** a configurable age (for example 7 days) a version must
       have before `jpm update` picks it, so a compromised release is likely caught and pulled before it
       reaches a project. Versions already in `project.lock` and explicitly pinned ones are not affected.
+      `jpm check` reports a locked version younger than the minimum age, so one that came in another way
+      (a hand edit, `jpm add`, a Renovate pull request) is caught too.
 - [x] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
 - [x] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension (`jpm sbom`, CycloneDX).
 - [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
