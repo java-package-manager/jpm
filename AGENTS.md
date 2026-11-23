@@ -24,7 +24,7 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
 ## Where things live
 
 - `api/`: the public API module (`dev.jpm.api`, `module-info.java` exports only it). `cli/`: jpm itself.
-- `cli/src/dev/jpm/cli`: `Main`; `cli/src/dev/jpm/cli/impl`: one class per command (`*Command`), the registry `Commands` (the source of `jpm help`, the README table and completions), shims, upgrade.
+- `cli/src/dev/jpm/cli`: `Main`; `cli/src/dev/jpm/cli/impl`: one class per command (`*Command`), the registry `Commands` (the source of `jpm help`, the table in `docs/commands.md` and completions), shims, upgrade.
 - Every area has its internal API in `dev.jpm.<area>` and its implementations in `dev.jpm.<area>.impl`.
 - `cli/src/dev/jpm/resolve`: dependency resolution and `project.lock`. `cli/src/dev/jpm/maven`: repositories, POMs.
 - `cli/src/dev/jpm/build`: compiling, jars, bundles, patches, scripts, the test runner.
@@ -52,8 +52,10 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
 
 1. `bin/check` passes.
 2. Behavior changes have tests: a unit test, and an end-to-end scenario for anything a user sees.
-3. User-facing changes are in `README.md` (commands, manifest fields, environment variables), and in
-   `cli/src/assets/dev/jpm/project.schema.json` for manifest fields.
+3. User-facing changes are in `docs/` (the page for the topic; `docs/environment.md` for environment
+   variables), and in `cli/src/assets/dev/jpm/project.schema.json` for manifest fields. `docs/commands.md`
+   and the field reference in `docs/manifest.md` are generated: `JPM_UPDATE_EXPECTED=1 bin/jpm test
+   dev.jpm.cli.impl.CommandsTest dev.jpm.DocsTest` rewrites them. `README.md` is the short version for users.
 4. The roadmap item is ticked in `ROADMAP.md` if the change finishes it.
 5. The commit message says what changed and why, and ends with the attribution line if one is asked for.
 6. A change users notice has a changeset: `jpm changeset add --module jpm --patch -m "..."` (`--minor` for a

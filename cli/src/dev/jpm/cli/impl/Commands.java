@@ -74,14 +74,23 @@ public final class Commands {
         return out.append('\n').toString();
     }
 
-    static String readmeTable() {
+    static String referenceTable() {
         List<String> rows = new ArrayList<>();
-        rows.add("| Command | |");
-        rows.add("|---|---|");
-        for (Command c : all(Path.of(""))) {
-            for (Command.Usage u : c.usages()) rows.add("| `" + u.synopsis() + "` | " + u.docs() + " |");
+        for (Command.Group g : Command.Group.values()) {
+            rows.add("## " + g.title);
+            rows.add("");
+            rows.add("| Command | |");
+            rows.add("|---|---|");
+            for (Command c : all(Path.of(""))) {
+                for (Command.Usage u : c.usages()) {
+                    if (u.group() == g) rows.add("| `" + (u.synopsis().startsWith("jvm ") ? "" : "jpm ") + u.synopsis() + "` | " + u.docs().replace("docs/protocol.md", "protocol.md") + " |");
+                }
+            }
+            if (g == Command.Group.MAINTENANCE) {
+                rows.add("| `jpm <anything else>` | Runs the extension `<name>`: the one the project declares, else `jpm-<name>` from `~/.jpm/bin` or `PATH` (see [Extensions](extensions.md)) |");
+            }
+            rows.add("");
         }
-        rows.add("| `<anything else>` | Runs the extension `<name>`: the one the project declares, else `jpm-<name>` from `~/.jpm/bin` or `PATH` (see [Extensions](#extensions)) |");
-        return String.join("\n", rows) + "\n";
+        return String.join("\n", rows).stripTrailing() + "\n";
     }
 }
