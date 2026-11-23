@@ -3,15 +3,19 @@ package dev.jpm.e2e;
 import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Exec;
 import dev.jpm.util.Fs;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Runs the {@code jpm} binary on the projects in {@code fixtures/} and compares everything it prints with
@@ -174,6 +178,44 @@ class EndToEndTest {
             s.jpm("start");
         }
         s.verify("git");
+    }
+
+    /**
+     * An extension is built with the JDK its own "java" names, not the project's: here one that opens javac
+     * with "javacArgs", which javac refuses with the --release a newer project JDK would need. Needs two
+     * JDKs from {@code JPM_TEST_JDKS}.
+     */
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
+    void extensionsBuildWithTheirOwnJava(@TempDir Path tmp) {
+        List<Path> jdks = new ArrayList<>(JavaVersionsTest.jdks());
+        jdks.add(Path.of(System.getProperty("java.home")));
+        jdks.sort(Comparator.comparingInt(JavaVersionsTest::major));
+        Path newer = jdks.get(jdks.size() - 1);
+        Path older = jdks.stream().filter(h -> JavaVersionsTest.major(h) >= 9 && JavaVersionsTest.major(h) < JavaVersionsTest.major(newer))
+                .findFirst().orElse(null);
+        Assumptions.assumeTrue(older != null, "needs a JDK 9+ older than " + newer + " in JPM_TEST_JDKS");
+        Session s = new Session(tmp).env("JAVA_HOME", newer.toString());
+        Fs.mkdirs(s.home.resolve("jdks"));
+        Exec.Result link = Exec.capture(tmp, List.of("ln", "-s", older.toString(), s.home.resolve("jdks/older").toString()));
+        assertEquals(0, link.exit(), link.err());
+        Path ext = tmp.resolve("git/me/jpm-hello");
+        Fs.write(ext.resolve("src/hello/Main.java"), "package hello; public class Main {"
+                + " static com.sun.tools.javac.tree.JCTree unused() { return null; }"
+                + " public static void main(String[] a) { System.out.println(\"hello on \" + Runtime.version().feature()); } }");
+        Fs.write(ext.resolve("project.jsonc"), "{ \"name\": \"jpm-hello\", \"version\": \"1.0.0\", \"main\": \"hello.Main\","
+                + " \"java\": \"" + JavaVersionsTest.major(older) + "\", \"extension\": {},"
+                + " \"javacArgs\": [\"--add-exports\", \"jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED\"] }");
+        git(ext, "init", "-q", "-b", "main");
+        git(ext, "add", "-A");
+        git(ext, "commit", "-qm", "1.0.0");
+        git(ext, "tag", "1.0.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \""
+                + JavaVersionsTest.major(newer) + "\", \"extensions\": { \"github:me/jpm-hello\": \"1.0.0\" } }");
+        s.jpm("install");
+        String out = s.jpm("hello");
+        assertTrue(out.contains("Building github:me/jpm-hello 1.0.0") && out.contains("hello on ") && !out.contains("error:"), out);
     }
 
     @Test

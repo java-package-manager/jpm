@@ -14,6 +14,9 @@ but javac refuses it together with options that open the JDK's own modules, such
 - jpm passes `--release` only when the target is older than the JDK (`Compiler`). kotlinc gets
   `-Xjdk-release` under the same rule (`KotlinCompiler`).
 - To use `"javacArgs"` that open JDK modules, build with a JDK of the target version.
+- An extension from Git is built with the JDK its own `"java"` names (`Builder.buildJdkManifest`), so
+  its author decides, and `"javacArgs"` that open JDK modules work in every project. Other Git packages
+  are libraries of the project and build with the project's JDK.
 - The bundle launcher is compiled for the module's target, and for at least Java 8 (`Builder`).
 
 - javac refuses some options together with `--release`: `--add-exports`, `--add-reads` and `--patch-module`

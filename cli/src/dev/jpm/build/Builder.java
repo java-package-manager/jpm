@@ -506,6 +506,14 @@ public final class Builder {
         return Compiler.distinct(cp);
     }
 
+    /**
+     * The manifest whose {@code "java"} picks the JDK a Git package is built with: an extension's own when
+     * it sets one, since it runs as a program of its own; otherwise the consuming project's.
+     */
+    static Manifest buildJdkManifest(Manifest dependency, Manifest consumer) {
+        return dependency.isExtension && dependency.java != null ? dependency : consumer;
+    }
+
     private static int release(Manifest m, Jdk jdk) {
         Integer t = m.targetMajor();
         int release = t == null ? jdk.major() : t;
@@ -903,7 +911,7 @@ public final class Builder {
             List<Defines.Value> defs = Defines.resolve(mod.manifest(), p.id, provided, topConsumer, env);
 
             Manifest consumerManifest = project.modules.get(0).manifest;
-            Jdk jdk = jdk(consumerManifest);
+            Jdk jdk = jdk(buildJdkManifest(mod.manifest(), consumerManifest));
             Integer t = mod.manifest().targetMajor();
             int release = t == null ? jdk.major() : t;
             if (release > jdk.major()) {

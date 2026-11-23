@@ -25,6 +25,11 @@ what follows `jpm`) with their `options`, and the `checks` it adds to `jpm check
 protocol (`extensions/list`), so they show an extension's commands without running it. To write one, start
 from [jpm-extension-template](https://github.com/java-package-manager/jpm-extension-template).
 
+An extension from Git is built from source with the JDK its own `"java"` names, installed if missing, so
+it builds the same in every project, whatever the project's `"java"`; without `"java"` it is built with the
+project's JDK. This lets an extension use `"javacArgs"` such as `--add-exports jdk.compiler/...`, which javac
+refuses with the `--release` that building on a newer JDK would need.
+
 jpm runs an extension in the folder it was called from, with `JPM_EXE` (the jpm to call back),
 `JPM_PROJECT_DIR`, `JPM_MODULE_DIR`, `JPM_MANIFEST`, `JPM_NAME`, `JPM_VERSION` and `JPM_CONFIG` (the module's
 manifest as JSON).

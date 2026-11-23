@@ -240,6 +240,18 @@ class BuildTest {
         assertEquals(null, Compiler.refusedWithRelease(List.of("-parameters")));
     }
 
+    @Test
+    void extensionsBuildWithTheirOwnJava() {
+        Manifest consumer = Manifest.parse(Path.of("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1\", \"java\": \"25\" }");
+        Manifest extension = Manifest.parse(Path.of("project.jsonc"),
+                "{ \"name\": \"ext\", \"version\": \"1\", \"java\": \"21\", \"extension\": {} }");
+        Manifest anyJava = Manifest.parse(Path.of("project.jsonc"), "{ \"name\": \"ext\", \"version\": \"1\", \"extension\": {} }");
+        Manifest library = Manifest.parse(Path.of("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"1\", \"java\": \"21\" }");
+        assertEquals(extension, Builder.buildJdkManifest(extension, consumer));
+        assertEquals(consumer, Builder.buildJdkManifest(anyJava, consumer));
+        assertEquals(consumer, Builder.buildJdkManifest(library, consumer));
+    }
+
     private static void quietly(Runnable r) {
         java.io.PrintStream err = System.err;
         System.setErr(new java.io.PrintStream(java.io.OutputStream.nullOutputStream()));

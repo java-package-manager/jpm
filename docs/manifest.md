@@ -81,7 +81,7 @@ Type: a string. Workspace modules inherit it from the root.
 
 ### `java`
 
-The JDK the project builds and runs with, installed when it is missing: a major version, a distribution with a version, or an exact version.
+The JDK the project builds and runs with, installed when it is missing: a major version, a distribution with a version, or an exact version. An extension's own "java" is the JDK it is built with in every project.
 
 Workspace modules inherit it from the root.
 
