@@ -181,13 +181,13 @@ class EndToEndTest {
     }
 
     /**
-     * A Git dependency that targets an older Java and opens javac with "javacArgs" cannot be built with
-     * {@code --release}, so jpm builds it with a JDK of its target instead of the project's. Needs two JDKs
-     * from {@code JPM_TEST_JDKS}.
+     * An extension is built with the JDK its own "java" names, not the project's: here one that opens javac
+     * with "javacArgs", which javac refuses with the --release a newer project JDK would need. Needs two
+     * JDKs from {@code JPM_TEST_JDKS}.
      */
     @Test
     @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
-    void gitDependencyThatOpensJavacBuildsWithItsTargetJdk(@TempDir Path tmp) {
+    void extensionsBuildWithTheirOwnJava(@TempDir Path tmp) {
         List<Path> jdks = new ArrayList<>(JavaVersionsTest.jdks());
         jdks.add(Path.of(System.getProperty("java.home")));
         jdks.sort(Comparator.comparingInt(JavaVersionsTest::major));
@@ -195,27 +195,27 @@ class EndToEndTest {
         Path older = jdks.stream().filter(h -> JavaVersionsTest.major(h) >= 9 && JavaVersionsTest.major(h) < JavaVersionsTest.major(newer))
                 .findFirst().orElse(null);
         Assumptions.assumeTrue(older != null, "needs a JDK 9+ older than " + newer + " in JPM_TEST_JDKS");
-        int target = JavaVersionsTest.major(older);
         Session s = new Session(tmp).env("JAVA_HOME", newer.toString());
         Fs.mkdirs(s.home.resolve("jdks"));
         Exec.Result link = Exec.capture(tmp, List.of("ln", "-s", older.toString(), s.home.resolve("jdks/older").toString()));
         assertEquals(0, link.exit(), link.err());
-        Path lib = tmp.resolve("git/me/lib");
-        Fs.write(lib.resolve("src/lib/Lib.java"), "package lib; public class Lib { public static String v() {"
-                + " return com.sun.tools.javac.tree.JCTree.class.getSimpleName(); } }");
-        Fs.write(lib.resolve("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"1.0.0\", \"java\": \"" + target + "\","
+        Path ext = tmp.resolve("git/me/jpm-hello");
+        Fs.write(ext.resolve("src/hello/Main.java"), "package hello; public class Main {"
+                + " static com.sun.tools.javac.tree.JCTree unused() { return null; }"
+                + " public static void main(String[] a) { System.out.println(\"hello on \" + Runtime.version().feature()); } }");
+        Fs.write(ext.resolve("project.jsonc"), "{ \"name\": \"jpm-hello\", \"version\": \"1.0.0\", \"main\": \"hello.Main\","
+                + " \"java\": \"" + JavaVersionsTest.major(older) + "\", \"extension\": {},"
                 + " \"javacArgs\": [\"--add-exports\", \"jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED\"] }");
-        git(lib, "init", "-q", "-b", "main");
-        git(lib, "add", "-A");
-        git(lib, "commit", "-qm", "1.0.0");
-        git(lib, "tag", "1.0.0");
+        git(ext, "init", "-q", "-b", "main");
+        git(ext, "add", "-A");
+        git(ext, "commit", "-qm", "1.0.0");
+        git(ext, "tag", "1.0.0");
         s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
-        Fs.write(s.project.resolve("src/app/Main.java"),
-                "package app; public class Main { public static void main(String[] a) { System.out.println(lib.Lib.v()); } }");
         Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \""
-                + JavaVersionsTest.major(newer) + "\", \"main\": \"app.Main\", \"runtime\": { \"github:me/lib\": \"1.0.0\" } }");
-        String build = s.jpm("build");
-        assertTrue(build.contains("Building github:me/lib 1.0.0") && !build.contains("error:"), build);
+                + JavaVersionsTest.major(newer) + "\", \"extensions\": { \"github:me/jpm-hello\": \"1.0.0\" } }");
+        s.jpm("install");
+        String out = s.jpm("hello");
+        assertTrue(out.contains("Building github:me/jpm-hello 1.0.0") && out.contains("hello on ") && !out.contains("error:"), out);
     }
 
     @Test

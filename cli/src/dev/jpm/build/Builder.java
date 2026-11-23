@@ -507,13 +507,11 @@ public final class Builder {
     }
 
     /**
-     * The JDK to build a dependency from source with instead of the project's: one of its target version
-     * when it targets an older Java and its {@code "javacArgs"} have options javac refuses with
-     * {@code --release} (ADR 0002), else null. Its author cannot pick the JDK that consumers build it with.
+     * The manifest whose {@code "java"} picks the JDK a Git package is built with: an extension's own when
+     * it sets one, since it runs as a program of its own; otherwise the consuming project's.
      */
-    static JavaSpec targetJdk(int projectJdk, int release, List<String> javacArgs) {
-        if (release >= projectJdk || Compiler.refusedWithRelease(javacArgs) == null) return null;
-        return JavaSpec.parse(Integer.toString(release));
+    static Manifest buildJdkManifest(Manifest dependency, Manifest consumer) {
+        return dependency.isExtension && dependency.java != null ? dependency : consumer;
     }
 
     private static int release(Manifest m, Jdk jdk) {
@@ -913,14 +911,12 @@ public final class Builder {
             List<Defines.Value> defs = Defines.resolve(mod.manifest(), p.id, provided, topConsumer, env);
 
             Manifest consumerManifest = project.modules.get(0).manifest;
-            Jdk jdk = jdk(consumerManifest);
+            Jdk jdk = jdk(buildJdkManifest(mod.manifest(), consumerManifest));
             Integer t = mod.manifest().targetMajor();
             int release = t == null ? jdk.major() : t;
             if (release > jdk.major()) {
                 throw new JpmException(p.id + " targets Java " + release + ", but this project builds with " + jdk.id());
             }
-            JavaSpec targetJdk = targetJdk(jdk.major(), release, mod.manifest().javacArgs);
-            if (targetJdk != null) jdk = Toolchain.require(targetJdk);
 
             Hash kh = new Hash().add(p.id).add(p.commit).add(patchHash).add(jdk.id()).add(Integer.toString(release));
             for (Defines.Value v : defs) kh.add(v.name() + "=" + v.value());

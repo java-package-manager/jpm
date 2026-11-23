@@ -774,7 +774,7 @@
         "string",
         "integer"
       ],
-      "description": "The JDK the project builds and runs with, installed when it is missing: a major version, a distribution with a version, or an exact version.",
+      "description": "The JDK the project builds and runs with, installed when it is missing: a major version, a distribution with a version, or an exact version. An extension's own \"java\" is the JDK it is built with in every project.",
       "examples": [
         "21",
         "temurin-21",

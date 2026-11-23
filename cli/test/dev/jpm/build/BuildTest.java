@@ -241,10 +241,15 @@ class BuildTest {
     }
 
     @Test
-    void sourceDependenciesThatExportJdkModulesBuildWithTheirTargetJdk() {
-        assertEquals(JavaSpec.parse("21"), Builder.targetJdk(25, 21, EXPORT_JAVAC_TREE));
-        assertEquals(null, Builder.targetJdk(21, 21, EXPORT_JAVAC_TREE));
-        assertEquals(null, Builder.targetJdk(25, 21, List.of("-parameters")));
+    void extensionsBuildWithTheirOwnJava() {
+        Manifest consumer = Manifest.parse(Path.of("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1\", \"java\": \"25\" }");
+        Manifest extension = Manifest.parse(Path.of("project.jsonc"),
+                "{ \"name\": \"ext\", \"version\": \"1\", \"java\": \"21\", \"extension\": {} }");
+        Manifest anyJava = Manifest.parse(Path.of("project.jsonc"), "{ \"name\": \"ext\", \"version\": \"1\", \"extension\": {} }");
+        Manifest library = Manifest.parse(Path.of("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"1\", \"java\": \"21\" }");
+        assertEquals(extension, Builder.buildJdkManifest(extension, consumer));
+        assertEquals(consumer, Builder.buildJdkManifest(anyJava, consumer));
+        assertEquals(consumer, Builder.buildJdkManifest(library, consumer));
     }
 
     private static void quietly(Runnable r) {

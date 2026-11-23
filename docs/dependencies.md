@@ -116,9 +116,8 @@ commits. A tag must match the version in that commit's manifest (when following 
 not is ignored); untagged commits are versioned like `1.3.0+a1b2c3d`. The `"repositories"` a Git
 dependency's manifest lists are searched too, after the project's own, for what it depends on. Git packages are built from source with the consuming project's resolved versions
 and cached in `~/.jpm/builds`, keyed by commit, patch, define values, classpath and JDK. They are built with
-the project's JDK, except when a package targets an older Java and its `"javacArgs"` open JDK modules
-(`--add-exports jdk.compiler/...`), which javac refuses with `--release`: then jpm builds it with a JDK of its
-target, and installs one if needed. A repository
+the project's JDK; an extension is built with the JDK its own `"java"` names (see [Extensions](extensions.md)).
+A repository
 without a `project.jsonc` is imported from its `pom.xml` or Gradle build (see
 [Importing](importing.md)); one with neither fails with a clear error.
 
