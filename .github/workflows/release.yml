@@ -26,25 +26,25 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.CHANGESET_TOKEN || github.token }}
-      # with no changesets left (the version pull request was just merged) the action would publish and tag,
-      # which is CI's job (ci.yml), so it runs only while there are changesets
-      - id: pending
-        run: echo "any=$(find .changeset -name '*.md' 2>/dev/null | head -n 1)" >> "$GITHUB_OUTPUT"
       # jpm built from this commit, as CI (ci.yml) builds and checks it: `jpm changeset version` installs, and a
       # released jpm can write project.lock differently (0.13.0 left out the "pom" pins), which CI's
       # `--frozen` then refuses
-      - if: steps.pending.outputs.any != ''
-        uses: graalvm/setup-graalvm@v1
+      - uses: graalvm/setup-graalvm@v1
         with:
           java-version: "21"
           distribution: graalvm-community
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cache: ""
-      - if: steps.pending.outputs.any != ''
-        name: jpm from source
+      - name: jpm from source
         run: |
           ./bootstrap.sh
           echo "$PWD/bin" >> "$GITHUB_PATH"
+      # without a changeset that releases something (none left after the version pull request is merged, or only
+      # empty ones), the action would publish and tag, which is CI's job (ci.yml): it runs only when
+      # `jpm changeset status` lists a release
+      - id: pending
+        run: |
+          if jpm changeset status 2>&1 | grep -q 'Releases'; then echo "any=true"; else echo "any="; fi >> "$GITHUB_OUTPUT"
       - if: steps.pending.outputs.any != ''
         uses: java-package-manager/changeset-action@v1
         with:
