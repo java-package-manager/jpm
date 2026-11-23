@@ -122,6 +122,31 @@ class ClientTest {
     }
 
     @Test
+    @org.junit.jupiter.api.condition.DisabledOnOs(value = org.junit.jupiter.api.condition.OS.WINDOWS,
+            disabledReason = "Git fixtures are served from file:// bases, which CI does not run on Windows yet")
+    void resolvesAndBuildsGitDependencies(@TempDir Path tmp) {
+        Session s = workspace(tmp);
+        Path lib = tmp.resolve("git/me/fmt");
+        Fs.write(lib.resolve("src/fmt/Upper.java"), "package fmt; public class Upper { public static String of(String s) {"
+                + " return org.example.money.Money.format(s.length()) + s.toUpperCase(); } }");
+        Fs.write(lib.resolve("project.jsonc"), "{ \"name\": \"fmt\", \"version\": \"1.0.0\", \"runtime\": { \"org.example:money\": \"1.2.0\" } }");
+        git(lib, "init", "-q", "-b", "main");
+        git(lib, "add", "-A");
+        git(lib, "commit", "-qm", "1.0.0");
+        git(lib, "tag", "1.0.0");
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        try (JpmClient jpm = connect(s)) {
+            List<Path> cp = jpm.resolve(s.project, Map.of("github:me/fmt", "^1.0.0"));
+            assertEquals(2, cp.size(), cp.toString());
+            assertTrue(cp.stream().anyMatch(p -> p.getFileName().toString().equals("money-1.2.0.jar")), cp.toString());
+            Path built = cp.stream().filter(p -> !p.getFileName().toString().startsWith("money")).findFirst().orElseThrow();
+            assertTrue(java.nio.file.Files.exists(built), built.toString());
+            JpmError e = assertThrows(JpmError.class, () -> jpm.resolve(null, Map.of("github:me/fmt", "^1.0.0")));
+            assertTrue(e.getMessage().contains("pass \"dir\""), e.getMessage());
+        }
+    }
+
+    @Test
     void listsExtensionsWithoutRunningThem(@TempDir Path tmp) {
         Session s = new Session(tmp);
         s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());

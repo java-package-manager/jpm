@@ -118,13 +118,15 @@ error.
 
 ### `dependencies/resolve`
 
-Since protocol 1.2. Resolves `dependencies`, an object of Maven dependency keys (`group:artifact`) to versions in
+Since protocol 1.2. Resolves `dependencies`, an object of dependency keys (`group:artifact`) to versions in
 any syntax the manifest takes, in a graph of their own (as a script's `"dependencies"`: they never change a
 project's versions), downloads them, and returns `classpath`: the absolute paths of their jars and of everything
 they need at run time, in resolution order. With `dir`, the project's `"repositories"` are asked too; without
 it, Maven Central only. For tools that load a library at run time, such as jpm-format running a formatter by
-name. A key that is not a Maven key, or a missing version, is an `InvalidParams` error; a version that does not
-exist is a `JpmError` with the resolver's message.
+name. With `dir`, keys can also be Git dependencies (`github:me/formatter`, with a tag range, `#branch` or a
+commit), which jpm builds as it builds a project's; `classpath` then has what it built for them. A key that is neither a
+Maven nor a Git key, a Git key without `dir`, or a missing version, is an `InvalidParams` error; a version that does
+not exist is a `JpmError` with the resolver's message.
 
 ### `dependencies/search`
 

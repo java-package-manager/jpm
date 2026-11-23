@@ -212,9 +212,11 @@ final class ApiServer {
         if (!(params.get("dependencies") instanceof Map<?, ?> deps) || deps.isEmpty()) {
             throw new ApiError(-32602, "\"dependencies\" is required: Maven dependency keys (group:artifact) and their versions", null);
         }
-        List<String> repos = params.get("dir") instanceof String ? Project.find(dir(params)).root.repositories : List.of();
+        Project project = params.get("dir") instanceof String ? Project.find(dir(params)) : null;
+        List<String> repos = project != null ? project.root.repositories : List.of();
         dev.jpm.maven.MavenRepo repo = new dev.jpm.maven.MavenRepo(repos);
         List<dev.jpm.resolve.Resolver.Root> roots = new ArrayList<>();
+        boolean git = false;
         for (Map.Entry<?, ?> d : deps.entrySet()) {
             dev.jpm.DepKey key;
             try {
@@ -222,13 +224,28 @@ final class ApiServer {
             } catch (JpmException e) {
                 throw new ApiError(-32602, e.getMessage(), null);
             }
-            if (!key.isMaven()) throw new ApiError(-32602, d.getKey() + " is not a Maven dependency key", null);
+            if (key.isGit() && project == null) throw new ApiError(-32602, d.getKey() + " is a Git dependency, which jpm builds in a project: pass \"dir\"", null);
+            if (!key.isMaven() && !key.isGit()) throw new ApiError(-32602, d.getKey() + " is not a Maven or Git dependency key", null);
             if (!(d.getValue() instanceof String spec) || spec.isBlank()) throw new ApiError(-32602, d.getKey() + " needs a version", null);
+            git |= key.isGit();
             roots.add(new dev.jpm.resolve.Resolver.Root("dependencies/resolve", key, spec));
         }
         List<String> classpath = new ArrayList<>();
-        for (Path jar : dev.jpm.resolve.Install.classpath(roots, repo)) classpath.add(jar.toString());
+        for (Path jar : git ? buildClasspath(project, roots, repo) : dev.jpm.resolve.Install.classpath(roots, repo)) classpath.add(jar.toString());
         return Map.of("classpath", classpath);
+    }
+
+    private static List<Path> buildClasspath(Project project, List<dev.jpm.resolve.Resolver.Root> roots, dev.jpm.maven.MavenRepo repo) {
+        Graph g = new dev.jpm.resolve.Resolver(roots, repo, null).resolve();
+        Install.fetch(g, repo);
+        dev.jpm.build.Builder b = new dev.jpm.build.Builder(project, g, repo, dev.jpm.build.Env.Mode.DEVELOPMENT);
+        List<Graph.Edge> edges = roots.stream().map(r -> new Graph.Edge(dev.jpm.resolve.ResolveInputs.idOf(r.key()), false, java.util.Set.of())).toList();
+        List<Path> out = new ArrayList<>();
+        for (String id : g.closure(edges, Graph.Walk.RUNTIME)) {
+            Graph.Pkg pkg = g.get(id);
+            if (pkg != null && (pkg.kind == Graph.Kind.GIT || pkg.kind == Graph.Kind.MAVEN && pkg.hasJar)) out.addAll(b.paths(id, null));
+        }
+        return out;
     }
 
     private Path dir(Map<?, ?> params) {
