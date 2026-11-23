@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -90,6 +91,7 @@ class KotlinTest {
     @Tag("live")
     void compilesKotlinAndJavaTogether(@TempDir Path dir) throws Exception {
         kotlinOnlyModuleWithDefines(dir.resolve("kotlin-only"));
+        compilesKotlinIncrementally(dir.resolve("incremental"));
         Path p = dir.resolve("p");
         Fs.write(p.resolve("project.jsonc"), """
                 { "name": "mixed", "version": "1.0.0", "java": "21", "layout": "maven",
@@ -134,6 +136,53 @@ class KotlinTest {
         Builder b2 = new Builder(again, Install.run(again, r, Install.Options.normal()), r, Env.Mode.PRODUCTION);
         assertTrue(b2.compileTests(again.modules.get(0)));
         assertTrue(Files.isRegularFile(Builder.testClassesDir(again.modules.get(0)).resolve("app/SecretCheck.class")));
+    }
+
+    /**
+     * A change to one Kotlin file recompiles that file and the files that use its classes, not the module; a file
+     * with top-level functions rebuilds the module, since kotlinc lists those in the module's .kotlin_module.
+     */
+    private static void compilesKotlinIncrementally(Path dir) throws Exception {
+        Path p = dir.resolve("p");
+        Fs.write(p.resolve("project.jsonc"), """
+                { "name": "inc", "version": "1.0.0", "java": "21", "kotlin": "2.2.20",
+                  "runtime": { "org.jetbrains.kotlin:kotlin-stdlib": "2.2.20" } }
+                """);
+        Fs.write(p.resolve("src/app/A.kt"), "package app\nclass A { fun a() = 1 }\n");
+        Fs.write(p.resolve("src/app/B.kt"), "package app\nclass B { fun b() = A().a() + 1 }\n");
+        Fs.write(p.resolve("src/app/C.kt"), "package app\nclass C { fun c() = 3 }\n");
+        Fs.write(p.resolve("src/app/Top.kt"), "package app\nfun top() = C().c()\n");
+        Project project = Project.load(p);
+        MavenRepo r = new MavenRepo(List.of());
+        Builder b = new Builder(project, Install.run(project, r, Install.Options.normal()), r, Env.Mode.PRODUCTION);
+        Project.Module m = project.modules.get(0);
+        assertTrue(b.compileMain(m));
+        Path kt = m.cacheDir().resolve("kotlin-classes");
+        java.util.function.Function<String, Long> time = c -> {
+            try {
+                return Files.getLastModifiedTime(kt.resolve("app/" + c + ".class")).toMillis();
+            } catch (java.io.IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        };
+        long a = time.apply("A"), bb = time.apply("B"), c = time.apply("C"), top = time.apply("TopKt");
+        Thread.sleep(1100);
+        Fs.write(p.resolve("src/app/A.kt"), "package app\nclass A { fun a() = 2 }\n");
+        assertTrue(new Builder(project, b.graph, r, Env.Mode.PRODUCTION).compileMain(m));
+        assertNotEquals(a, time.apply("A"));
+        assertNotEquals(bb, time.apply("B"));
+        assertEquals(c, time.apply("C"));
+        assertEquals(top, time.apply("TopKt"));
+        assertTrue(Files.isRegularFile(kt.resolve("META-INF/inc.kotlin_module")));
+        try (URLClassLoader cl = new URLClassLoader(b.runtimeClasspath(m).stream().map(KotlinTest::url).toArray(java.net.URL[]::new), null)) {
+            Class<?> bc = cl.loadClass("app.B");
+            assertEquals(3, bc.getMethod("b").invoke(bc.getConstructor().newInstance()));
+        }
+        Thread.sleep(1100);
+        Fs.write(p.resolve("src/app/Top.kt"), "package app\nfun top() = C().c() + 1\n");
+        assertTrue(new Builder(project, b.graph, r, Env.Mode.PRODUCTION).compileMain(m));
+        assertNotEquals(c, time.apply("C"));
+        assertTrue(Fs.read(kt.resolve("META-INF/inc.kotlin_module")).contains("TopKt"));
     }
 
     private static java.net.URL url(Path p) {

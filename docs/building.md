@@ -61,8 +61,11 @@ A module with Kotlin sources names the Kotlin version, and depends on the standa
 `src/test/kotlin` are source folders too. kotlinc (`org.jetbrains.kotlin:kotlin-compiler-embeddable` of that
 version, resolved on its own like any tool) compiles first, seeing the Java sources and the defines class, so
 the two languages can use each other; javac then compiles the Java against its output. Tests see the module's
-`internal` declarations. A module's Kotlin is compiled as a whole when a source, the classpath or a setting
-changes. A module with Kotlin sources only gets its defines class as Kotlin (an `object` with `const val`s,
+`internal` declarations. A module's Kotlin is compiled per file: a changed file is
+compiled again, then the files that use a class whose bytes changed, until nothing more changes (so an
+`inline` function's callers get its new body). The module is compiled as a whole when the classpath or a
+setting changes, a file is removed, the module has Java sources too, a changed file has top-level
+declarations (kotlinc lists them in the module's `.kotlin_module`), or another file has the same name. A module with Kotlin sources only gets its defines class as Kotlin (an `object` with `const val`s,
 which Java code reads as static final fields), so it needs no Java at all.
 
 Compiler plugins and flags:
