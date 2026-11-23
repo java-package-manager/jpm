@@ -16,7 +16,7 @@
   "extensions": {
     "changeset": { "packages": {
       "dev.jpm:jpm-api": { "version": "0.12.0", "sha256": "9b1644cfba32bf3f57468dd7b1e6da6f71f9398aa58c9ac3931ffab4f46fce9a" },
-      "github:java-package-manager/jpm-changeset": { "version": "0.2.0", "tag": "0.2.0", "commit": "9cf00b9ad9a1f823e39881ae856d563c69bd0306", "dependencies": { "dev.jpm:jpm-api": "compile" } }
+      "github:java-package-manager/jpm-changeset": { "version": "0.2.1", "tag": "0.2.1", "commit": "510be4fadfdf327c6f0b75230cc8884bfd0843f2", "dependencies": { "dev.jpm:jpm-api": "compile" } }
     } },
     "publish": { "packages": {
       "dev.jpm:jpm-api": { "version": "0.12.0", "sha256": "9b1644cfba32bf3f57468dd7b1e6da6f71f9398aa58c9ac3931ffab4f46fce9a" },
