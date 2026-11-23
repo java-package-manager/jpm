@@ -23,5 +23,6 @@ API types.
 | [0015](0015-running-tests.md) | Running tests |
 | [0016](0016-licenses.md) | Licenses |
 | [0017](0017-checksums.md) | Checksums |
+| [0018](0018-minimum-release-age.md) | Minimum release age |
 
 New ADRs take the next number. An ADR that is replaced stays, with its status set to "replaced by NNNN".

@@ -6,6 +6,7 @@ import dev.jpm.git.GitRepo;
 import dev.jpm.log.Log;
 import dev.jpm.resolve.GitModule;
 import dev.jpm.resolve.Graph;
+import dev.jpm.resolve.ReleaseAge;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.resolve.Resolver.Request;
 import dev.jpm.resolve.Resolver.Selected;
@@ -30,9 +31,12 @@ public final class GitVersions {
     private final Predicate<String> locked;
     private final Map<String, Map<String, String>> tagMemo = new HashMap<>();
 
-    public GitVersions(Graph previous, Predicate<String> locked) {
+    private final ReleaseAge age;
+
+    public GitVersions(Graph previous, Predicate<String> locked, ReleaseAge age) {
         this.previous = previous;
         this.locked = locked;
+        this.age = age;
     }
 
     String branchCommit(String id, GitRepo git, String branch, Request r) {
@@ -122,7 +126,7 @@ public final class GitVersions {
                 if (ok) return new Selected(p.version, p.commit, p.tag);
             }
         }
-        Version best = null;
+        Version best = null, oldEnough = null;
         for (Version v : byVersion.keySet()) {
             boolean ok = true;
             for (VersionSpec r : ranges) {
@@ -132,6 +136,15 @@ public final class GitVersions {
                 }
             }
             if (ok && (best == null || v.compareTo(best) > 0)) best = v;
+            if (ok && (oldEnough == null || v.compareTo(oldEnough) > 0) && age.allowsTag(key, byVersion.get(v), v.toString())) oldEnough = v;
+        }
+        if (best != null && age.active() && !best.equals(oldEnough)) {
+            if (oldEnough != null) {
+                Log.debug("minimumReleaseAge: " + id + " " + best + " is too young, taking " + oldEnough);
+                best = oldEnough;
+            } else if (!ranges.stream().allMatch(VersionSpec::isExact)) {
+                age.warnTooYoung(id, best);
+            }
         }
         if (best == null) {
             StringBuilder sb = new StringBuilder("No tag of " + key.repoKey() + " matches every requirement for " + id + ":");

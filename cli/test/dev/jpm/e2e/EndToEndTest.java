@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -322,6 +324,59 @@ class EndToEndTest {
             osv.stop(0);
         }
         s.verify("audit");
+    }
+
+    @Test
+    void minimumReleaseAge(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp);
+        money(s.repo);
+        int[] days = {60, 20, 2};
+        String[] versions = {"1.0.0", "1.2.0", "2.0.0"};
+        for (int i = 0; i < versions.length; i++) {
+            java.nio.file.Files.setLastModifiedTime(s.repo.root().resolve("org/example/money/" + versions[i] + "/money-" + versions[i] + ".pom"),
+                    java.nio.file.attribute.FileTime.from(java.time.Instant.now().minus(java.time.Duration.ofDays(days[i]))));
+        }
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"minimumReleaseAge\": \"7 days\"\n}\n");
+        s.jpm("add", "org.example:money");
+        s.show("project.jsonc");
+        s.jpm("check", "release-age");
+        Fs.write(s.project.resolve("project.jsonc"), Fs.read(s.project.resolve("project.jsonc")).replace("\"1.2.0\"", "\"2.0.0\""));
+        s.jpm("install");
+        s.jpm("check", "release-age");
+        Fs.write(s.project.resolve("project.jsonc"), Fs.read(s.project.resolve("project.jsonc"))
+                .replace("\"7 days\",", "\"7 days\",\n  \"releaseAgeExceptions\": { \"org.example:money\": \"2.0.0\" },"));
+        s.jpm("check", "release-age");
+        Fs.write(s.project.resolve("project.jsonc"), Fs.read(s.project.resolve("project.jsonc")).replace("\"2.0.0\" }", "\"1.0.0\" }"));
+        s.jpm("check", "release-age");
+        s.verify("minimum-release-age");
+    }
+
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
+    void minimumReleaseAgeOfGitTags(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Path lib = tmp.resolve("git/me/lib");
+        Fs.mkdirs(lib);
+        git(lib, "init", "-q", "-b", "main");
+        for (String[] release : new String[][]{{"1.0.0", "30"}, {"1.1.0", "1"}}) {
+            Fs.write(lib.resolve("src/lib/Lib.java"), "package lib; public class Lib { public static String v() { return \"" + release[0] + "\"; } }");
+            Fs.write(lib.resolve("project.jsonc"), "{ \"name\": \"lib\", \"version\": \"" + release[0] + "\" }");
+            String date = java.time.Instant.now().minus(java.time.Duration.ofDays(Long.parseLong(release[1]))).getEpochSecond() + " +0000";
+            Map<String, String> env = Map.of("GIT_COMMITTER_DATE", date, "GIT_AUTHOR_DATE", date);
+            List<String> git = List.of("git", "-c", "user.name=e2e", "-c", "user.email=e2e@example.com", "-c", "commit.gpgsign=false");
+            Exec.capture(lib, Stream.concat(git.stream(), Stream.of("add", "-A")).toList(), env);
+            Exec.capture(lib, Stream.concat(git.stream(), Stream.of("commit", "-qm", release[0])).toList(), env);
+            Exec.capture(lib, Stream.concat(git.stream(), Stream.of("tag", release[0])).toList(), env);
+        }
+        s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"minimumReleaseAge\": \"7 days\",\n"
+                + "  \"runtime\": { \"github:me/lib\": \"^1.0.0\" }\n}\n");
+        s.jpm("install");
+        s.jpm("check", "release-age");
+        Fs.write(s.project.resolve("project.jsonc"), Fs.read(s.project.resolve("project.jsonc")).replace("^1.0.0", "1.1.0"));
+        s.jpm("install");
+        s.jpm("check", "release-age");
+        s.verify("minimum-release-age-git");
     }
 
     @Test

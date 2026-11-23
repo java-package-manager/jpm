@@ -76,6 +76,7 @@ public final class Resolver {
     private final Map<String, Graph.Kind> kinds = new HashMap<>();
     private final Map<String, Expanded> expandMemo = new HashMap<>();
     private final GitVersions gitVersions;
+    private final ReleaseAge age;
 
     /**
      * A resolver for a project. Packages of {@code previous} keep their versions unless they are in {@code unlocked} or {@code unlockAll} is true.
@@ -101,7 +102,8 @@ public final class Resolver {
         this.repo = repo;
         this.poms = new Pom.Loader(repo, dev.jpm.maven.Profiles.Context.forJava(project.root.java));
         this.previous = previous;
-        this.gitVersions = new GitVersions(previous, this::locked);
+        this.age = ReleaseAge.of(project.root, repo);
+        this.gitVersions = new GitVersions(previous, this::locked, age);
         this.unlocked = unlocked;
         this.unlockAll = unlockAll;
     }
@@ -115,7 +117,8 @@ public final class Resolver {
         this.repo = repo;
         this.poms = new Pom.Loader(repo);
         this.previous = previous;
-        this.gitVersions = new GitVersions(previous, this::locked);
+        this.age = ReleaseAge.none();
+        this.gitVersions = new GitVersions(previous, this::locked, age);
         this.unlocked = Set.of();
         this.unlockAll = false;
     }
@@ -311,7 +314,8 @@ public final class Resolver {
         } else {
             String[] ga = id.split(":");
             List<Version> all = repo.versions(ga[0], ga[1]);
-            Optional<Version> best = hard.size() == 1 ? hard.get(0).best(all) : new AllOf(hard).best(all);
+            VersionSpec spec = hard.size() == 1 ? hard.get(0) : new AllOf(hard);
+            Optional<Version> best = age.pick(id, all, spec::best);
             if (best.isPresent()) return new Selected(best.get().toString(), null, null);
         }
         throw conflict(id, reqs);

@@ -382,8 +382,8 @@ Items that are not in the original list but would pay off.
 - [x] **`jpm doctor`:** check the machine, not the project: PATH order, shims, installed JDKs, cache
       health and network access to configured repositories, and print what to fix. Project checks
       belong in `jpm check`, so a CI result never depends on the runner.
-- [ ] **More project checks for `jpm check`:** unused dependencies and duplicate classes on the
-      classpath, both read from compiled classes, not sources.
+- [x] **More project checks for `jpm check`:** unused dependencies and duplicate classes on the
+      classpath, both read from compiled classes, not sources (`unused-dependencies`, `duplicate-classes`).
 - [x] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
       resolving again, instead of failing.
 - [x] **Private repositories:** credentials for downloading from Maven repositories that need them,
@@ -398,14 +398,15 @@ Items that are not in the original list but would pay off.
 - [x] **Supply-chain checks:** verify checksums of every downloaded artifact against what the repository
       publishes, store hashes in `project.lock` (jars and POMs), and fail on a mismatch (ADR 0017).
 - [ ] **Signatures:** check `.asc` signatures where published, against a list of trusted keys.
-- [ ] **Minimum release age for `jpm update`:** a configurable age (for example 7 days) a version must
+- [x] **Minimum release age for `jpm update`:** a configurable age (for example 7 days) a version must
       have before `jpm update` picks it, so a compromised release is likely caught and pulled before it
       reaches a project. `jpm check` fails on any locked version younger than the minimum age, however it
       got there (a hand edit, `jpm add`, a Renovate pull request, an explicit pin). The only way past it is
       an exception for that dependency and version, added by hand in `project.jsonc` (for example to take
       a security fix at once); jpm never writes one itself, but the failure shows the exception to add.
       `jpm check` warns about a stale exception: the locked version is no longer the excepted one, or the
-      excepted version is now older than the minimum age and needs no exception.
+      excepted version is now older than the minimum age and needs no exception. Done: `"minimumReleaseAge"`,
+      `"releaseAgeExceptions"` and the `release-age` check (ADR 0018).
 - [x] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
 - [x] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension (`jpm sbom`, CycloneDX).
 - [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock

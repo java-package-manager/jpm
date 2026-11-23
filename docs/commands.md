@@ -19,7 +19,7 @@ Every command jpm has, from its command registry (the same list `jpm help` print
 | `jpm info` | Describe the project: each module's version and folder, and its dependencies with what they resolve to. Programs use the jpm protocol instead (`jpm api`, [protocol.md](protocol.md)) |
 | `jpm import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
 | `jpm license [id]` | Show the project's license and license file; `license <SPDX id>` sets `"license"` and writes `LICENSE` from SPDX's text with the year and the author (`--author`, else git's `user.name`) filled in; `--force` replaces a license file |
-| `jpm check [check...]` | Run jpm's checks (manifest, dependencies, paths, license, compile, unused-dependencies, duplicate-classes), the checks of the extensions the project declares, then the tests, and report every problem; `--no-test`, `--fail-on-warning`, `--exclude-tag <tag>`, `--sarif <file>`, `--junit <file>`, `--frozen` |
+| `jpm check [check...]` | Run jpm's checks (manifest, dependencies, release-age, paths, license, compile, unused-dependencies, duplicate-classes), the checks of the extensions the project declares, then the tests, and report every problem; `--no-test`, `--fail-on-warning`, `--exclude-tag <tag>`, `--sarif <file>`, `--junit <file>`, `--frozen` |
 
 ## Build and run
 

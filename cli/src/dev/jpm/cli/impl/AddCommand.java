@@ -11,6 +11,7 @@ import dev.jpm.resolve.Extensions;
 import dev.jpm.resolve.GitModule;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
+import dev.jpm.resolve.ReleaseAge;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
@@ -79,7 +80,7 @@ final class AddCommand extends Command {
                 if (d.key().isWorkspace() && p.module(d.key().artifact()) == null) {
                     throw new JpmException("No workspace module named \"" + d.key().artifact() + "\"");
                 }
-                String spec = d.spec() != null ? d.spec() : d.key().isWorkspace() ? "*" : DepArgs.latestSpec(repo, d.key());
+                String spec = d.spec() != null ? d.spec() : d.key().isWorkspace() ? "*" : DepArgs.latestSpec(repo, d.key(), ReleaseAge.of(p.root, repo));
                 if (d.key().isMaven()) {
                     try {
                         VersionSpecs.parse(spec);

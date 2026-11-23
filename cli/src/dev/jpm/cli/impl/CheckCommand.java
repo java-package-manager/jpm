@@ -25,7 +25,7 @@ final class CheckCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(new Usage(Group.PROJECT, "check [check...]", "Run every check, then the tests, and report all problems (for CI)",
-                "Run jpm's checks (manifest, dependencies, paths, license, compile, unused-dependencies, duplicate-classes), the checks"
+                "Run jpm's checks (manifest, dependencies, release-age, paths, license, compile, unused-dependencies, duplicate-classes), the checks"
                         + " of the extensions the project declares, then the tests, and report every problem; `--no-test`, `--fail-on-warning`,"
                         + " `--exclude-tag <tag>`, `--sarif <file>`, `--junit <file>`, `--frozen`"));
     }

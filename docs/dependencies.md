@@ -140,6 +140,23 @@ conflict, starts from the higher version of each package, resolves again and wri
 repository publishes next to it (`.sha512`, `.sha256` or `.sha1`); one that does not match is deleted and
 the install fails. See [ADR 0017](adr/0017-checksums.md).
 
+**Minimum release age.** A compromised release is usually found and pulled within days, so a project can
+wait that long before it takes a new version. In the workspace root:
+
+```jsonc
+"minimumReleaseAge": "7 days",
+"releaseAgeExceptions": { "com.example:lib": "1.4.2" }
+```
+
+With it, jpm takes the highest version that is old enough whenever it picks one: `jpm add` without a
+version, `jpm update`, `--latest`, and ranges in manifests and POMs. When no version that fits is old enough, it
+takes the newest and warns. `jpm check` fails on every locked version that is younger than the minimum (Maven
+versions and Git tags, transitive ones and extensions included), however it got into `project.lock`. The only
+way past it is an exception for that package and version, added by hand; the error shows the one to add, and
+`jpm check` warns about one that is no longer needed. A Maven version's age comes from the `Last-Modified`
+time its repository sends for the POM, a Git tag's from its date. Snapshots and Git branches and commits are
+not checked. See [ADR 0018](adr/0018-minimum-release-age.md).
+
 **Vulnerabilities.** `jpm audit` asks the [OSV](https://osv.dev) database about every locked package (Maven
 packages by name and version, Git packages by commit) and prints each known vulnerability with its id and
 CVE, its severity, the version that fixes it and how the project gets the package; it exits 1 when there is

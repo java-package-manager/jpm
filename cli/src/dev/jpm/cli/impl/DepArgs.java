@@ -3,11 +3,14 @@ package dev.jpm.cli.impl;
 import dev.jpm.DepKey;
 import dev.jpm.git.GitRepo;
 import dev.jpm.maven.MavenRepo;
+import dev.jpm.resolve.ReleaseAge;
 import dev.jpm.version.Tags;
 import dev.jpm.version.Version;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 final class DepArgs {
     private DepArgs() {
@@ -38,25 +41,30 @@ final class DepArgs {
     }
 
     static String latestSpec(MavenRepo repo, DepKey key) {
+        return latestSpec(repo, key, ReleaseAge.none());
+    }
+
+    static String latestSpec(MavenRepo repo, DepKey key, ReleaseAge age) {
         if (key.isGradle()) return dev.jpm.resolve.GradleDist.latest();
         if (key.isExtension()) return dev.jpm.resolve.ExtensionDeps.resolve(key, "latest").version();
         if (key.isMaven()) {
             List<Version> all = repo.versions(key.group(), key.artifact());
-            Version best = null;
-            for (Version v : all) if (!v.isPreRelease() && !v.isSnapshot() && (best == null || v.compareTo(best) > 0)) best = v;
-            if (best == null) best = all.get(all.size() - 1);
-            return best.toString();
+            Optional<Version> best = age.pick(key.toString(), all, vs -> vs.stream().filter(v -> !v.isPreRelease() && !v.isSnapshot()).max(Comparator.naturalOrder()));
+            return best.orElse(all.get(all.size() - 1)).toString();
         }
         if (key.isGit()) {
             GitRepo git = GitRepo.of(key);
             Map<String, String> tags = git.tags();
-            Version best = null;
+            Version best = null, newest = null;
             for (String t : tags.keySet()) {
                 String v = Tags.version(key.module(), t, tags.keySet());
                 if (v == null) continue;
                 Version vv = Version.of(v);
-                if (!vv.isPreRelease() && (best == null || vv.compareTo(best) > 0)) best = vv;
+                if (vv.isPreRelease()) continue;
+                if (newest == null || vv.compareTo(newest) > 0) newest = vv;
+                if ((best == null || vv.compareTo(best) > 0) && age.allowsTag(key, t, v)) best = vv;
             }
+            if (best == null) best = newest;
             if (best != null) return "^" + best;
             return "#" + git.defaultBranch();
         }

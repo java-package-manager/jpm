@@ -1016,6 +1016,20 @@
       },
       "uniqueItems": true
     },
+    "minimumReleaseAge": {
+      "type": "string",
+      "description": "How old a version must be before jpm picks it, such as \"7 days\": `jpm add`, `jpm update` and ranges take the highest version that is old enough, and `jpm check` fails on a locked version that is younger, unless `releaseAgeExceptions` names it. Snapshots and Git branches are not checked. Only in the workspace root.",
+      "pattern": "^\\s*\\d{1,6}\\s*(m|min|mins|minutes?|h|hours?|d|days?|w|weeks?)\\s*$",
+      "examples": ["7 days", "3d", "12 hours", "2 weeks"]
+    },
+    "releaseAgeExceptions": {
+      "type": "object",
+      "description": "Packages that may be younger than `minimumReleaseAge`, each with the one version that may, such as {\"com.example:lib\": \"1.4.2\"} to take a security fix at once. jpm never adds one; `jpm check` shows the one to add, and warns about one that is no longer needed. Only in the workspace root.",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "javacArgs": {
       "type": "array",
       "description": "Extra arguments for javac.",

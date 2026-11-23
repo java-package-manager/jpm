@@ -117,7 +117,7 @@ error: jpm check found problems (2 checks: 2 errors, 1 warning)
 
 $ jpm check --no-test pahts
 error: No check named pahts
-  hint: the checks are manifest, dependencies, paths, license, compile, unused-dependencies, duplicate-classes, lint:style, tests
+  hint: the checks are manifest, dependencies, release-age, paths, license, compile, unused-dependencies, duplicate-classes, lint:style, tests
 [exit 2]
 
 $ jpm check --fail-on-warning --no-test

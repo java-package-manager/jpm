@@ -207,6 +207,18 @@ Maven repositories to search besides Maven Central (https:// or file:// URLs).
 
 Type: a list of strings.
 
+### `minimumReleaseAge`
+
+How old a version must be before jpm picks it, such as "7 days": `jpm add`, `jpm update` and ranges take the highest version that is old enough, and `jpm check` fails on a locked version that is younger, unless `releaseAgeExceptions` names it. Snapshots and Git branches are not checked. Only in the workspace root.
+
+Type: a string.
+
+### `releaseAgeExceptions`
+
+Packages that may be younger than `minimumReleaseAge`, each with the one version that may, such as {"com.example:lib": "1.4.2"} to take a security fix at once. jpm never adds one; `jpm check` shows the one to add, and warns about one that is no longer needed. Only in the workspace root.
+
+Type: an object.
+
 ### `javacArgs`
 
 Extra arguments for javac.

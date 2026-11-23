@@ -1,0 +1,45 @@
+$ jpm add org.example:money
+      Adding org.example:money 1.2.0
+   Resolving dependencies
+  + org.example:money 1.2.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+
+--- project.jsonc
+{
+  "name": "app",
+  "version": "1.0.0",
+  "minimumReleaseAge": "7 days",
+  "runtime": {
+    "org.example:money": "1.2.0"
+  }
+}
+
+$ jpm check release-age
+    Checking locked versions are at least the minimum release age old (release-age)
+     Checked 1 check: 0 errors, 0 warnings
+
+$ jpm install
+   Resolving dependencies
+  ~ org.example:money 1.2.0 -> 2.0.0
+      Locked 1 package (0 added, 1 changed, 0 removed)
+
+$ jpm check release-age
+    Checking locked versions are at least the minimum release age old (release-age)
+error: project.jsonc:6: org.example:money 2.0.0 was released 2 days ago, less than the minimum release age (7 days)
+  hint: take it now with "releaseAgeExceptions": {"org.example:money": "2.0.0"} in project.jsonc, or wait until it is 7 days old
+error: jpm check found problems (1 check: 1 error, 0 warnings)
+[exit 1]
+
+$ jpm check release-age
+    Checking locked versions are at least the minimum release age old (release-age)
+     Checked 1 check: 0 errors, 0 warnings
+
+$ jpm check release-age
+    Checking locked versions are at least the minimum release age old (release-age)
+error: project.jsonc:7: org.example:money 2.0.0 was released 2 days ago, less than the minimum release age (7 days)
+  hint: take it now with "releaseAgeExceptions": {"org.example:money": "2.0.0"} in project.jsonc, or wait until it is 7 days old
+warning: project.jsonc:5: the exception for org.example:money 1.0.0 is not needed: the locked version is 2.0.0
+  hint: remove it from "releaseAgeExceptions"
+error: jpm check found problems (1 check: 1 error, 1 warning)
+[exit 1]
+

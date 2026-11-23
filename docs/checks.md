@@ -7,6 +7,7 @@ tests, and reports every problem before it exits, so failing tests never hide an
 |---|---|
 | `manifest` | `project.jsonc` does not load (unknown fields, bad values; the file and line) |
 | `dependencies` | the dependencies do not resolve, or `project.lock` is stale with `--frozen` |
+| `release-age` | a locked version younger than `"minimumReleaseAge"` that `"releaseAgeExceptions"` does not name; an exception no longer needed (warning). Only with either field |
 | `paths` | a field names a file or folder that does not exist: `sources`, `resources`, `patches`, script and hook files |
 | `license` | a module with a `"group"` (published) has no `"license"`, or one that is not an SPDX id (warning) |
 | `compile` | the sources or tests do not compile |

@@ -1,22 +1,28 @@
 package dev.jpm.check;
 
+import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.build.Builder;
 import dev.jpm.check.impl.ClassFiles;
 import dev.jpm.license.Licenses;
+import dev.jpm.maven.MavenRepo;
+import dev.jpm.resolve.Graph;
+import dev.jpm.resolve.ReleaseAge;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -112,6 +118,86 @@ public final class ProjectChecks {
             String id = Licenses.find(Licenses.ids(license).get(0)).id();
             out.add(Problem.warning("license", "the project is " + id + " but has no license file", owner.file, line(owner, "license"))
                     .withHint("`jpm license " + id + "` writes LICENSE from SPDX's text"));
+        }
+        return out;
+    }
+
+    /**
+     * Every locked Maven version and Git tag, the extensions' included, is at least the minimum release age old, or
+     * is the version {@code releaseAgeExceptions} names for it; exceptions that no longer do anything are warnings
+     * (ADR 0018).
+     */
+    public static List<Problem> releaseAge(Project p, Graph g, MavenRepo repo) {
+        List<Problem> out = new ArrayList<>();
+        ReleaseAge age = ReleaseAge.of(p.root, repo);
+        Manifest root = p.root;
+        if (!age.active()) {
+            for (String id : root.releaseAgeExceptions.keySet()) {
+                out.add(Problem.warning("release-age", "the exception for " + id + " does nothing: there is no \"minimumReleaseAge\"", root.file,
+                        line(root, "releaseAgeExceptions", id)).withHint("remove it, or set \"minimumReleaseAge\", such as \"7 days\""));
+            }
+            return out;
+        }
+        Map<String, String> locked = new LinkedHashMap<>();
+        List<Graph> graphs = new ArrayList<>(List.of(g));
+        graphs.addAll(g.isolated.values());
+        graphs.addAll(g.extensions.values());
+        for (Graph each : graphs) {
+            for (Graph.Pkg pkg : each.pkgs.values()) {
+                if (locked.putIfAbsent(pkg.id, pkg.version) != null) continue;
+                String version = pkg.version;
+                Instant released;
+                if (pkg.kind == Graph.Kind.MAVEN) {
+                    if (ReleaseAge.isSnapshot(version)) continue;
+                    Optional<Instant> when;
+                    try {
+                        when = age.mavenReleased(pkg.id, version);
+                    } catch (JpmException e) {
+                        out.add(Problem.error("release-age", e.getMessage(), root.file, null));
+                        continue;
+                    }
+                    if (when.isEmpty()) {
+                        out.add(Problem.warning("release-age", "no repository says when " + pkg.id + " " + version + " was released", root.file, null)
+                                .withHint("its age cannot be checked; the repository sends no Last-Modified time for the POM"));
+                        continue;
+                    }
+                    released = when.get();
+                } else if (pkg.kind == Graph.Kind.GIT && pkg.tag != null) {
+                    released = age.tagDate(DepKey.parse(pkg.id), pkg.tag);
+                    if (released == null) continue;
+                } else {
+                    continue;
+                }
+                if (age.oldEnough(released) || age.excepted(pkg.id, version)) {
+                    if (age.excepted(pkg.id, version) && age.oldEnough(released)) {
+                        out.add(Problem.warning("release-age", "the exception for " + pkg.id + " " + version + " is not needed: it was released "
+                                + age.ago(released) + " ago", root.file, line(root, "releaseAgeExceptions", pkg.id)).withHint("remove it from"
+                                        + " \"releaseAgeExceptions\""));
+                    }
+                    continue;
+                }
+                Problem.Severity sev = Problem.Severity.ERROR;
+                Path file = root.file;
+                Integer at = null;
+                for (Project.Module m : p.modules) {
+                    for (Manifest.Dependency d : m.manifest.dependencies) {
+                        if (d.key().toString().equals(pkg.id) && at == null) {
+                            file = m.manifest.file;
+                            at = d.line();
+                        }
+                    }
+                }
+                out.add(new Problem(sev, pkg.id + " " + version + " was released " + age.ago(released) + " ago, less than the minimum release age ("
+                        + ReleaseAge.describe(age.minimum) + ")", file, at, "take it now with \"releaseAgeExceptions\": {\"" + pkg.id + "\": \"" + version
+                                + "\"} in " + p.dir.relativize(root.file) + ", or wait until it is " + ReleaseAge.describe(age.minimum) + " old", "release-age"));
+            }
+        }
+        for (Map.Entry<String, String> e : root.releaseAgeExceptions.entrySet()) {
+            String now = locked.get(e.getKey());
+            if (e.getValue().equals(now)) continue;
+            out.add(Problem.warning("release-age", "the exception for " + e.getKey() + " " + e.getValue() + " is not needed: "
+                    + (now == null ? "it is not a dependency" : "the locked version is " + now), root.file, line(root, "releaseAgeExceptions", e.getKey()))
+                    .withHint("remove it from \"releaseAgeExceptions\""));
         }
         return out;
     }

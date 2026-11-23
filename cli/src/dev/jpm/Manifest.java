@@ -9,12 +9,16 @@ import dev.jpm.util.JpmException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The parsed {@code project.jsonc}.
@@ -39,7 +43,7 @@ public final class Manifest {
      */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
-            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "groovy", "scala", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "$schema");
+            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "groovy", "scala", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "minimumReleaseAge", "releaseAgeExceptions", "$schema");
 
     /**
      * The dependency sections of a manifest; {@link #key} is the section's name in {@code project.jsonc}.
@@ -194,6 +198,15 @@ public final class Manifest {
     public final boolean isolated;
 
     public final List<String> repositories;
+    /**
+     * How old a version must be before jpm picks it and {@code jpm check} accepts it locked (ADR 0018); null for no minimum.
+     */
+    public final Duration minimumReleaseAge;
+    /**
+     * Package id to the one version of it that may be younger than {@link #minimumReleaseAge}.
+     */
+    public final Map<String, String> releaseAgeExceptions;
+
     public final String defineClass;
     public final List<String> javacArgs;
     public final List<String> nativeArgs;
@@ -466,6 +479,8 @@ public final class Manifest {
         }
         this.workspace = reader.stringList("workspace");
         this.repositories = reader.stringList("repositories");
+        this.minimumReleaseAge = releaseAge(parent);
+        this.releaseAgeExceptions = releaseAgeExceptions(parent);
         this.javacArgs = parent == null ? reader.stringList("javacArgs") : concat(parent.javacArgs, reader.stringList("javacArgs"));
         this.nativeArgs = parent == null ? reader.stringList("nativeArgs") : concat(parent.nativeArgs, reader.stringList("nativeArgs"));
         this.testJvmArgs = parent == null ? reader.stringList("testJvmArgs") : concat(parent.testJvmArgs, reader.stringList("testJvmArgs"));
@@ -651,6 +666,54 @@ public final class Manifest {
      */
     public int line(int offset) {
         return reader.line(offset);
+    }
+
+    private Duration releaseAge(Manifest parent) {
+        Jsonc.Node n = root.get("minimumReleaseAge");
+        if (n == null) return null;
+        if (parent != null) throw err(n, "set minimumReleaseAge in the workspace root's " + FILE + ", not in a module's");
+        Duration d = n.isString() ? parseAge((String) n.value) : null;
+        if (d == null) throw err(n, "minimumReleaseAge must be a number and a unit, such as \"7 days\", \"12h\" or \"2 weeks\"");
+        return d;
+    }
+
+    /**
+     * A duration such as {@code 7 days}, {@code 7d}, {@code 12 hours} or {@code 2w}, or null when it is not one.
+     */
+    public static Duration parseAge(String text) {
+        Matcher m = Pattern.compile("(\\d{1,6})\\s*(m|min|mins|minutes?|h|hours?|d|days?|w|weeks?)")
+                .matcher(text.strip().toLowerCase(Locale.ROOT));
+        if (!m.matches()) return null;
+        long n = Long.parseLong(m.group(1));
+        return switch (m.group(2).charAt(0)) {
+            case 'm' -> Duration.ofMinutes(n);
+            case 'h' -> Duration.ofHours(n);
+            case 'd' -> Duration.ofDays(n);
+            default -> Duration.ofDays(7 * n);
+        };
+    }
+
+    private Map<String, String> releaseAgeExceptions(Manifest parent) {
+        Jsonc.Node n = root.get("releaseAgeExceptions");
+        if (n == null) return Map.of();
+        if (parent != null) throw err(n, "set releaseAgeExceptions in the workspace root's " + FILE + ", not in a module's");
+        if (!n.isObject()) throw err(n, "releaseAgeExceptions must be an object of package to the version that may be younger, such as"
+                + " {\"com.example:lib\": \"1.4.2\"}");
+        Map<String, String> out = new LinkedHashMap<>();
+        for (Jsonc.Member e : n.members.values()) {
+            DepKey key;
+            try {
+                key = DepKey.parse(e.key);
+            } catch (JpmException ex) {
+                throw JpmException.at(file, line(e.keyStart), ex.getMessage());
+            }
+            if (!key.isMaven() && !key.isGit()) throw JpmException.at(file, line(e.keyStart), e.key + " has no releases to wait for: name a Maven or Git package");
+            if (!e.value.isString() || ((String) e.value.value).isBlank()) {
+                throw err(e.value, "releaseAgeExceptions." + e.key + " must be the one version that may be younger, such as \"1.4.2\"");
+            }
+            out.put(key.toString(), ((String) e.value.value).strip());
+        }
+        return out;
     }
 
     /**

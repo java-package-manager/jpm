@@ -8,6 +8,7 @@ import dev.jpm.util.JpmException;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -110,6 +111,20 @@ public final class GitRepo {
             if (line.isBlank()) continue;
             String[] p = line.trim().split(" ");
             out.put(p[0], p.length > 2 && !p[2].isEmpty() ? p[2] : p[1]);
+        }
+        return out;
+    }
+
+    /**
+     * Tag name to when it was made: the tagger date of an annotated tag, the commit date of a lightweight one.
+     */
+    public Map<String, Instant> tagDates() {
+        fetch();
+        Exec.Result r = Exec.checked(mirror, Exec.cmd("git", "for-each-ref", "refs/tags", "--format=%(refname:strip=2) %(creatordate:unix)"));
+        Map<String, Instant> out = new LinkedHashMap<>();
+        for (String line : r.out().split("\n")) {
+            String[] p = line.trim().split(" ");
+            if (p.length == 2 && p[1].matches("\\d+")) out.put(p[0], Instant.ofEpochSecond(Long.parseLong(p[1])));
         }
         return out;
     }

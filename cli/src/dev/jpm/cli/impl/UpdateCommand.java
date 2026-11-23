@@ -7,6 +7,7 @@ import dev.jpm.json.JsoncEdit;
 import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
+import dev.jpm.resolve.ReleaseAge;
 import dev.jpm.util.Fs;
 
 import java.nio.file.Path;
@@ -54,7 +55,7 @@ final class UpdateCommand extends Command {
                 for (Manifest.Dependency d : m.manifest.dependencies) {
                     if (d.key().isWorkspace() || (!only.isEmpty() && !only.contains(d.key().toString()))) continue;
                     if (d.key().isGit() && (d.spec().startsWith("#") || d.spec().matches("[0-9a-f]{7,40}"))) continue;
-                    String spec = DepArgs.latestSpec(repo, d.key());
+                    String spec = DepArgs.latestSpec(repo, d.key(), ReleaseAge.of(p.root, repo));
                     if (!spec.equals(d.spec())) {
                         Log.step("Updating", d.key() + " " + d.spec() + " -> " + spec);
                         src = JsoncEdit.set(src, List.of(d.scope().key), d.key().toString(), Jsonc.quote(spec));

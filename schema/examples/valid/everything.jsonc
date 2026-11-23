@@ -39,6 +39,8 @@
   },
   "visibility": "internal",
   "repositories": ["https://repo.example.com/releases", "file:///opt/repo"],
+  "minimumReleaseAge": "7 days",
+  "releaseAgeExceptions": { "com.example:lib": "1.4.2" },
   "javacArgs": ["-Xlint:all"],
   "nativeArgs": ["--no-fallback"],
   "layout": "maven",

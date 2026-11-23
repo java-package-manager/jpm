@@ -15,8 +15,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -274,6 +280,76 @@ public final class MavenRepo {
     }
 
     /**
+     * When a version was published (ADR 0018): the {@code Last-Modified} time the first repository that has its POM
+     * sends for it, or the POM's modification time in a {@code file:} repository. Kept in the cache next to the POM.
+     * Empty when no repository says; throws when none could be asked.
+     */
+    public Optional<Instant> released(String group, String artifact, String version) {
+        Path stamp = local(group, artifact, version, null, "pom").resolveSibling(artifact + "-" + version + ".pom.released");
+        if (Files.isRegularFile(stamp)) {
+            String t = Fs.read(stamp).strip();
+            return t.equals("unknown") ? Optional.empty() : Optional.of(Instant.parse(t));
+        }
+        String rel = path(group, artifact, version, null, "pom");
+        List<String> problems = new ArrayList<>();
+        for (String repo : repos) {
+            Released r = lastModified(repo + rel);
+            if (r.problem() != null) {
+                problems.add(r.problem());
+                continue;
+            }
+            if (!r.found()) continue;
+            Fs.write(stamp, r.time() == null ? "unknown" : r.time().toString());
+            return Optional.ofNullable(r.time());
+        }
+        if (!problems.isEmpty()) {
+            throw new JpmException("Could not learn when " + group + ":" + artifact + " " + version + " was released: " + String.join("; ", problems));
+        }
+        return Optional.empty();
+    }
+
+    private record Released(boolean found, Instant time, String problem) {}
+
+    private Released lastModified(String url) {
+        if (url.startsWith("file:")) {
+            try {
+                Path src = Path.of(URI.create(url));
+                if (!Files.isRegularFile(src)) return new Released(false, null, null);
+                return new Released(true, Files.getLastModifiedTime(src).toInstant().truncatedTo(ChronoUnit.SECONDS), null);
+            } catch (IOException | IllegalArgumentException e) {
+                return new Released(false, null, url + ": " + e.getMessage());
+            }
+        }
+        if (offline) return new Released(false, null, "offline");
+        Log.debug("HEAD " + url);
+        try {
+            HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofMinutes(2)).header("User-Agent", "jpm")
+                    .method("HEAD", HttpRequest.BodyPublishers.noBody());
+            String auth = Credentials.authorization(url);
+            if (auth != null) b.header("Authorization", auth);
+            HttpResponse<Void> resp = http.send(b.build(), HttpResponse.BodyHandlers.discarding());
+            int status = resp.statusCode();
+            if (status == 404 || status == 410) return new Released(false, null, null);
+            if (status != 200) return new Released(false, null, url + " answered HTTP " + status);
+            Instant time = resp.headers().firstValue("Last-Modified").map(MavenRepo::httpDate).orElse(null);
+            return new Released(true, time, null);
+        } catch (IOException e) {
+            return new Released(false, null, url + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new JpmException("Interrupted");
+        }
+    }
+
+    private static Instant httpDate(String value) {
+        try {
+            return ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    /**
      * All published versions of a module, from maven-metadata.xml.
      */
     public List<Version> versions(String group, String artifact) {
@@ -289,7 +365,7 @@ public final class MavenRepo {
             boolean fresh = false;
             try {
                 fresh = Files.exists(local) && !refreshMetadata
-                        && Files.getLastModifiedTime(local).toInstant().plus(METADATA_TTL).isAfter(java.time.Instant.now());
+                        && Files.getLastModifiedTime(local).toInstant().plus(METADATA_TTL).isAfter(Instant.now());
             } catch (IOException ignored) {
             }
             if (!fresh && !offline) {
