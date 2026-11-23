@@ -410,7 +410,9 @@ Items that are not in the original list but would pay off.
       Done when a Windows run is green and those are enabled too.
 - [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …) and a template
       repository for writing new ones.
-- [ ] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists.
+- [x] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists. jpm and
+      jpm-format release with changesets and changeset-action (`.changeset/`, the "Version packages" pull
+      request, `CHANGELOG.md`).
 - [x] **Document the versioned schema URL:** every release already ships `project.schema.json`, so
       `releases/download/<version>/project.schema.json` is a stable URL per version. The README only
       mentions `releases/latest/…`; document the pinned form as the replacement for `jpm schema`.
