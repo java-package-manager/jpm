@@ -26,13 +26,21 @@ final class InitCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(
-                new Usage(Group.PROJECT, "init [name]", "Create a project in the current directory",
-                        "Create a project"));
+                new Usage(Group.PROJECT, "init [name]", "Create a project in the current directory (--license <id> also writes LICENSE)",
+                        "Create a project; `--license <SPDX id>` sets its license and writes `LICENSE` (as `jpm license` does)"));
+    }
+
+    @Override
+    List<String> flags() {
+        return List.of("--license", "--author");
     }
 
     @Override
     int run(List<String> args) {
+        String license = option(args, "--license");
+        String author = option(args, "--author");
         noMoreFlags(args);
+        if (license != null) LicenseCommand.validate(license);
         if (Files.exists(cwd.resolve(Manifest.FILE))) throw new JpmException(Manifest.FILE + " already exists here");
         String name = args.isEmpty() ? cwd.getFileName().toString() : args.get(0);
         name = name.replaceAll("[^A-Za-z0-9._-]", "-").replaceAll("^[^A-Za-z0-9]+", "");
@@ -50,11 +58,12 @@ final class InitCommand extends Command {
                   "$schema": "%s",
                   "name": "%s",
                   "version": "0.1.0",
-                  %s"main": "%s.App",
+                  %s%s"main": "%s.App",
                   "runtime": {},
                   "test": {}
                 }
-                """.formatted(Manifest.SCHEMA_URL, name, "\"java\": \"" + major + "\",\n  ", pkg);
+                """.formatted(Manifest.SCHEMA_URL, name, license == null ? "" : "\"license\": " + dev.jpm.api.json.Jsonc.quote(license) + ",\n  ",
+                "\"java\": \"" + major + "\",\n  ", pkg);
         Fs.write(cwd.resolve(Manifest.FILE), manifest);
         Path app = cwd.resolve("src").resolve(pkg).resolve("App.java");
         if (!Files.exists(app)) {
@@ -89,6 +98,7 @@ final class InitCommand extends Command {
                     }
                     """.formatted(pkg, name));
         }
+        if (license != null) LicenseCommand.set(cwd, cwd.resolve(Manifest.FILE), license, author, false);
         Path gi = cwd.resolve(".gitignore");
         String ignore = ".cache/\ndist/\n.env.local\n";
         if (!Files.exists(gi)) Fs.write(gi, ignore);

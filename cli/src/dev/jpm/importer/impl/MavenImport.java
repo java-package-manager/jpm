@@ -56,6 +56,8 @@ public final class MavenImport {
             ws.put("$schema", dev.jpm.Manifest.SCHEMA_URL);
             ws.put("name", rootModel.artifact);
             if (rootModel.version != null) ws.put("version", rootModel.version);
+            String license = license(rootModel, out, "");
+            if (license != null) ws.put("license", license);
             ws.put("workspace", modules.stream().map(Module::dir).toList());
             List<String> repos = repositories(rootModel);
             if (!repos.isEmpty()) ws.put("repositories", repos);
@@ -116,6 +118,8 @@ public final class MavenImport {
         if (workspace && !java.util.Objects.equals(pom.version, rootModel.version)) {
             imp.warn(where, "version " + pom.version + " differs from the workspace version " + rootModel.version + "; jpm versions workspaces in lockstep by default");
         }
+        String license = license(pom, imp, where);
+        if (license != null && !(workspace && license.equals(license(rootModel, null, "")))) man.put("license", license);
         man.put("layout", "maven");
 
         Integer release = release(pom);
@@ -289,6 +293,25 @@ public final class MavenImport {
             if (!out.isEmpty()) break;
         }
         return out;
+    }
+
+    private static String license(Pom pom, Imported imp, String where) {
+        for (Element e : pom.chain) {
+            Element ls = childOf(e, "licenses");
+            if (ls == null) continue;
+            List<String> ids = new ArrayList<>();
+            for (Element l : elements(ls, "license")) {
+                String name = interp(pom, textOf(l, "name")), url = interp(pom, textOf(l, "url"));
+                String id = dev.jpm.license.Licenses.forNameOrUrl(name, url);
+                if (id == null) {
+                    if (imp != null) imp.warn(where, "the license \"" + (name != null ? name : url) + "\" is not on the SPDX license list; set \"license\" by hand");
+                    continue;
+                }
+                if (!ids.contains(id)) ids.add(id);
+            }
+            return ids.isEmpty() ? null : String.join(" OR ", ids);
+        }
+        return null;
     }
 
     private static List<String> repositories(Pom pom) {

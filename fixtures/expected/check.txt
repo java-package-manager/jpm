@@ -22,9 +22,9 @@ $ jpm check --sarif check.sarif --junit check.xml
     Checking files and folders the manifests name exist (paths)
 error: project.jsonc:7: the source folder generated does not exist
 error: project.jsonc:8: the script file gen.java (gen) does not exist
-    Checking published modules have a license (license)
+    Checking the license is an SPDX id and agrees with the license file (license)
 warning: project.jsonc:3: app has a "group" but no "license"
-  hint: add an SPDX license id, such as "license": "MIT" (in the workspace root for every module)
+  hint: set one with `jpm license <SPDX id>`, such as `jpm license MIT`, which also writes the license file
     Checking the sources compile (compile)
     Compiled app 1.0.0 (<jdk>, release 21)
     Compiled app tests
@@ -109,9 +109,9 @@ $ jpm check --no-test paths license
     Checking files and folders the manifests name exist (paths)
 error: project.jsonc:7: the source folder generated does not exist
 error: project.jsonc:8: the script file gen.java (gen) does not exist
-    Checking published modules have a license (license)
+    Checking the license is an SPDX id and agrees with the license file (license)
 warning: project.jsonc:3: app has a "group" but no "license"
-  hint: add an SPDX license id, such as "license": "MIT" (in the workspace root for every module)
+  hint: set one with `jpm license <SPDX id>`, such as `jpm license MIT`, which also writes the license file
 error: jpm check found problems (2 checks: 2 errors, 1 warning)
 [exit 1]
 
@@ -124,7 +124,9 @@ $ jpm check --fail-on-warning --no-test
     Checking project.jsonc loads (manifest)
     Checking dependencies resolve (dependencies)
     Checking files and folders the manifests name exist (paths)
-    Checking published modules have a license (license)
+    Checking the license is an SPDX id and agrees with the license file (license)
+warning: project.jsonc:8: the project is MIT but has no license file
+  hint: `jpm license MIT` writes LICENSE from SPDX's text
     Checking the sources compile (compile)
     Compiled app tests
     Checking every declared dependency is used (unused-dependencies)
@@ -136,14 +138,16 @@ warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 
     Checking the code has style (lint:style)
 jpm-lint ran with --style
 warning: src/app/Main.java:1: Main is too long
-error: jpm check found problems (8 checks: 0 errors, 3 warnings)
+error: jpm check found problems (8 checks: 0 errors, 4 warnings)
 [exit 1]
 
 $ jpm check --no-test
     Checking project.jsonc loads (manifest)
     Checking dependencies resolve (dependencies)
     Checking files and folders the manifests name exist (paths)
-    Checking published modules have a license (license)
+    Checking the license is an SPDX id and agrees with the license file (license)
+warning: project.jsonc:8: the project is MIT but has no license file
+  hint: `jpm license MIT` writes LICENSE from SPDX's text
     Checking the sources compile (compile)
     Checking every declared dependency is used (unused-dependencies)
 warning: project.jsonc:12: app does not use org.example:unused (runtime)
@@ -154,5 +158,5 @@ warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 
     Checking the code has style (lint:style)
 jpm-lint ran with --style
 warning: src/app/Main.java:1: Main is too long
-     Checked 8 checks: 0 errors, 3 warnings
+     Checked 8 checks: 0 errors, 4 warnings
 

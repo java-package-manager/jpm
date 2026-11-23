@@ -1,0 +1,91 @@
+$ jpm license
+license: (none)
+file:    (none)
+
+$ jpm license Apach-2.0
+error: "Apach-2.0" is not an SPDX license id
+  hint: did you mean Apache-2.0?
+[exit 2]
+
+$ jpm license MIT --author Ann Smith
+     License MIT (project.jsonc)
+       Wrote LICENSE (MIT, Ann Smith)
+
+--- project.jsonc
+{
+  "name": "app",
+  "version": "1.0.0",
+  "license": "MIT"
+}
+
+--- LICENSE
+MIT License
+
+Copyright (c) Ann Smith
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software.
+
+The above copyright notice and this permission notice shall be included in all copies.
+
+$ jpm license
+license: MIT
+file:    LICENSE (MIT)
+
+$ jpm check --no-test license
+   Resolving dependencies
+      Locked 0 packages
+    Checking the license is an SPDX id and agrees with the license file (license)
+     Checked 1 check: 0 errors, 0 warnings
+
+$ jpm check --no-test license
+    Checking the license is an SPDX id and agrees with the license file (license)
+warning: project.jsonc:4: "license" is Apache-2.0, but LICENSE is MIT
+  hint: make them agree: the license file is what users read
+     Checked 1 check: 0 errors, 1 warning
+
+$ jpm check --no-test license
+    Checking the license is an SPDX id and agrees with the license file (license)
+warning: project.jsonc: LICENSE is MIT, but project.jsonc has no "license"
+  hint: add "license": "MIT" (or run `jpm license MIT`, which keeps the file)
+     Checked 1 check: 0 errors, 1 warning
+
+$ jpm check --no-test license
+    Checking the license is an SPDX id and agrees with the license file (license)
+warning: project.jsonc:4: the project is MIT but has no license file
+  hint: `jpm license MIT` writes LICENSE from SPDX's text
+     Checked 1 check: 0 errors, 1 warning
+
+$ (cd new) jpm init --license MIT --author Ann Smith
+       Wrote LICENSE (MIT, Ann Smith)
+     Created project.jsonc, src/new/App.java and test/new/AppTest.java
+Next: `jpm start` to run it, `jpm test` to test it.
+
+--- new/project.jsonc
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "new",
+  "version": "0.1.0",
+  "license": "MIT",
+  "java": "21",
+  "main": "new.App",
+  "runtime": {},
+  "test": {}
+}
+
+$ (cd lib) jpm import
+    Imported project.jsonc from Maven
+   Resolving dependencies
+      Locked 0 packages
+Next: `jpm build` and `jpm test`. Sources stay where they are ("layout": "maven").
+
+--- lib/project.jsonc
+// Imported from Maven by `jpm import`. Edit freely; jpm does not read the pom.xml anymore.
+{
+  "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
+  "name": "lib",
+  "group": "org.example",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "layout": "maven"
+}
+

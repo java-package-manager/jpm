@@ -79,7 +79,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 
 | Command | |
 |---|---|
-| `init [name]` | Create a project |
+| `init [name]` | Create a project; `--license <SPDX id>` sets its license and writes `LICENSE` (as `jpm license` does) |
 | `add <dep>[@version]` | Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). An extension (a Git project with `"extension"` in its manifest) is declared in the root's `"extensions"` instead; `-g` installs one globally. Without a version: latest release (Maven) or `^latest-tag` (Git) |
 | `remove <dep>` | Remove dependencies, or a declared extension by name or key (`-g` removes a global extension) |
 | `install` | Resolve dependencies and declared extensions and write `project.lock`; `--frozen` fails if the lock is stale (CI) |
@@ -88,6 +88,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `why <dep>` | Show why a dependency is in the graph |
 | `info` | Describe the project: each module's version and folder, and its dependencies with what they resolve to. Programs use the jpm protocol instead (`jpm api`, [docs/protocol.md](docs/protocol.md)) |
 | `import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
+| `license [id]` | Show the project's license and license file; `license <SPDX id>` sets `"license"` and writes `LICENSE` from SPDX's text with the year and the author (`--author`, else git's `user.name`) filled in; `--force` replaces a license file |
 | `build` | Build into `dist/` (`--release`, `--profile <name>`) |
 | `build --bundle` | Also build `dist/<name>-<version>-bundle.jar` with the runtime dependencies: a runnable jar-in-jar with isolated modules for a module with a `main`, one flat jar (like a shadow jar) for one without, such as a Paper or Velocity plugin; `--flat` makes it flat either way. `"package": "bundle"` makes it the default |
 | `build --native` | Also build a native executable of `main` with GraalVM into `dist/` |
@@ -234,7 +235,11 @@ Other fields:
   module's (`${name}`, `${version}`, `${description}`, nested ones dotted: `${extensions.publish.repo}`, array items by
   index: `${javacArgs.0}`); the `*.properties` files next to the root's project.jsonc (such as `gradle.properties`),
   then those next to the module's; and the module's define values. Unknown names are left as they are
-- `description`, `license`, `url` (used by publishing)
+- `description`, `url` (used by publishing)
+- `license`: an SPDX license id (`MIT`) or expression (`MIT OR Apache-2.0`); the schema lists every id.
+  `jpm license <id>` sets it and writes `LICENSE` from SPDX's text, `jpm init --license <id>` does the same
+  for a new project, `jpm import` takes it from the POM or the license file, and `jpm check` reports ids
+  that are not on the SPDX list and a `"license"` that does not match the license file
 - `extensions`: the extensions the project uses, by dependency key with a version, and their settings by
   name, which jpm passes through untouched: `"extensions": { "github:java-package-manager/jpm-publish": "^0.2",
   "publish": { ... } }`. See [Extensions](#extensions).

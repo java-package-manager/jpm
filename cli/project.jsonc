@@ -23,6 +23,8 @@
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.msg.DOMMessages",
     "-H:IncludeResourceBundles=com.sun.org.apache.xerces.internal.impl.xpath.regex.message",
     // the manifest schema is served from the binary (schema/manifest in `jpm api`)
-    "-H:IncludeResources=dev/jpm/project\\.schema\\.json"
+    "-H:IncludeResources=dev/jpm/project\\.schema\\.json",
+    // the SPDX license list (dev.jpm.license.Licenses)
+    "-H:IncludeResources=dev/jpm/spdx-licenses\\.json"
   ]
 }

@@ -30,9 +30,33 @@ public final class Importer {
     public static Imported run(Path dir, MavenRepo repo, boolean noExecution) {
         String tool = detect(dir);
         if (tool == null) throw new JpmException("No pom.xml or Gradle build found in " + dir);
-        return switch (tool) {
+        Imported imported = switch (tool) {
             case "maven" -> MavenImport.run(dir, repo);
             default -> noExecution ? GradleScripts.runStatic(dir, repo) : GradleImport.run(dir, repo);
         };
+        licenseFromFile(dir, imported);
+        return imported;
+    }
+
+    /** A build that names no license gets the one its license file is, when jpm recognises the file. */
+    static void licenseFromFile(Path dir, Imported imported) {
+        java.util.Map<String, Object> root = imported.manifests.get("");
+        if (root == null || root.containsKey("license")) return;
+        if (imported.manifests.values().stream().anyMatch(m -> m.containsKey("license"))) return;
+        Path file = dev.jpm.license.Licenses.file(dir);
+        if (file == null) return;
+        java.util.List<String> detected = dev.jpm.license.Licenses.detect(dev.jpm.util.Fs.read(file));
+        if (detected.isEmpty()) {
+            imported.warn("", file.getFileName() + " is a license jpm does not recognise; set \"license\" by hand");
+            return;
+        }
+        java.util.Map<String, Object> withLicense = new java.util.LinkedHashMap<>();
+        for (java.util.Map.Entry<String, Object> e : root.entrySet()) {
+            withLicense.put(e.getKey(), e.getValue());
+            if (e.getKey().equals("version") || (e.getKey().equals("name") && !root.containsKey("version"))) withLicense.put("license", detected.get(0));
+        }
+        if (!withLicense.containsKey("license")) withLicense.put("license", detected.get(0));
+        root.clear();
+        root.putAll(withLicense);
     }
 }

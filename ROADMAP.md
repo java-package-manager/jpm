@@ -314,14 +314,14 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 ### Licenses
 
-- [ ] The schema offers every SPDX license id as a value for `license`, generated from the SPDX
+- [x] The schema offers every SPDX license id as a value for `license`, generated from the SPDX
       license list (https://spdx.org/licenses/, machine-readable at
       https://spdx.org/licenses/licenses.json) and linking to it. It still accepts SPDX expressions such
       as `MIT OR Apache-2.0`.
-- [ ] `jpm check`: when the project has a license file but no `license`, suggest the SPDX id, detected
+- [x] `jpm check`: when the project has a license file but no `license`, suggest the SPDX id, detected
       from the file's text where possible; warn when `license` and the license file do not match.
-- [ ] `jpm import` fills in `license` the same way.
-- [ ] Creating a license: when `license` is set and no license file exists, create one from the SPDX
+- [x] `jpm import` fills in `license` the same way.
+- [x] Creating a license: when `license` is set and no license file exists, create one from the SPDX
       text (with the year and the author filled in). `jpm init` asks for (or takes) a license and does
       the same.
 

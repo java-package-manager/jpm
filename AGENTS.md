@@ -16,6 +16,7 @@ Facts for AI agents working on jpm. The reasons behind them are in [CONTRIBUTING
 | Rewrite end-to-end transcripts | `JPM_UPDATE_EXPECTED=1 bin/jpm test dev.jpm.e2e.EndToEndTest` |
 | Ratchets | `java checks/Ratchets.java` (`--list <name>` shows the hits, `--update` lowers baselines) |
 | Comments in a file | `java checks/Comments.java list <path>` |
+| Update the SPDX license list | `python3 schema/spdx.py` (writes `spdx-licenses.json` and the schema's ids) |
 | Native binary | `bin/jpm build --native` (`cli/dist/jpm`) |
 
 If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21.

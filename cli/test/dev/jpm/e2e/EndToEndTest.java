@@ -230,6 +230,41 @@ class EndToEndTest {
     }
 
     @Test
+    void licenses(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Path spdx = tmp.resolve("spdx");
+        Fs.write(spdx.resolve("MIT.json"), "{ \"licenseId\": \"MIT\", \"licenseText\": \"MIT License\\n\\nCopyright (c) <copyright holders>\\n\\n"
+                + "Permission is hereby granted, free of charge, to any person obtaining a copy of this software.\\n\\n"
+                + "The above copyright notice and this permission notice shall be included in all copies.\\n\" }");
+        s.env("JPM_SPDX_BASE", spdx.toUri().toString());
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\"\n}\n");
+        s.jpm("license");
+        s.jpm("license", "Apach-2.0");
+        s.jpm("license", "MIT", "--author", "Ann Smith");
+        s.show("project.jsonc").show("LICENSE");
+        s.jpm("license");
+        s.jpm("check", "--no-test", "license");
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"license\": \"Apache-2.0\"\n}\n");
+        s.jpm("check", "--no-test", "license");
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\"\n}\n");
+        s.jpm("check", "--no-test", "license");
+        Fs.deleteTree(s.project.resolve("LICENSE"));
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"license\": \"MIT\"\n}\n");
+        s.jpm("check", "--no-test", "license");
+        Fs.write(s.project.resolve("new/.keep"), "");
+        s.jpmIn("new", "init", "--license", "MIT", "--author", "Ann Smith");
+        s.show("new/project.jsonc");
+        Fs.write(s.project.resolve("lib/pom.xml"), """
+                <project><modelVersion>4.0.0</modelVersion><groupId>org.example</groupId><artifactId>lib</artifactId><version>1.0.0</version>
+                  <licenses><license><name>The Apache Software License, Version 2.0</name>
+                    <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url></license></licenses></project>
+                """);
+        s.jpmIn("lib", "import");
+        s.show("lib/project.jsonc");
+        s.verify("licenses");
+    }
+
+    @Test
     void checkReportsEveryProblem(@TempDir Path tmp) {
         Session s = new Session(tmp);
         money(s.repo);

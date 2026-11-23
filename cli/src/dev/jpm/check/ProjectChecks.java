@@ -5,6 +5,8 @@ import dev.jpm.Project;
 import dev.jpm.api.json.Jsonc;
 import dev.jpm.build.Builder;
 import dev.jpm.check.impl.ClassFiles;
+import dev.jpm.license.Licenses;
+import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 
 import java.io.IOException;
@@ -57,19 +59,54 @@ public final class ProjectChecks {
         return Problem.error(check, "the " + what + " does not exist", mf.file, line(mf, keys));
     }
 
-    /** Modules published with Maven coordinates (a {@code "group"}) say under which license. */
+    /**
+     * Licenses: published modules (with a {@code "group"}) say which, every id is on the SPDX license list, and the
+     * project's license file and {@code "license"} agree (or the one that is missing is suggested from the other).
+     */
     public static List<Problem> license(Project p) {
         List<Problem> out = new ArrayList<>();
         for (Project.Module m : p.modules) {
             Manifest mf = m.manifest;
-            if (mf.group == null || "private".equals(mf.visibility)) continue;
-            if (mf.license == null) {
-                out.add(Problem.warning("license", m.name() + " has a \"group\" but no \"license\"", mf.file, line(mf, "group"))
-                        .withHint("add an SPDX license id, such as \"license\": \"MIT\" (in the workspace root for every module)"));
-            } else if (!mf.license.matches("[A-Za-z0-9.+-]+( (AND|OR|WITH) [A-Za-z0-9.+-]+)*")) {
-                out.add(Problem.warning("license", "\"" + mf.license + "\" is not an SPDX license id", mf.file, line(mf, "license"))
-                        .withHint("use an id from https://spdx.org/licenses/, such as MIT or Apache-2.0"));
+            String own = mf.license;
+            if (own == null) {
+                if (mf.group != null && !"private".equals(mf.visibility) && Licenses.file(p.dir) == null) {
+                    out.add(Problem.warning("license", m.name() + " has a \"group\" but no \"license\"", mf.file, line(mf, "group"))
+                            .withHint("set one with `jpm license <SPDX id>`, such as `jpm license MIT`, which also writes the license file"));
+                }
+                continue;
             }
+            if (line(mf, "license") == null) continue;
+            for (String id : Licenses.unknown(own)) {
+                String suggestion = Licenses.suggest(id);
+                out.add(Problem.warning("license", "\"" + id + "\" is not an SPDX license id", mf.file, line(mf, "license"))
+                        .withHint(suggestion != null ? "did you mean \"" + suggestion + "\"?" : "use an id from https://spdx.org/licenses/, such as MIT or Apache-2.0"));
+            }
+        }
+        if (p.root.isWorkspaceRoot() && p.root.license != null) {
+            for (String id : Licenses.unknown(p.root.license)) {
+                String suggestion = Licenses.suggest(id);
+                out.add(Problem.warning("license", "\"" + id + "\" is not an SPDX license id", p.root.file, line(p.root, "license"))
+                        .withHint(suggestion != null ? "did you mean \"" + suggestion + "\"?" : "use an id from https://spdx.org/licenses/, such as MIT or Apache-2.0"));
+            }
+        }
+        String license = p.root.license != null ? p.root.license : p.modules.size() == 1 ? p.modules.get(0).manifest.license : null;
+        Manifest owner = p.root.license != null || p.modules.size() != 1 ? p.root : p.modules.get(0).manifest;
+        Path file = Licenses.file(p.dir);
+        if (file != null) {
+            List<String> detected = Licenses.detect(Fs.read(file));
+            if (license == null) {
+                out.add(Problem.warning("license", p.dir.relativize(file) + " is " + (detected.isEmpty() ? "there" : detected.get(0))
+                        + ", but " + p.dir.relativize(owner.file) + " has no \"license\"", owner.file, null)
+                        .withHint(detected.isEmpty() ? "add \"license\" with its SPDX id (https://spdx.org/licenses/)"
+                                : "add \"license\": \"" + detected.get(0) + "\" (or run `jpm license " + detected.get(0) + "`, which keeps the file)"));
+            } else if (!detected.isEmpty() && !Licenses.names(license, detected)) {
+                out.add(Problem.warning("license", "\"license\" is " + license + ", but " + p.dir.relativize(file) + " is " + detected.get(0),
+                        owner.file, line(owner, "license")).withHint("make them agree: the license file is what users read"));
+            }
+        } else if (license != null && Licenses.unknown(license).isEmpty() && Licenses.ids(license).size() == 1) {
+            String id = Licenses.find(Licenses.ids(license).get(0)).id();
+            out.add(Problem.warning("license", "the project is " + id + " but has no license file", owner.file, line(owner, "license"))
+                    .withHint("`jpm license " + id + "` writes LICENSE from SPDX's text"));
         }
         return out;
     }

@@ -63,7 +63,7 @@ final class Checker {
         MavenRepo repo = new MavenRepo(p.root.repositories);
         Graph g = step("dependencies", "dependencies resolve", () -> Install.run(p, repo, new Install.Options(o.frozen(), false, Set.of(), true)));
         list("paths", "files and folders the manifests name exist", () -> ProjectChecks.paths(p));
-        list("license", "published modules have a license", () -> ProjectChecks.license(p));
+        list("license", "the license is an SPDX id and agrees with the license file", () -> ProjectChecks.license(p));
         if (g == null) return skipRest("the dependencies do not resolve");
         Builder b = new Builder(p, g, repo, Env.Mode.DEVELOPMENT);
         List<Project.Module> compiled = new ArrayList<>();
