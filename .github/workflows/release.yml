@@ -26,8 +26,14 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.CHANGESET_TOKEN || github.token }}
-      - uses: java-package-manager/setup-jpm@v1
-      - uses: java-package-manager/changeset-action@v1
+      # with no changesets left (the version pull request was just merged) the action would publish and tag,
+      # which is CI's job (ci.yml), so it runs only while there are changesets
+      - id: pending
+        run: echo "any=$(find .changeset -name '*.md' 2>/dev/null | head -n 1)" >> "$GITHUB_OUTPUT"
+      - if: steps.pending.outputs.any != ''
+        uses: java-package-manager/setup-jpm@v1
+      - if: steps.pending.outputs.any != ''
+        uses: java-package-manager/changeset-action@v1
         with:
           # a token of its own, so CI runs on the pull request (one opened with github.token starts no workflows)
           github-token: ${{ secrets.CHANGESET_TOKEN || github.token }}
