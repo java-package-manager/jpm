@@ -125,7 +125,7 @@ resolved into the exact versions they stood for, so the build is reproducible wi
 | `<repositories>` | `"repositories"` (Maven Central is always included) |
 | main class (jar, exec, shade, assembly, Spring Boot plugins) | `"main"` |
 | profiles | only modules of profiles active by default are imported |
-| resource filtering (`${…}` in resources) | not supported; use [defines](README.md#how-it-works) instead |
+| resource filtering (`${…}` in resources) | `"filter": ["app.properties"]`; see [`filter`](docs/manifest.md#filter) |
 
 ### Commands
 
@@ -164,8 +164,8 @@ resolved into the exact versions they stood for, so the build is reproducible wi
 | `application { mainClass = … }` | `"main"` |
 | `repositories { maven { url = … } }` | `"repositories"` |
 | tasks, `buildSrc`, convention plugins | not carried over; see [Custom build logic](#custom-build-logic) |
-| `kotlin("jvm")`, `kotlin { compilerOptions { … } }` | `"kotlin": "<version>"`, or `{ "version", "plugins", "args" }`; see [Kotlin](README.md#kotlin) |
-| `java-gradle-plugin`, `kotlin-dsl`, `gradleApi()`, `gradleTestKit()` | `"gradle:api": "<Gradle version>"` in `"dev"` and `"test"`; see [Gradle plugins](README.md#gradle-plugins) |
+| `kotlin("jvm")`, `kotlin { compilerOptions { … } }` | `"kotlin": "<version>"`, or `{ "version", "plugins", "args" }`; see [Kotlin](docs/building.md#kotlin) |
+| `java-gradle-plugin`, `kotlin-dsl`, `gradleApi()`, `gradleTestKit()` | `"gradle:api": "<Gradle version>"` in `"dev"` and `"test"`; see [Gradle plugins](docs/building.md#gradle-plugins) |
 | `gradlePlugin { plugins { … } }` | a `META-INF/gradle-plugins/<id>.properties` resource per plugin |
 | Shadow's `shadowJar` with `relocate(…)` | `jpm build --bundle` of a module without `main` (one flat jar) with `"relocate"` |
 
@@ -224,7 +224,7 @@ Maven plugins and Gradle tasks become **scripts** and **hooks** in `project.json
 ```
 
 Run a script with `jpm run <name>`. Scripts get `JPM_PROJECT_DIR`, `JPM_VERSION`, `JPM_CLASSPATH`, `JPM_JAR`
-and the other variables listed in the [README](README.md#how-it-works).
+and the other variables listed in [Scripts and hooks](docs/running-and-testing.md#scripts-and-hooks).
 
 ## Java modules
 

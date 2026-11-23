@@ -356,14 +356,14 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 ## Phase 6: User-facing documentation
 
-- [ ] Rewrite the README for users, not contributors: what jpm is, install, a five-minute start, the
+- [x] Rewrite the README for users, not contributors: what jpm is, install, a five-minute start, the
       everyday commands, and links to the rest. The README is about 600 lines today and mixes release
       engineering, internals and reference.
 - [x] Move reference material (manifest fields, version syntax, environment variables, how resolution
       works) into `docs/`, generated from the schema and command registry where possible.
       `docs/commands.md` and the field reference in `docs/manifest.md` are generated (CommandsTest, DocsTest).
 - [x] Move release and CI details into `CONTRIBUTING.md`.
-- [ ] Keep `MIGRATION.md`, linked from the README.
+- [x] Keep `MIGRATION.md`, linked from the README.
 - [ ] A docs site built from `docs/` (optional, once the content has settled).
 
 ---
@@ -665,6 +665,9 @@ can be generated.
 3. Move release and CI details into `CONTRIBUTING.md`.
 4. Keep `MIGRATION.md` and link it from the README.
 5. A docs site, once `docs/` has been stable for a release.
+
+Done: 1 to 4 (README, docs/ with the generated command and field references, CONTRIBUTING,
+MIGRATION.md linked). Open: 5.
 
 ### Risks
 
