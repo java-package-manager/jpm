@@ -216,6 +216,15 @@ classes and helpers) on this module's test classpaths. `lib`'s tests are not run
 jpm add -r https://repo.example.dev/releases com.example:lib:1.0.0
 ```
 
+A repository that needs a login reads it from the environment, never from `project.jsonc`:
+`JPM_REPO_<HOST>_USERNAME` and `JPM_REPO_<HOST>_PASSWORD` (basic authentication), or `JPM_REPO_<HOST>_TOKEN`
+(a bearer token), where `<HOST>` is the repository's host in upper case with every character other than a
+letter or digit as `_`. For `https://repo.example.dev/releases` that is `JPM_REPO_REPO_EXAMPLE_DEV_USERNAME`
+and `_PASSWORD`; for GitHub Packages (`https://maven.pkg.github.com/<owner>/<repo>`),
+`JPM_REPO_MAVEN_PKG_GITHUB_COM_USERNAME` and a token as `_PASSWORD`. Credentials are sent only over HTTPS (or
+to this machine), and not along a redirect to another host. A repository that answers 401 or 403 gets an
+error that names the variables to set.
+
 Other fields:
 
 - `package`: `"jar"` (the default) or `"bundle"`, see [Bundles](#bundles-jar-in-jar-isolation)
@@ -687,6 +696,7 @@ jar and is picked up by native-image automatically.
 |---|---|
 | `JPM_HOME` | Where jpm keeps its cache, JDKs and shims (default `$HOME/.jpm`) |
 | `JPM_OFFLINE`, `--offline` | Use only what is cached |
+| `JPM_REPO_<HOST>_USERNAME`, `_PASSWORD`, `_TOKEN` | Credentials for a Maven repository that needs them, see **Repositories** under [Manifest](#manifest) |
 | `JPM_OSV_URL` | The OSV server `jpm audit` asks (default `https://api.osv.dev`) |
 | `JPM_SPDX_BASE` | Where `jpm license` downloads license texts (default `https://spdx.org/licenses`) |
 | `JPM_VERBOSE`, `-v` | Show what jpm runs and downloads; `JPM_VERBOSE=2` or `-vv` shows trace messages too |

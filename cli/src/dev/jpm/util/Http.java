@@ -40,6 +40,16 @@ public final class Http {
         return NetworkSettings.client(connectTimeout).build();
     }
 
+    private static HttpClient noRedirects;
+
+    /** The shared client that does not follow redirects, for requests that carry credentials and follow them by hand. */
+    public static synchronized HttpClient clientWithoutRedirects() {
+        if (noRedirects == null) {
+            noRedirects = NetworkSettings.client(Duration.ofSeconds(20)).followRedirects(HttpClient.Redirect.NEVER).build();
+        }
+        return noRedirects;
+    }
+
     private static HttpRequest get(String url, Duration timeout) {
         return HttpRequest.newBuilder(URI.create(url)).timeout(timeout).header("User-Agent", "jpm").GET().build();
     }

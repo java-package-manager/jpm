@@ -306,6 +306,55 @@ class EndToEndTest {
         s.verify("lockfile-conflicts");
     }
 
+    @Test
+    void privateRepositories(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp);
+        TestRepo secret = new TestRepo(tmp.resolve("private"));
+        secret.artifact("com.acme:internal:1.0.0").publish();
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        java.util.List<String> cdnAuth = new java.util.ArrayList<>();
+        server.createContext("/releases/", ex -> {
+            String auth = ex.getRequestHeaders().getFirst("Authorization");
+            if (!("Basic " + java.util.Base64.getEncoder().encodeToString("me:secret".getBytes(java.nio.charset.StandardCharsets.UTF_8))).equals(auth)) {
+                ex.sendResponseHeaders(401, -1);
+                ex.close();
+                return;
+            }
+            ex.getResponseHeaders().add("Location", "http://localhost:" + server.getAddress().getPort() + "/cdn/"
+                    + ex.getRequestURI().getPath().substring("/releases/".length()));
+            ex.sendResponseHeaders(302, -1);
+            ex.close();
+        });
+        server.createContext("/cdn/", ex -> {
+            String auth = ex.getRequestHeaders().getFirst("Authorization");
+            if (auth != null) cdnAuth.add(auth);
+            Path f = secret.root().resolve(ex.getRequestURI().getPath().substring("/cdn/".length()));
+            if (!java.nio.file.Files.isRegularFile(f)) {
+                ex.sendResponseHeaders(404, -1);
+                ex.close();
+                return;
+            }
+            byte[] b = java.nio.file.Files.readAllBytes(f);
+            ex.sendResponseHeaders(200, b.length);
+            ex.getResponseBody().write(b);
+            ex.close();
+        });
+        server.start();
+        try {
+            String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/releases";
+            Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"repositories\": [\""
+                    + url + "\"], \"runtime\": { \"com.acme:internal\": \"1.0.0\" } }");
+            String out = s.jpmUnrecorded("install");
+            org.junit.jupiter.api.Assertions.assertTrue(out.contains("set JPM_REPO_127_0_0_1_USERNAME and JPM_REPO_127_0_0_1_PASSWORD"), out);
+            s.env("JPM_REPO_127_0_0_1_USERNAME", "me").env("JPM_REPO_127_0_0_1_PASSWORD", "secret");
+            s.jpm("install");
+        } finally {
+            server.stop(0);
+        }
+        assertEquals(List.of(), cdnAuth, "credentials do not follow a redirect to another host");
+        s.verify("private-repositories");
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }

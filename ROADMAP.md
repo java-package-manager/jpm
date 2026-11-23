@@ -372,7 +372,7 @@ Items that are not in the original list but would pay off.
       classpath, both read from compiled classes, not sources.
 - [x] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
       resolving again, instead of failing.
-- [ ] **Private repositories:** credentials for downloading from Maven repositories that need them,
+- [x] **Private repositories:** credentials for downloading from Maven repositories that need them,
       from environment variables like jpm-publish's (`JPM_REPO_<NAME>_USERNAME` / `_PASSWORD`), never
       from `project.jsonc`.
 - [ ] **Cache commands:** `jpm cache size` and `jpm cache clean`.
