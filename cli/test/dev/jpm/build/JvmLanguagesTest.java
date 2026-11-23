@@ -96,7 +96,7 @@ class JvmLanguagesTest {
     void groovyAndJavaTogether(@TempDir Path dir) throws Exception {
         String repo = repo(dir, "org.apache.groovy:groovy:4.99.0-stub", "org.codehaus.groovy.tools.FileSystemCompiler", null);
         Path p = dir.resolve("p");
-        Fs.write(p.resolve("project.jsonc"), "{ \"name\": \"g\", \"version\": \"1.0.0\", \"groovy\": \"4.99.0-stub\", \"repositories\": [\"" + repo
+        Fs.write(p.resolve("project.jsonc"), "{ \"name\": \"g\", \"version\": \"1.0.0\", \"java\": \"21\", \"groovy\": \"4.99.0-stub\", \"repositories\": [\"" + repo
                 + "\"], \"runtime\": { \"org.apache.groovy:groovy\": \"4.99.0-stub\" } }");
         Fs.write(p.resolve("src/g/Greeter.groovy"), "package g; public class Greeter { public String greet() { return \"Hi \" + new Twice().of(21); } }");
         Fs.write(p.resolve("src/g/Twice.java"), "package g; public class Twice { public int of(int x) { return 2 * x; } }");
@@ -109,7 +109,7 @@ class JvmLanguagesTest {
     void scalaAndJavaTogether(@TempDir Path dir) throws Exception {
         String repo = repo(dir, "org.scala-lang:scala3-compiler_3:3.99.0-stub", "dotty.tools.dotc.Main", "org.scala-lang:scala3-library_3:3.99.0-stub");
         Path p = dir.resolve("p");
-        Fs.write(p.resolve("project.jsonc"), "{ \"name\": \"s\", \"version\": \"1.0.0\", \"scala\": \"3.99.0-stub\", \"repositories\": [\"" + repo
+        Fs.write(p.resolve("project.jsonc"), "{ \"name\": \"s\", \"version\": \"1.0.0\", \"java\": \"21\", \"scala\": \"3.99.0-stub\", \"repositories\": [\"" + repo
                 + "\"], \"runtime\": { \"org.scala-lang:scala3-library_3\": \"3.99.0-stub\" } }");
         Fs.write(p.resolve("src/s/Square.scala"), "package s; public class Square { public int area(int side) { return side * side * Unit1.one(); } }");
         Fs.write(p.resolve("src/s/Unit1.java"), "package s; public class Unit1 { public static int one() { return 1; } }");
