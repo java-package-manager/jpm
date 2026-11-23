@@ -375,6 +375,30 @@ class EndToEndTest {
         s.verify("cache");
     }
 
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void workspaceFilters(@TempDir Path tmp) {
+        Session s = new Session(tmp).fixture("workspace-demo");
+        money(s.repo);
+        Fs.write(s.project.resolve("core/project.jsonc"), "{ \"name\": \"core\", \"runtime\": { \"org.example:money\": \"^1.0.0\" }, \"test\": { \"org.junit.jupiter:junit-jupiter\": \"*\" },"
+                + " \"scripts\": { \"where\": \"echo core in $PWD\", \"fail\": \"exit 2\" } }");
+        Fs.write(s.project.resolve("app/project.jsonc"), "{ \"name\": \"app\", \"main\": \"shop.app.Main\", \"define\": { \"GREETING\": \"Welcome\" },"
+                + " \"defineClass\": \"shop.app.Config\", \"runtime\": { \"workspace:core\": \"*\" },"
+                + " \"scripts\": { \"where\": \"echo app in $PWD\", \"fail\": \"exit 3\" } }");
+        s.jpmUnrecorded("install");
+        s.jpm("run", "-r", "where");
+        s.jpm("run", "--filter", "app", "where");
+        s.jpm("run", "--filter", "app...", "where");
+        s.jpm("run", "--filter", "...core", "where");
+        s.jpm("run", "-r", "--filter", "!core", "where");
+        s.jpm("run", "--filter", "./a*", "where");
+        s.jpm("run", "-r", "fail");
+        s.jpm("run", "-r", "nothing");
+        s.jpm("run", "--filter", "nope", "where");
+        s.jpm("build", "--filter", "core");
+        s.verify("workspace-filters");
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }

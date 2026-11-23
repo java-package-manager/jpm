@@ -11,6 +11,7 @@ import dev.jpm.util.JpmException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -105,6 +106,14 @@ abstract class Command {
         MavenRepo repo = new MavenRepo(p.root.repositories);
         Graph g = Install.run(p, repo, new Install.Options(frozen, false, Set.of(), true));
         return new Ctx(p, repo, g);
+    }
+
+    List<Project.Module> targets(Project p, List<String> names, List<String> filters) {
+        if (filters.isEmpty()) return targets(p, names);
+        Set<String> seen = new LinkedHashSet<>();
+        if (!names.isEmpty()) for (Project.Module m : targets(p, names)) seen.add(m.name());
+        for (Project.Module m : WorkspaceFilter.select(p, cwd, filters)) seen.add(m.name());
+        return p.buildOrder().stream().filter(m -> seen.contains(m.name())).toList();
     }
 
     List<Project.Module> targets(Project p, List<String> names) {

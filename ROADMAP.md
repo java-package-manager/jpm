@@ -376,7 +376,7 @@ Items that are not in the original list but would pay off.
       from environment variables like jpm-publish's (`JPM_REPO_<NAME>_USERNAME` / `_PASSWORD`), never
       from `project.jsonc`.
 - [x] **Cache commands:** `jpm cache size` and `jpm cache clean`.
-- [ ] **Workspace-wide commands:** run a script or command in every workspace module, with a
+- [x] **Workspace-wide commands:** run a script or command in every workspace module, with a
       `--filter` like pnpm's.
 - [ ] **Testing:** `jpm test --watch`, and JUnit XML reports for CI.
 - [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest

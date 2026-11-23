@@ -91,15 +91,16 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `info` | Describe the project: each module's version and folder, and its dependencies with what they resolve to. Programs use the jpm protocol instead (`jpm api`, [docs/protocol.md](docs/protocol.md)) |
 | `import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
 | `license [id]` | Show the project's license and license file; `license <SPDX id>` sets `"license"` and writes `LICENSE` from SPDX's text with the year and the author (`--author`, else git's `user.name`) filled in; `--force` replaces a license file |
-| `build` | Build into `dist/` (`--release`, `--profile <name>`) |
+| `build` | Build into `dist/` (`--release`, `--profile <name>`); in a workspace, every module, the one you are in, or the modules named; `--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves modules out |
 | `build --bundle` | Also build `dist/<name>-<version>-bundle.jar` with the runtime dependencies: a runnable jar-in-jar with isolated modules for a module with a `main`, one flat jar (like a shadow jar) for one without, such as a Paper or Velocity plugin; `--flat` makes it flat either way. `"package": "bundle"` makes it the default |
 | `build --native` | Also build a native executable of `main` with GraalVM into `dist/` |
 | `start [entry] [-- args]` | Build, then run `main` with the production env |
 | `start --trace` | Run under the native-image tracing agent, recording configuration for native builds |
 | `dev [entry] [-- args]` | Run `main` with the development env, restarting when sources, assets, manifest or env files change |
-| `test [filter...]` | Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag |
+| `test [filter...]` | Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag; in a workspace, `--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves modules out |
 | `check [check...]` | Run jpm's checks (manifest, dependencies, paths, license, compile, unused-dependencies, duplicate-classes), the checks of the extensions the project declares, then the tests, and report every problem; `--no-test`, `--fail-on-warning`, `--exclude-tag <tag>`, `--sarif <file>`, `--junit <file>`, `--frozen` |
 | `run <script> [args]` | Run a script from `scripts` (no shorthand); `<module>:<script>` runs a workspace module's script from anywhere in the workspace |
+| `run -r <script> [args]` | Run a script in every workspace module that has it, in build order, stopping at the first that fails; `--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves modules out (and implies `-r`) |
 | `clean` | Delete build output |
 | `patch <dep>` | Unpack a dependency's source for editing |
 | `patch --commit <dep>` | Save your edits to `patches/` and record them in the manifest |
@@ -362,6 +363,13 @@ pulls it in. Prefixed tags (`api/v1.2.0`) version a module on its own. A module 
 resolved in a graph of its own (its own section of `project.lock`), so its dependencies never change
 the versions the other modules get: for linters, formatters and code generators. Nothing can depend
 on an isolated module, and it cannot depend on workspace modules.
+
+**Commands across a workspace.** `jpm build` and `jpm test` at the root work on every module (inside a
+module, on that one); `jpm run -r <script>` runs a script in every module that has it, in build order,
+and stops at the first that fails. `--filter <pattern>` (repeatable, like pnpm's) picks modules for all
+three: a name or glob (`--filter app`, `--filter 'lib-*'`), a folder (`--filter './libs/*'`),
+`<pattern>...` with the modules it depends on, `...<pattern>` with the modules that depend on it, and
+`!<pattern>` to leave modules out (`jpm run -r --filter '!docs' lint`).
 
 **Builds** call the selected JDK's `javac`, with `--release` only when it is newer than the module's
 target (so an API added later is a compile error, not a runtime crash). On a JDK of the target version

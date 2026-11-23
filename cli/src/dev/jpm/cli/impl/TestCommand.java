@@ -26,12 +26,13 @@ final class TestCommand extends Command {
     List<Usage> usages() {
         return List.of(
                 new Usage(Group.BUILD, "test [filter...]", "Run tests on the JUnit Platform (--tag, --exclude-tag select by JUnit tag)",
-                        "Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag"));
+                        "Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag;"
+                                + " in a workspace, " + WorkspaceFilter.USAGE));
     }
 
     @Override
     List<String> flags() {
-        return List.of("--frozen", "--module", "--tag", "--exclude-tag");
+        return List.of("--frozen", "--module", "--tag", "--exclude-tag", "--filter");
     }
 
     @Override
@@ -42,11 +43,12 @@ final class TestCommand extends Command {
         for (String t; (t = option(args, "--tag")) != null; ) tags.add(t);
         List<String> excludedTags = new ArrayList<>();
         for (String t; (t = option(args, "--exclude-tag")) != null; ) excludedTags.add(t);
+        List<String> filters = WorkspaceFilter.options(args);
         noMoreFlags(args);
         TestRunner.Selection selection = new TestRunner.Selection(args, tags, excludedTags);
         Ctx c = open(frozen);
         Builder b = c.builder(Env.Mode.DEVELOPMENT);
-        List<Project.Module> mods = module != null ? targets(c.project(), List.of(module)) : targets(c.project(), List.of());
+        List<Project.Module> mods = targets(c.project(), module != null ? List.of(module) : List.of(), filters);
         int worst = 0;
         boolean matched = false;
         for (Project.Module m : mods) {
