@@ -283,7 +283,7 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 ### Editing project.jsonc
 
-- [~] **jpm-intellij:** ctrl+click on values in `project.jsonc` goes to what they name:
+- [x] **jpm-intellij:** ctrl+click on values in `project.jsonc` goes to what they name:
   - `main`, `defineClass` and `scripts`: the class (or the script file);
   - dependencies and `exclude`: the library under External Libraries in the project view;
   - `relocate`: the package in the project view;
@@ -295,19 +295,20 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
   - `hooks`: the script the hook runs;
   - `java`: the JDK;
   - values in `define` for a dependency: the define where that dependency declares it.
-  Done: `main`, `defineClass`, `scripts` files, `hooks`, `relocate`, `license`, `workspace`, `sources`,
-  `resources`, `patches`. Open: dependencies and `exclude`, `filter`, `java`, `define` values.
-- [~] Every value that names a file or folder (`filter`, `patches`, `scripts`, `sources`, `resources`,
+  Done: all of them (jpm-intellij, unreleased).
+- [x] Every value that names a file or folder (`filter`, `patches`, `scripts`, `sources`, `resources`,
       workspace modules, env files) gives a warning when it does not exist. One shared check, not one
       per field. Done in jpm-intellij for `patches`, script files, `sources`, `resources` and workspace
       modules; `filter` globs that match no resource are a warning of jpm check's `paths` check, which
-      jpm-intellij shows with the other check results. Open: env files.
+      jpm-intellij shows with the other check results. Env files need nothing: no field names one (jpm
+      reads `.env`, `.env.<mode>` and `.env.local` by their fixed names, and each is optional).
 - [x] **jpm-intellij:** renames update the manifest: renaming a class updates `main` and
       `defineClass`, moving a package updates `relocate`, renaming a script updates the `hooks` that run
       it, moving a file or folder updates the paths that name it.
-- [~] Completion of dependency coordinates and versions, and the resolved version from `project.lock`
-      shown next to each dependency (inlay hint). Done: versions (from `dependencies/versions`, protocol 1.1) and the
-      inlay hint. Open: completing `group:artifact` coordinates, which needs a search service.
+- [x] Completion of dependency coordinates and versions, and the resolved version from `project.lock`
+      shown next to each dependency (inlay hint). Done: versions (from `dependencies/versions`, protocol 1.1), the
+      inlay hint, and `group:artifact` coordinates (from `dependencies/search`, protocol 1.2: jpm's cache, then
+      Maven Central's search).
 - [x] An inspection for dependencies with a newer version, with a quick fix that runs `jpm update`.
 - [x] Documentation from the schema on hover, for every field.
 - [~] jpm-intellij and the language server (see jpm-format) highlight jpm's warnings and errors in
@@ -660,7 +661,8 @@ In this order (decided 2026-11-23):
    - The `.gitignore` fix is done in `jpm init`/`jpm import`, so it ships with any jpm release.
    - Done (jpm-intellij, unreleased): the migration UI, run configurations, the dependency tree, and in
      `project.jsonc` navigation and renames, missing paths, resolved versions, version completion, the
-     newer-version inspection and jpm's check results. Open: see the `[~]` items above.
+     newer-version inspection, jpm's check results, ctrl+click on every value that names something, and
+     coordinate completion. Open: the language server's highlighting (jpm-format).
 4. **jpm-format.**
    - Formatter parity is measured against IntelliJ on a corpus of real projects, with a stored diff
      count as a ratchet. Then lint parity, then the LSP.
