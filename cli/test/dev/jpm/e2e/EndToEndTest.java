@@ -548,6 +548,28 @@ class EndToEndTest {
         s.verify("pom-profiles");
     }
 
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "the generators are sh commands")
+    void codeGenerators(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Fs.write(s.project.resolve("project.jsonc"), """
+                { "name": "app", "version": "1.0.0", "main": "app.Main",
+                  "scripts": {
+                    "codename": { "run": "mkdir -p $JPM_GENERATED/app && printf 'package app; public class Codename { public static final String NAME = \\"%s\\"; }' \\"$(cat codename.txt)\\" > $JPM_GENERATED/app/Codename.java",
+                                  "generates": "sources", "inputs": ["codename.txt"] },
+                    "banner": { "run": "printf 'generated banner' > $JPM_GENERATED/banner.txt", "generates": "resources" }
+                  } }
+                """);
+        Fs.write(s.project.resolve("codename.txt"), "falcon");
+        Fs.write(s.project.resolve("src/app/Main.java"), "package app;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n"
+                + "        System.out.println(Codename.NAME + \" / \" + new String(Main.class.getResourceAsStream(\"/banner.txt\").readAllBytes()));\n    }\n}\n");
+        s.jpm("start");
+        s.jpm("start");
+        Fs.write(s.project.resolve("codename.txt"), "osprey");
+        s.jpm("start");
+        s.verify("code-generators");
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }

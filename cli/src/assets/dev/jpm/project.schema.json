@@ -856,7 +856,7 @@
     },
     "scripts": {
       "type": "object",
-      "description": "Commands run with `jpm run <name>`: a .java file (run with the project's classpath), a .sh file, or any shell command. An object gives a .java script dependencies of its own, resolved apart from the project's.",
+      "description": "Commands run with `jpm run <name>`: a .java file (run with the project's classpath), a .sh file, or any shell command. An object gives a script dependencies of its own, resolved apart from the project's, or makes it a code generator (\"generates\").",
       "additionalProperties": {
         "oneOf": [
           {
@@ -875,12 +875,23 @@
               },
               "dependencies": {
                 "type": "object",
-                "description": "Maven dependencies of a .java script, on its classpath before the module's. They are resolved on their own and never change the project's versions.",
+                "description": "Maven dependencies of a .java script, on its classpath before the module's; other scripts get them in JPM_SCRIPT_CLASSPATH. They are resolved on their own and never change the project's versions.",
                 "propertyNames": {
                   "$ref": "#/definitions/dependencyKey"
                 },
                 "additionalProperties": {
                   "$ref": "#/definitions/versionSpec"
+                }
+              },
+              "generates": {
+                "enum": ["sources", "resources"],
+                "description": "Makes the script a code generator: before compiling, jpm runs it into a folder of its own (JPM_GENERATED) when its inputs or its definition changed, and adds that folder to the module's sources or resources."
+              },
+              "inputs": {
+                "type": "array",
+                "description": "Files and folders, relative to the module, whose changes make a generator run again.",
+                "items": {
+                  "type": "string"
                 }
               }
             }

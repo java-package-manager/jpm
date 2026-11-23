@@ -426,12 +426,29 @@ restarts.
 **Scripts** run with `jpm run <name>`. `.java` scripts run on the source launcher with the runtime
 classpath. A script that needs libraries of its own lists them with it:
 `"generate": { "run": "scripts/Generate.java", "dependencies": { "com.google.code.gson:gson": "2.11.0" } }`;
-they are resolved on their own, come first on the script's classpath and never move the project's versions. `.sh` scripts with `sh`; anything else as a shell command. Scripts and extensions get
+they are resolved on their own, come first on the script's classpath and never move the project's versions
+(a script that is not a `.java` file gets them in `JPM_SCRIPT_CLASSPATH`). `.sh` scripts with `sh`; anything else as a shell command. Scripts and extensions get
 `JPM_PROJECT_DIR`, `JPM_MODULE_DIR`, `JPM_NAME`, `JPM_VERSION`, `JPM_MANIFEST`, `JPM_CLASSES_DIR`,
 `JPM_CLASSPATH`, `JPM_JAR` (after a build), `JPM_JAVA_HOME`, and `JPM_EXE` and `JPM_VERSION_OF_JPM` to
 call back into the jpm running them; extensions also get `JPM_CONFIG`.
 Hooks are `pre`/`post` + `build`/`test`/`start`, optionally with `:<profile>` (`build --release` is
 profile `release`).
+
+**Code generators** are scripts with `"generates": "sources"` (or `"resources"`), what Maven and Gradle do with
+code-generating plugins. Before compiling, jpm runs each one into a folder of its own, `JPM_GENERATED`, and
+adds that folder to the module's sources (or resources); it runs again only when a file under its `"inputs"`
+or its own definition changed. For example ANTLR:
+
+```jsonc
+"scripts": {
+  "parser": {
+    "run": "java -cp $JPM_SCRIPT_CLASSPATH org.antlr.v4.Tool -o $JPM_GENERATED/app -package app src/grammar/Calc.g4",
+    "dependencies": { "org.antlr:antlr4": "4.13.2" },
+    "generates": "sources",
+    "inputs": ["src/grammar"]
+  }
+}
+```
 
 ## Java modules
 

@@ -168,13 +168,14 @@ public final class ManifestReader {
         return (String) n.value;
     }
 
-    public record Scripts(Map<String, String> commands, Map<String, Map<String, String>> dependencies) {}
+    public record Scripts(Map<String, String> commands, Map<String, Map<String, String>> dependencies, Map<String, Manifest.Generator> generators) {}
 
     public Scripts scripts() {
         Map<String, String> commands = new LinkedHashMap<>();
         Map<String, Map<String, String>> deps = new LinkedHashMap<>();
+        Map<String, Manifest.Generator> generators = new LinkedHashMap<>();
         Jsonc.Node n = root.get("scripts");
-        if (n == null) return new Scripts(commands, deps);
+        if (n == null) return new Scripts(commands, deps, generators);
         if (!n.isObject()) throw err(n, "scripts must be an object");
         for (Jsonc.Member e : n.members.values()) {
             if (e.value.isString()) {
@@ -183,11 +184,20 @@ public final class ManifestReader {
             }
             if (!e.value.isObject()) throw err(e.value, "scripts." + e.key + " must be a command or {\"run\": ..., \"dependencies\": {...}}");
             for (String k : e.value.members.keySet()) {
-                if (!Set.of("run", "dependencies").contains(k)) throw err(e.value.get(k), "unknown script option \"" + k + "\"");
+                if (!Set.of("run", "dependencies", "generates", "inputs").contains(k)) throw err(e.value.get(k), "unknown script option \"" + k + "\"");
             }
             Jsonc.Node run = e.value.get("run");
             if (run == null || !run.isString()) throw err(e.value, "scripts." + e.key + " needs \"run\": the command or file to run");
             commands.put(e.key, (String) run.value);
+            Jsonc.Node gen = e.value.get("generates");
+            if (gen != null) {
+                if (!gen.isString() || !Set.of("sources", "resources").contains(gen.value)) {
+                    throw err(gen, "scripts." + e.key + ".generates must be \"sources\" or \"resources\"");
+                }
+                generators.put(e.key, new Manifest.Generator(e.key, (String) gen.value, strings(e.value.get("inputs"), "scripts." + e.key + ".inputs")));
+            } else if (e.value.get("inputs") != null) {
+                throw err(e.value.get("inputs"), "scripts." + e.key + ".inputs is for generators: add \"generates\": \"sources\" or \"resources\"");
+            }
             Jsonc.Node dn = e.value.get("dependencies");
             if (dn == null) continue;
             if (!dn.isObject()) throw err(dn, "scripts." + e.key + ".dependencies must be an object of dependency to version");
@@ -205,7 +215,7 @@ public final class ManifestReader {
             }
             deps.put(e.key, d);
         }
-        return new Scripts(commands, deps);
+        return new Scripts(commands, deps, generators);
     }
 
     public Map<String, String> stringMap(String key) {

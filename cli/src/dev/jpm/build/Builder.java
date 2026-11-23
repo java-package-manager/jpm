@@ -255,6 +255,9 @@ public final class Builder {
             roots.addAll(m.srcDirs());
             Path gen = generateSources(m);
             if (gen != null) roots.add(gen);
+            roots.addAll(Scripts.generate(this, m, "sources"));
+            List<Path> resourceDirs = new ArrayList<>(m.assetsDirs());
+            resourceDirs.addAll(Scripts.generate(this, m, "resources"));
             Path kotlinOut = m.cacheDir().resolve("kotlin-classes");
             boolean kotlinRan = KotlinCompiler.compile(this, new KotlinCompiler.Request(m.name(), m.name(), m.manifest.kotlin, jdk, release,
                     roots, m.assetsDirs(), cp, List.of(), kotlinOut, m.cacheDir().resolve("kotlin-classes.key")));
@@ -285,7 +288,7 @@ public final class Builder {
             if (Files.isDirectory(kotlinOut)) outs.add(kotlinOut);
             outs.addAll(otherOut);
             Resources.sync(outs, classesDir(m), m.cacheDir().resolve("kotlin-classes.list"));
-            Resources.sync(m.assetsDirs(), classesDir(m), m.cacheDir().resolve("resources.list"),
+            Resources.sync(resourceDirs, classesDir(m), m.cacheDir().resolve("resources.list"),
                     m.manifest.filter, filterValues(m));
             if (ran) Log.step("Compiled", m.name() + " " + m.version() + Log.dim(" (" + jdk.id() + ", release " + release + ")"));
             compiledModules.put(m.name(), ran);

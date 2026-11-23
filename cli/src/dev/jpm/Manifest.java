@@ -40,6 +40,16 @@ public final class Manifest {
         Scope(String key) { this.key = key; }
     }
 
+    /**
+     * A script with {@code "generates"}: jpm runs it before compiling, into a folder of its own ({@code JPM_GENERATED}),
+     * whenever its inputs or its definition changed, and adds the folder to the module's sources or resources.
+     *
+     * @param name   the script's name
+     * @param kind   {@code sources} or {@code resources}
+     * @param inputs files and folders, relative to the module, whose changes make it run again
+     */
+    public record Generator(String name, String kind, List<String> inputs) {}
+
     /** The type of a define, which is the type of its constant in the generated class. */
     public enum DefineType { STRING, INT, BOOLEAN }
 
@@ -123,6 +133,8 @@ public final class Manifest {
     public final Map<String, String> scripts;
     /** Dependencies of {@code .java} scripts, by script name: dependency key to version, resolved apart from the project. */
     public final Map<String, Map<String, String>> scriptDependencies;
+    /** Scripts that generate code, by name: run before compiling, their output added to the sources or resources. */
+    public final Map<String, Generator> generators;
     public final Map<String, String> hooks;
     /** Patched dependency to its patch file. */
     public final Map<String, String> patches;
@@ -307,6 +319,7 @@ public final class Manifest {
         ManifestReader.Scripts sc = reader.scripts();
         this.scripts = sc.commands();
         this.scriptDependencies = sc.dependencies();
+        this.generators = sc.generators();
         this.hooks = reader.stringMap("hooks");
         Map<String, String> pf = new LinkedHashMap<>();
         Map<String, PatchOptions> po = new LinkedHashMap<>();

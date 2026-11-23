@@ -335,8 +335,9 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 ### More
 
 - [x] Evaluate POM profiles (activation by JDK, OS and properties) when reading POMs.
-- [~] Maven and Gradle features with no manifest equivalent yet: code-generating plugins, and Groovy and
-      Scala sources. Done: Groovy and Scala (`"groovy"`, `"scala"`).
+- [x] Maven and Gradle features with no manifest equivalent yet: code-generating plugins, and Groovy and
+      Scala sources. Done: Groovy and Scala (`"groovy"`, `"scala"`), and code generators (scripts with
+      `"generates"` and `"inputs"`).
 - [ ] Kotlin: compile a module's Kotlin incrementally (per file) instead of as a whole; Kotlin
       Multiplatform builds with targets other than the JVM.
 - [x] Run the GraalVM tracing agent during tests (open question); today `start --trace` records what one

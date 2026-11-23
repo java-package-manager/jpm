@@ -41,20 +41,62 @@ public final class Scripts {
             throw new JpmException("No script named \"" + name + "\" in " + m.manifest.file
                     + (m.manifest.scripts.isEmpty() ? "" : ". Scripts: " + String.join(", ", m.manifest.scripts.keySet())));
         }
-        return exec(b, m, name, value, args, mode, new LinkedHashSet<>());
+        return exec(b, m, name, value, args, mode, new LinkedHashSet<>(), Map.of());
     }
 
-    private static int exec(Builder b, Project.Module m, String name, String value, List<String> args, Env.Mode mode, Set<String> stack) {
+    /**
+     * Runs the module's generators of one kind ({@code sources} or {@code resources}) that are out of date, and returns
+     * the folders they generate into, for every generator of that kind.
+     */
+    public static List<Path> generate(Builder b, Project.Module m, String kind) {
+        List<Path> out = new ArrayList<>();
+        for (Manifest.Generator g : m.manifest.generators.values()) {
+            if (!g.kind().equals(kind)) continue;
+            Path dir = m.cacheDir().resolve("generators").resolve(g.name());
+            Path stamp = m.cacheDir().resolve("generators").resolve(g.name() + ".key");
+            dev.jpm.util.Hash h = new dev.jpm.util.Hash().add("generate-v1").add(g.name()).add(kind).add(m.manifest.scripts.get(g.name()))
+                    .add(String.valueOf(m.manifest.scriptDependencies.getOrDefault(g.name(), Map.of())));
+            for (String in : g.inputs()) {
+                Path p = m.dir.resolve(in);
+                h.add("input " + in);
+                List<Path> files = Files.isDirectory(p) ? dev.jpm.util.Fs.files(p, null) : Files.isRegularFile(p) ? List.of(p) : List.of();
+                for (Path f : files) h.add(dev.jpm.util.Fs.slash(m.dir.relativize(f)) + " " + dev.jpm.util.Hash.sha256(f));
+            }
+            String key = h.hex();
+            out.add(dir);
+            if (Files.isDirectory(dir) && Files.isRegularFile(stamp) && dev.jpm.util.Fs.read(stamp).equals(key)) continue;
+            dev.jpm.util.Fs.deleteTree(dir);
+            dev.jpm.util.Fs.mkdirs(dir);
+            try {
+                Files.deleteIfExists(stamp);
+            } catch (java.io.IOException ignored) {
+            }
+            int code = exec(b, m, g.name(), m.manifest.scripts.get(g.name()), new ArrayList<>(), Env.Mode.DEVELOPMENT, new LinkedHashSet<>(),
+                    Map.of("JPM_GENERATED", dir.toString()));
+            if (code != 0) throw new JpmException(m.name() + ": the generator \"" + g.name() + "\" failed (exit " + code + ")");
+            dev.jpm.util.Fs.write(stamp, key);
+            Log.step("Generated", m.name() + " " + kind + " with " + g.name());
+        }
+        return out;
+    }
+
+    private static int exec(Builder b, Project.Module m, String name, String value, List<String> args, Env.Mode mode, Set<String> stack,
+                            Map<String, String> extra) {
         if (!stack.add(name)) throw new JpmException("Script \"" + name + "\" calls itself");
         String alias = m.manifest.scripts.get(value);
-        if (alias != null && !value.equals(name)) return exec(b, m, value, alias, args, mode, stack);
+        if (alias != null && !value.equals(name)) return exec(b, m, value, alias, args, mode, stack, extra);
 
         Map<String, String> env = new LinkedHashMap<>(Env.forChild(b.project.dir, mode));
         env.putAll(info(b, m));
+        env.putAll(extra);
         List<String> cmd = new ArrayList<>();
         boolean win = System.getProperty("os.name").toLowerCase().contains("win");
         Path file = m.dir.resolve(value);
-        if (value.endsWith(".java") && Files.exists(file)) {
+        boolean javaScript = value.endsWith(".java") && Files.exists(file);
+        if (!javaScript && !m.manifest.scriptDependencies.getOrDefault(name, Map.of()).isEmpty()) {
+            env.put("JPM_SCRIPT_CLASSPATH", Compiler.join(scriptClasspath(b, m, name)));
+        }
+        if (javaScript) {
             Jdk jdk = b.jdk(m.manifest);
             if (jdk.major() < 11) throw new JpmException("Java scripts need JDK 11 or newer");
             cmd.add(jdk.java());
@@ -149,8 +191,8 @@ public final class Scripts {
             if (target == null) continue;
             Log.step("Hook", h + " -> " + target);
             int code;
-            if (manifest.scripts.containsKey(target)) code = exec(b, m, target, manifest.scripts.get(target), List.of(), mode, new LinkedHashSet<>());
-            else code = exec(b, m, h, target, List.of(), mode, new LinkedHashSet<>());
+            if (manifest.scripts.containsKey(target)) code = exec(b, m, target, manifest.scripts.get(target), List.of(), mode, new LinkedHashSet<>(), Map.of());
+            else code = exec(b, m, h, target, List.of(), mode, new LinkedHashSet<>(), Map.of());
             if (code != 0) throw new JpmException("Hook " + h + " failed with exit code " + code, code);
         }
     }
