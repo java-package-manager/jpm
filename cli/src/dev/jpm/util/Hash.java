@@ -77,6 +77,27 @@ public final class Hash {
         }
     }
 
+    /** A file's hash with another algorithm ({@code sha1}, {@code sha256}, {@code sha512}), as lowercase hex. */
+    public static String of(String algorithm, Path file) {
+        String name = switch (algorithm) {
+            case "sha1" -> "SHA-1";
+            case "sha256" -> "SHA-256";
+            case "sha512" -> "SHA-512";
+            default -> throw new IllegalArgumentException("no hash named " + algorithm);
+        };
+        try (InputStream in = Files.newInputStream(file)) {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance(name);
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) md.update(buf, 0, n);
+            return HexFormat.of().formatHex(md.digest());
+        } catch (IOException e) {
+            throw new JpmException("Could not read " + file + ": " + e.getMessage());
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     /** The SHA-256 of UTF-8 text, as lowercase hex. */
     public static String sha256(String s) {
         return sha256(s.getBytes(StandardCharsets.UTF_8));

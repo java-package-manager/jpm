@@ -18,16 +18,16 @@ $ jpm install
   "lockfileVersion": 1,
   "inputs": "<inputs>",
   "packages": {
-    "org.apiguardian:apiguardian-api": { "version": "<test-framework>", "sha256": "<sha256>" },
-    "org.example:money": { "version": "1.2.0", "sha256": "<sha256>" },
-    "org.jspecify:jspecify": { "version": "<test-framework>", "sha256": "<sha256>" },
-    "org.junit.jupiter:junit-jupiter": { "version": "<test-framework>", "sha256": "<sha256>", "dependencies": { "org.junit.jupiter:junit-jupiter-api": "compile", "org.junit.jupiter:junit-jupiter-engine": "runtime", "org.junit.jupiter:junit-jupiter-params": "compile" } },
-    "org.junit.jupiter:junit-jupiter-api": { "version": "<test-framework>", "sha256": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.platform:junit-platform-commons": "compile", "org.opentest4j:opentest4j": "compile" } },
-    "org.junit.jupiter:junit-jupiter-engine": { "version": "<test-framework>", "sha256": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.jupiter:junit-jupiter-api": "compile", "org.junit.platform:junit-platform-engine": "compile" } },
-    "org.junit.jupiter:junit-jupiter-params": { "version": "<test-framework>", "sha256": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.jupiter:junit-jupiter-api": "compile" } },
-    "org.junit.platform:junit-platform-commons": { "version": "<test-framework>", "sha256": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile" } },
-    "org.junit.platform:junit-platform-engine": { "version": "<test-framework>", "sha256": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.platform:junit-platform-commons": "compile", "org.opentest4j:opentest4j": "compile" } },
-    "org.opentest4j:opentest4j": { "version": "<test-framework>", "sha256": "<sha256>" }
+    "org.apiguardian:apiguardian-api": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>" },
+    "org.example:money": { "version": "1.2.0", "sha256": "<sha256>", "pom": "<sha256>" },
+    "org.jspecify:jspecify": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>" },
+    "org.junit.jupiter:junit-jupiter": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>", "dependencies": { "org.junit.jupiter:junit-jupiter-api": "compile", "org.junit.jupiter:junit-jupiter-engine": "runtime", "org.junit.jupiter:junit-jupiter-params": "compile" } },
+    "org.junit.jupiter:junit-jupiter-api": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.platform:junit-platform-commons": "compile", "org.opentest4j:opentest4j": "compile" } },
+    "org.junit.jupiter:junit-jupiter-engine": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.jupiter:junit-jupiter-api": "compile", "org.junit.platform:junit-platform-engine": "compile" } },
+    "org.junit.jupiter:junit-jupiter-params": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.jupiter:junit-jupiter-api": "compile" } },
+    "org.junit.platform:junit-platform-commons": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile" } },
+    "org.junit.platform:junit-platform-engine": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>", "dependencies": { "org.apiguardian:apiguardian-api": "compile", "org.jspecify:jspecify": "compile", "org.junit.platform:junit-platform-commons": "compile", "org.opentest4j:opentest4j": "compile" } },
+    "org.opentest4j:opentest4j": { "version": "<test-framework>", "sha256": "<sha256>", "pom": "<sha256>" }
   }
 }
 

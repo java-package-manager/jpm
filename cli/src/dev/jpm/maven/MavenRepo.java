@@ -122,7 +122,7 @@ public final class MavenRepo {
         List<String> problems = new ArrayList<>();
         for (String repo : repos) {
             Result r = download(repo + rel, local);
-            if (r.found()) return local;
+            if (r.found()) return verified(repo + rel, local);
             if (r.problem() != null) problems.add(r.problem());
             if (snapshot) {
                 String timestamped = snapshotVersion(repo, group, artifact, version, classifier, ext, problems);
@@ -130,7 +130,7 @@ public final class MavenRepo {
                         + (classifier == null || classifier.isEmpty() ? "" : "-" + classifier) + "." + ext;
                 if (timestamped != null) {
                     Result t = download(repo + file, local);
-                    if (t.found()) return local;
+                    if (t.found()) return verified(repo + file, local);
                     if (t.problem() != null) problems.add(t.problem());
                 }
             }
@@ -139,7 +139,7 @@ public final class MavenRepo {
                 String file = group.replace('.', '/') + "/" + artifact + "/" + base + "/" + artifact + "-" + version
                         + (classifier == null || classifier.isEmpty() ? "" : "-" + classifier) + "." + ext;
                 Result t = download(repo + file, local);
-                if (t.found()) return local;
+                if (t.found()) return verified(repo + file, local);
                 if (t.problem() != null) problems.add(t.problem());
             }
         }
@@ -151,6 +151,45 @@ public final class MavenRepo {
             Log.debug("not caching a miss for " + rel + ": " + String.join("; ", problems));
         }
         return null;
+    }
+
+    /** The checksums a repository may publish next to a file, strongest first (ADR 0017). */
+    private static final List<String> CHECKSUMS = List.of("sha512", "sha256", "sha1");
+
+    /**
+     * {@code local}, just downloaded from {@code url}, checked against the strongest checksum the repository publishes
+     * next to it; a file that does not match is deleted and fails. A repository that publishes none is trusted, and
+     * the lockfile then pins what was downloaded.
+     */
+    private Path verified(String url, Path local) {
+        for (String algorithm : CHECKSUMS) {
+            Path sum = local.resolveSibling(local.getFileName() + "." + algorithm + ".download");
+            Result r = download(url + "." + algorithm, sum);
+            if (!r.found()) continue;
+            String published = Fs.read(sum).strip().split("\\s+")[0].toLowerCase(java.util.Locale.ROOT);
+            try {
+                Files.deleteIfExists(sum);
+            } catch (IOException ignored) {
+            }
+            if (!published.matches("[0-9a-f]{40,128}")) {
+                Log.debug(url + "." + algorithm + " is not a checksum; ignoring it");
+                continue;
+            }
+            String actual = dev.jpm.util.Hash.of(algorithm, local);
+            if (!actual.equals(published)) {
+                try {
+                    Files.deleteIfExists(local);
+                } catch (IOException ignored) {
+                }
+                throw new JpmException("Checksum mismatch for " + url + ":\n  " + algorithm + " published: " + published
+                        + "\n  downloaded:       " + actual).withHint("the download or the repository is corrupt or was tampered with;"
+                        + " nothing was kept. Try again, and report it to the repository if it stays");
+            }
+            Log.debug("verified " + url + " (" + algorithm + ")");
+            return local;
+        }
+        Log.debug(url + " has no published checksum");
+        return local;
     }
 
     /**

@@ -197,6 +197,7 @@ final class Session {
     private static final Pattern JDK_ID = Pattern.compile("\\b[a-z_]+-\\d+(\\.\\d+)*(\\+\\d+)?(-[\\w.]+)?(?=, release)");
     private static final Pattern MILLIS = Pattern.compile("after \\d+ ms");
     private static final Pattern SHA256 = Pattern.compile("\"sha256\": \"[0-9a-f]{64}\"");
+    private static final Pattern POM_SHA256 = Pattern.compile("\"pom\": \"[0-9a-f]{64}\"");
     private static final Pattern INPUTS = Pattern.compile("\"inputs\": \"[0-9a-f]+\"");
     private static final Pattern COMMIT = Pattern.compile("\\b[0-9a-f]{40}\\b|(?<=\\+|\\()[0-9a-f]{7}\\b");
     private static final Pattern SECONDS = Pattern.compile("in \\d+(\\.\\d+)?s\\b");
@@ -218,6 +219,7 @@ final class Session {
         s = COMMIT.matcher(s).replaceAll("<commit>");
         s = MILLIS.matcher(s).replaceAll("after <n> ms");
         s = SHA256.matcher(s).replaceAll("\"sha256\": \"<sha256>\"");
+        s = POM_SHA256.matcher(s).replaceAll("\"pom\": \"<sha256>\"");
         s = INPUTS.matcher(s).replaceAll("\"inputs\": \"<inputs>\"");
         s = SECONDS.matcher(s).replaceAll("in <n>s");
         for (Map.Entry<String, String> e : frameworkVersions.entrySet()) {

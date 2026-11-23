@@ -313,8 +313,12 @@ Timestamped snapshot versions (`0.1-20240720.200737-2`) can be asked for by name
 from the folder of their `-SNAPSHOT` version.
 
 **Lockfile.** `project.lock` is sorted JSONC with one line per package: exact version, tag and commit
-for Git, a SHA-256 for Maven jars (verified on every install), and its edges. It is reused as long as
-the declared dependencies are unchanged.
+for Git, a SHA-256 for Maven jars (verified on every install) and for their POMs (`"pom"`, verified when
+resolving), and its edges. It is reused as long as the declared dependencies are unchanged.
+
+**Checksums.** Every file downloaded from a Maven repository is checked against the strongest checksum the
+repository publishes next to it (`.sha512`, `.sha256` or `.sha1`); one that does not match is deleted and
+the install fails. See [ADR 0017](docs/adr/0017-checksums.md).
 
 For libraries published with Gradle Module Metadata, the metadata also says where a Kotlin Multiplatform
 library's JVM classes are: `io.mockk:mockk` resolves to `io.mockk:mockk-jvm`, as in Gradle.

@@ -71,6 +71,7 @@ public final class Lockfile {
                 p.commit = (String) entry.get("commit");
                 p.tag = (String) entry.get("tag");
                 p.sha256 = (String) entry.get("sha256");
+                p.pomSha256 = (String) entry.get("pom");
                 if (Boolean.FALSE.equals(entry.get("jar"))) p.hasJar = false;
                 Object deps = entry.get("dependencies");
                 if (deps instanceof Map<?, ?> dm) {
@@ -123,6 +124,7 @@ public final class Lockfile {
             if (p.tag != null) entry.put("tag", p.tag);
             if (p.commit != null) entry.put("commit", p.commit);
             if (p.sha256 != null) entry.put("sha256", p.sha256);
+            if (p.pomSha256 != null) entry.put("pom", p.pomSha256);
             if (!p.hasJar) entry.put("jar", Boolean.FALSE);
             if (!p.deps.isEmpty()) {
                 Map<String, Object> deps = new LinkedHashMap<>();

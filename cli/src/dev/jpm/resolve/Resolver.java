@@ -16,6 +16,9 @@ import dev.jpm.version.VersionSpecs;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import dev.jpm.util.Hash;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -175,6 +178,7 @@ public final class Resolver {
             p.tag = s.tag;
             Expanded exp = expand(id, s);
             p.hasJar = exp.hasJar;
+            if (p.kind == Graph.Kind.MAVEN) pinPom(p);
             for (EdgeReq e : exp.edges) {
                 if (!requests.containsKey(e.target)) continue;
                 p.deps.put(e.target, new Graph.Edge(e.target, e.runtimeOnly, e.exclusions, e.compileOnly));
@@ -184,6 +188,19 @@ public final class Resolver {
         checkVisibility(g, requests);
         if (project != null) ResolveInputs.addLocal(g, project);
         return g;
+    }
+
+    private void pinPom(Graph.Pkg p) {
+        String[] ga = p.id.split(":");
+        Path pom = repo.local(ga[0], ga[1], p.version, null, "pom");
+        if (!Files.isRegularFile(pom)) return;
+        p.pomSha256 = Hash.sha256(pom);
+        Graph.Pkg before = previous == null ? null : previous.get(p.id);
+        if (before != null && p.version.equals(before.version) && before.pomSha256 != null && !before.pomSha256.equals(p.pomSha256)) {
+            throw new JpmException("Checksum mismatch for the POM of " + p.id + " " + p.version + ":\n  locked:   " + before.pomSha256
+                    + "\n  download: " + p.pomSha256).withHint("the POM the lock was made from is not the one the repository serves now;"
+                    + " if the cached file is corrupt, delete " + pom + " and try again");
+        }
     }
 
     private void checkVisibility(Graph g, Map<String, List<Request>> requests) {

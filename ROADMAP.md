@@ -381,8 +381,9 @@ Items that are not in the original list but would pay off.
 - [ ] **Testing:** `jpm test --watch`, and JUnit XML reports for CI.
 - [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest
       errors), and what to do next; no stack traces unless `--verbose`.
-- [ ] **Supply-chain checks:** verify checksums (and signatures where published) of every downloaded
-      artifact, store hashes in `project.lock`, and fail `--frozen` installs on a mismatch.
+- [x] **Supply-chain checks:** verify checksums of every downloaded artifact against what the repository
+      publishes, store hashes in `project.lock` (jars and POMs), and fail on a mismatch (ADR 0017).
+- [ ] **Signatures:** check `.asc` signatures where published, against a list of trusted keys.
 - [ ] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
 - [ ] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension.
 - [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock

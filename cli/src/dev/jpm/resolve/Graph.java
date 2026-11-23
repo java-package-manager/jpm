@@ -57,6 +57,8 @@ public final class Graph {
         public String tag;
         /** Maven only: checksum of the jar. Null for POM-only packages. */
         public String sha256;
+        /** For Maven packages: the SHA-256 of the POM resolution read, which the lockfile pins too. */
+        public String pomSha256;
         /** False for packages that have no jar (Maven pom packaging). */
         public boolean hasJar = true;
         public final Map<String, Edge> deps = new TreeMap<>();

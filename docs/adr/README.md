@@ -22,5 +22,6 @@ API types.
 | [0014](0014-editing-jsonc-in-place.md) | Editing `project.jsonc` in place |
 | [0015](0015-running-tests.md) | Running tests |
 | [0016](0016-licenses.md) | Licenses |
+| [0017](0017-checksums.md) | Checksums |
 
 New ADRs take the next number. An ADR that is replaced stays, with its status set to "replaced by NNNN".
