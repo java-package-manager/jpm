@@ -307,7 +307,7 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 - [ ] Run configurations generated from `main` entries and `scripts`.
 - [ ] A dependency graph view, using what `jpm why` knows.
-- [ ] New projects ignore jpm's folders (`dist/`, `.cache/`, `.env.local`) in Git. The wizard runs
+- [x] New projects ignore jpm's folders (`dist/`, `.cache/`, `.env.local`) in Git. The wizard runs
       `jpm init`, which only writes `.gitignore` when there is none, so a `.gitignore` that exists
       already (for example one IntelliJ created) is left without them. `jpm init` and `jpm import`
       add the missing entries to an existing `.gitignore` instead of skipping it.
