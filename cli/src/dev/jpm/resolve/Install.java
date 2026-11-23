@@ -142,6 +142,26 @@ public final class Install {
     }
 
     /**
+     * The jars of {@code roots}, resolved in a graph of their own (so they never change a project's versions) and
+     * downloaded: each root's runtime closure, in resolution order. For tools that run apart from a project's
+     * classpath: script dependencies and the {@code dependencies/resolve} request of the protocol.
+     */
+    public static List<Path> classpath(List<Resolver.Root> roots, MavenRepo repo) {
+        if (roots.isEmpty()) return List.of();
+        Graph g = new Resolver(roots, repo, null).resolve();
+        fetch(g, repo);
+        List<Graph.Edge> edges = roots.stream().map(r -> new Graph.Edge(ResolveInputs.idOf(r.key()), false, Set.of())).toList();
+        List<Path> out = new ArrayList<>();
+        for (String id : g.closure(edges, Graph.Walk.RUNTIME)) {
+            Graph.Pkg p = g.get(id);
+            if (p != null && p.kind == Graph.Kind.MAVEN && p.hasJar) {
+                out.add(repo.require(p.group(), p.name(), p.version, p.classifier(), "jar"));
+            }
+        }
+        return out;
+    }
+
+    /**
      * Downloads Maven jars in parallel, recording or verifying their checksums.
      */
     public static void fetch(Graph graph, MavenRepo repo) {

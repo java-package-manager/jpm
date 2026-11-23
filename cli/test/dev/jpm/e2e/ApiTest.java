@@ -184,6 +184,22 @@ class ApiTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void resolveGivesTheJarsOfDependencies(@TempDir Path tmp) throws Exception {
+        Session s = workspace(tmp);
+        s.repo.artifact("org.example:fmt-core:1.0.0").publish();
+        s.repo.artifact("org.example:fmt:2.0.0").dependsOn("org.example:fmt-core:1.0.0").publish();
+        start(s);
+        assertTrue(((List<?>) result(initialize()).get("methods")).contains("dependencies/resolve"));
+        List<String> cp = (List<String>) result(call("dependencies/resolve",
+                Map.of("dir", s.project.toString(), "dependencies", Map.of("org.example:fmt", "^2.0")))).get("classpath");
+        assertEquals(List.of("fmt-2.0.0.jar", "fmt-core-1.0.0.jar"), cp.stream().map(p -> Path.of(p).getFileName().toString()).toList());
+        for (String p : cp) assertTrue(java.nio.file.Files.isRegularFile(Path.of(p)), p);
+        assertEquals(-32602, ((Number) error(call("dependencies/resolve", Map.of("dependencies", Map.of("github:me/x", "1.0")))).get("code")).intValue());
+        assertEquals(-32602, ((Number) error(call("dependencies/resolve", Map.of())).get("code")).intValue());
+    }
+
+    @Test
     void errorsAreProblems(@TempDir Path tmp) throws Exception {
         Session s = workspace(tmp);
         Fs.write(s.project.resolve("core/project.jsonc"), "{\n  \"name\": \"core\",\n  \"runtim\": {}\n}\n");

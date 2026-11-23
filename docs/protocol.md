@@ -62,6 +62,7 @@ result type is defined in section 5.
 | `extensions/list` | `dir?` | `{extensions: [ExtensionDescriptor]}` | the plugin's built-in command list |
 | `check/run` | `dir`, `checks?`, `tests?` | `{problems: [Problem], ran: [String]}` | |
 | `dependencies/versions` (1.1) | `keys`, `dir?`, `refresh?` | `{versions: {key: {versions: [String], latest?}}}` | `jpm outdated` for editors |
+| `dependencies/resolve` (1.2) | `dependencies`, `dir?` | `{classpath: [String]}` | |
 | `$/cancelRequest` (notification) | `id` | | |
 
 ### `project/load`
@@ -113,6 +114,16 @@ project's `"repositories"` are asked too, after Maven Central. It reads `maven-m
 from the cache while it is fresh; `refresh: true` asks the repositories again. Editors use it to complete
 versions and to show dependencies with newer versions. A key that is not a Maven key is an `InvalidParams`
 error.
+
+### `dependencies/resolve`
+
+Since protocol 1.2. Resolves `dependencies`, an object of Maven dependency keys (`group:artifact`) to versions in
+any syntax the manifest takes, in a graph of their own (as a script's `"dependencies"`: they never change a
+project's versions), downloads them, and returns `classpath`: the absolute paths of their jars and of everything
+they need at run time, in resolution order. With `dir`, the project's `"repositories"` are asked too; without
+it, Maven Central only. For tools that load a library at run time, such as jpm-format running a formatter by
+name. A key that is not a Maven key, or a missing version, is an `InvalidParams` error; a version that does not
+exist is a `JpmError` with the resolver's message.
 
 ## 4. Notifications from jpm
 

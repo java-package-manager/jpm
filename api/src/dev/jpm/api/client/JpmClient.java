@@ -259,6 +259,27 @@ public final class JpmClient implements AutoCloseable {
     }
 
     /**
+     * {@code dependencies/resolve} (protocol 1.2): resolves Maven dependencies in a graph of their own, apart from any
+     * project's, downloads them and returns their jars, for tools that load a library at run time (a formatter, a code
+     * generator). Check {@link #supports(String)} first: a jpm with protocol 1.1 or older does not have it.
+     *
+     * @param dir          the project's folder, whose repositories are asked too; null for Maven Central only
+     * @param dependencies Maven dependency keys ({@code group:artifact}) and their versions, in any syntax jpm reads
+     * @return the jars of the dependencies and of everything they need at run time
+     * @throws JpmError when jpm cannot resolve them, for example a version that does not exist
+     */
+    @SuppressWarnings("unchecked")
+    public List<Path> resolve(Path dir, Map<String, String> dependencies) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        if (dir != null) params.put("dir", dir.toAbsolutePath().toString());
+        params.put("dependencies", dependencies);
+        Map<String, Object> r = call("dependencies/resolve", params);
+        List<Path> out = new ArrayList<>();
+        if (r.get("classpath") instanceof List<?> l) for (Object o : l) out.add(Path.of(String.valueOf(o)));
+        return out;
+    }
+
+    /**
      * {@code schema/manifest}: the JSON Schema of {@code project.jsonc} that this jpm reads.
      *
      * @return the schema, as {@link Jsonc#parse(String)} gives JSON
