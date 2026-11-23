@@ -281,6 +281,36 @@ class EndToEndTest {
     }
 
     @Test
+    void lockfileMergeConflicts(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        s.repo.artifact("org.example:tax:1.0.0").publish();
+        s.repo.artifact("org.example:tax:1.1.0").publish();
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\","
+                + " \"runtime\": { \"org.example:money\": \"^1.0.0\", \"org.example:tax\": \"^1.0.0\" } }");
+        Fs.write(s.project.resolve("project.lock"), "{ \"lockfileVersion\": 1, \"inputs\": \"\", \"packages\": {"
+                + " \"org.example:money\": { \"version\": \"1.0.0\" }, \"org.example:tax\": { \"version\": \"1.0.0\" } } }");
+        s.jpmUnrecorded("install");
+        String base = Fs.read(s.project.resolve("project.lock"));
+        s.jpmUnrecorded("update");
+        String updated = Fs.read(s.project.resolve("project.lock"));
+        String money = line(base, "org.example:money"), tax = line(base, "org.example:tax");
+        String theirsMoney = line(updated, "org.example:money");
+        Fs.write(s.project.resolve("project.lock"), base.replace(money + ",\n" + tax, "<<<<<<< HEAD\n" + money + ",\n"
+                + line(updated, "org.example:tax") + "\n=======\n" + theirsMoney + "\n>>>>>>> feature"));
+        s.show("project.lock");
+        s.jpm("install", "--frozen");
+        s.jpm("install");
+        s.show("project.lock");
+        s.jpm("install", "--frozen");
+        s.verify("lockfile-conflicts");
+    }
+
+    private static String line(String lock, String id) {
+        return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
+    }
+
+    @Test
     void sbom(@TempDir Path tmp) {
         Session s = new Session(tmp);
         s.repo.artifact("org.example:money:1.0.0").javaClass("org.example.money.Money", MONEY_V1)

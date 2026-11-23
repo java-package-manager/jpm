@@ -21,19 +21,35 @@ public final class Lockfile {
 
     public final String inputs;
     public final Graph graph;
+    /**
+     * Whether the file had merge conflict markers. Its graph then merges both sides, the higher version of each
+     * package winning, and its inputs are null, so it is always resolved again.
+     */
+    public final boolean conflicted;
 
     /** A lockfile for a graph resolved from these inputs. */
     public Lockfile(String inputs, Graph graph) {
+        this(inputs, graph, false);
+    }
+
+    private Lockfile(String inputs, Graph graph, boolean conflicted) {
         this.inputs = inputs;
         this.graph = graph;
+        this.conflicted = conflicted;
     }
 
     /** Reads {@code project.lock}; null when there is none. */
     public static Lockfile read(Path file) {
         if (!Files.exists(file)) return null;
+        String text = Fs.read(file);
+        if (hasConflictMarkers(text)) return merged(file, text);
+        return parse(file, text);
+    }
+
+    private static Lockfile parse(Path file, String text) {
         Object parsed;
         try {
-            parsed = Jsonc.parse(Fs.read(file));
+            parsed = Jsonc.parse(text);
         } catch (Jsonc.ParseException e) {
             throw new JpmException(file + " is corrupt (" + e.getMessage() + "). Delete it and run `jpm install`.");
         }
@@ -56,6 +72,89 @@ public final class Lockfile {
             }
         }
         return new Lockfile((String) root.get("inputs"), g);
+    }
+
+    /** Whether a lockfile's text has Git merge conflict markers. */
+    public static boolean hasConflictMarkers(String text) {
+        for (String line : text.split("\n", -1)) {
+            if (line.startsWith("<<<<<<<") || line.startsWith(">>>>>>>")) return true;
+        }
+        return false;
+    }
+
+    private static Lockfile merged(Path file, String text) {
+        Lockfile ours = null, theirs = null;
+        try {
+            ours = parse(file, side(text, true));
+        } catch (JpmException ignored) {
+        }
+        try {
+            theirs = parse(file, side(text, false));
+        } catch (JpmException ignored) {
+        }
+        if (ours == null && theirs == null) {
+            throw new JpmException(file + " has merge conflicts that jpm cannot read. Take either side"
+                    + " (`git checkout --theirs " + file.getFileName() + "`) and run `jpm install`.");
+        }
+        if (ours == null || theirs == null) return new Lockfile(null, (ours != null ? ours : theirs).graph, true);
+        Graph g = merge(ours.graph, theirs.graph);
+        for (String name : union(ours.graph.isolated.keySet(), theirs.graph.isolated.keySet())) {
+            g.isolated.put(name, merge(ours.graph.isolated.getOrDefault(name, new Graph()), theirs.graph.isolated.getOrDefault(name, new Graph())));
+        }
+        for (String name : union(ours.graph.extensions.keySet(), theirs.graph.extensions.keySet())) {
+            g.extensions.put(name, merge(ours.graph.extensions.getOrDefault(name, new Graph()), theirs.graph.extensions.getOrDefault(name, new Graph())));
+        }
+        return new Lockfile(null, g, true);
+    }
+
+    private static java.util.Set<String> union(java.util.Set<String> a, java.util.Set<String> b) {
+        java.util.Set<String> out = new java.util.TreeSet<>(a);
+        out.addAll(b);
+        return out;
+    }
+
+    /**
+     * One side of a conflicted file: the lines outside the conflicts and, inside each, ours (between {@code <<<<<<<}
+     * and {@code |||||||} or {@code =======}) or theirs (between {@code =======} and {@code >>>>>>>}). A comma is added
+     * where a side's last entry is followed by another entry, since each side ends its entries as if it were alone.
+     */
+    static String side(String text, boolean ours) {
+        List<String> out = new java.util.ArrayList<>();
+        int state = 0;
+        for (String line : text.split("\n", -1)) {
+            if (line.startsWith("<<<<<<<")) { state = 1; continue; }
+            if (state != 0 && line.startsWith("|||||||")) { state = 2; continue; }
+            if (state != 0 && line.startsWith("=======")) { state = 3; continue; }
+            if (state != 0 && line.startsWith(">>>>>>>")) { state = 0; continue; }
+            if (state == 0 || (ours && state == 1) || (!ours && state == 3)) out.add(line);
+        }
+        for (int i = 0; i < out.size(); i++) {
+            String line = out.get(i).stripTrailing();
+            if (line.isEmpty() || line.endsWith(",") || line.endsWith("{") || line.endsWith("[")) continue;
+            int next = i + 1;
+            while (next < out.size() && out.get(next).isBlank()) next++;
+            if (next < out.size() && out.get(next).stripLeading().startsWith("\"")) out.set(i, line + ",");
+        }
+        return String.join("\n", out);
+    }
+
+    private static Graph merge(Graph a, Graph b) {
+        Graph g = new Graph();
+        for (Graph.Pkg p : a.pkgs.values()) g.put(p);
+        for (Graph.Pkg p : b.pkgs.values()) {
+            Graph.Pkg other = g.get(p.id);
+            if (other == null || newer(p, other)) g.put(p);
+        }
+        return g;
+    }
+
+    private static boolean newer(Graph.Pkg p, Graph.Pkg than) {
+        if (p.version == null || than.version == null) return than.version == null;
+        try {
+            return dev.jpm.version.Version.of(p.version).compareTo(dev.jpm.version.Version.of(than.version)) > 0;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     private static Graph readPackages(Object pkgs) {

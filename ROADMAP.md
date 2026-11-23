@@ -370,7 +370,7 @@ Items that are not in the original list but would pay off.
       belong in `jpm check`, so a CI result never depends on the runner.
 - [ ] **More project checks for `jpm check`:** unused dependencies and duplicate classes on the
       classpath, both read from compiled classes, not sources.
-- [ ] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
+- [x] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
       resolving again, instead of failing.
 - [ ] **Private repositories:** credentials for downloading from Maven repositories that need them,
       from environment variables like jpm-publish's (`JPM_REPO_<NAME>_USERNAME` / `_PASSWORD`), never

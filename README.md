@@ -318,6 +318,10 @@ from the folder of their `-SNAPSHOT` version.
 for Git, a SHA-256 for Maven jars (verified on every install) and for their POMs (`"pom"`, verified when
 resolving), and its edges. It is reused as long as the declared dependencies are unchanged.
 
+**Merge conflicts in `project.lock`.** Do not resolve them by hand: `jpm install` reads both sides of every
+conflict, starts from the higher version of each package, resolves again and writes a clean lockfile.
+`jpm install --frozen` fails on a lockfile with conflict markers, so CI never builds from one.
+
 **Vulnerabilities.** `jpm audit` asks the [OSV](https://osv.dev) database about every locked package (Maven
 packages by name and version, Git packages by commit) and prints each known vulnerability with its id and
 CVE, its severity, the version that fixes it and how the project gets the package; it exits 1 when there is
