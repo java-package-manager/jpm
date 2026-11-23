@@ -385,7 +385,7 @@ Items that are not in the original list but would pay off.
       publishes, store hashes in `project.lock` (jars and POMs), and fail on a mismatch (ADR 0017).
 - [ ] **Signatures:** check `.asc` signatures where published, against a list of trusted keys.
 - [x] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
-- [ ] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension.
+- [x] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension (`jpm sbom`, CycloneDX).
 - [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
       give byte-identical output; checked in CI.
 - [x] **Performance budget:** measure `jpm install` and no-op `jpm build` on the fixtures in CI and fail
@@ -611,7 +611,7 @@ In this order (decided 2026-11-23):
 
 1. **Supply chain** (in jpm): checksums of every download checked against what the repository publishes and
    kept in `project.lock` (POMs too), failing `--frozen` installs on a mismatch; then `jpm audit` (OSV);
-   then an SBOM (CycloneDX) from the lockfile.
+   then an SBOM (CycloneDX) from the lockfile. Done: checksums, `jpm audit`, `jpm sbom`.
 2. **The smaller items:**
    - lockfile conflict resolution;
    - private repository credentials;

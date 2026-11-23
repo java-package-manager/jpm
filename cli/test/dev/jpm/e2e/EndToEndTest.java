@@ -11,6 +11,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Runs the {@code jpm} binary on the projects in {@code fixtures/} and compares everything it prints with
  * {@code fixtures/expected/}. These tests are the safety net for the restructure: a change to an expected
@@ -276,6 +278,26 @@ class EndToEndTest {
             osv.stop(0);
         }
         s.verify("audit");
+    }
+
+    @Test
+    void sbom(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        s.repo.artifact("org.example:money:1.0.0").javaClass("org.example.money.Money", MONEY_V1)
+                .pom("<licenses><license><name>The Apache Software License, Version 2.0</name></license></licenses>").publish();
+        s.repo.artifact("org.example:shop:1.0.0").dependsOn("org.example:money:1.0.0")
+                .pom("<licenses><license><name>Shop Proprietary License</name><url>https://shop.example/license</url></license></licenses>").publish();
+        s.repo.artifact("org.example:checks:1.0.0").publish();
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"group\": \"org.example\","
+                + " \"license\": \"MIT\", \"main\": \"app.Main\", \"runtime\": { \"org.example:shop\": \"1.0.0\" },"
+                + " \"test\": { \"org.example:checks\": \"1.0.0\" } }");
+        s.jpm("sbom");
+        s.jpm("sbom", "-o", "bom.json");
+        String first = Fs.read(s.project.resolve("bom.json"));
+        s.jpmUnrecorded("sbom", "-o", "bom.json");
+        assertEquals(first, Fs.read(s.project.resolve("bom.json")), "the same lock gives the same SBOM");
+        s.jpm("sbom", "extra");
+        s.verify("sbom");
     }
 
     @Test

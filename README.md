@@ -86,6 +86,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `update [dep...]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |
 | `outdated` | Show dependencies with newer versions |
 | `audit` | Report the locked dependencies with known vulnerabilities, from the OSV database: id, severity, the version that fixes it and how the project gets it; exits 1 when there are any. `--ignore <id>` (repeatable) accepts one, `--json` prints them as JSON, `--frozen` |
+| `sbom` | Write a CycloneDX 1.6 software bill of materials (JSON) for the locked dependencies: package URLs, SHA-256 hashes, licenses and the dependency graph; the same lock gives the same file. `-o <file>` writes it to a file instead of stdout, `--frozen` |
 | `why <dep>` | Show why a dependency is in the graph |
 | `info` | Describe the project: each module's version and folder, and its dependencies with what they resolve to. Programs use the jpm protocol instead (`jpm api`, [docs/protocol.md](docs/protocol.md)) |
 | `import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
@@ -322,6 +323,12 @@ packages by name and version, Git packages by commit) and prints each known vuln
 CVE, its severity, the version that fixes it and how the project gets the package; it exits 1 when there is
 one, so it can run in CI. `--ignore <id>` accepts one (an OSV id or a CVE), and `--json` prints them as JSON.
 `JPM_OSV_URL` points it at another OSV server.
+
+**SBOM.** `jpm sbom` writes a [CycloneDX](https://cyclonedx.org) 1.6 software bill of materials (JSON) for
+the locked dependencies of every module: each package with its package URL, the SHA-256 from `project.lock`,
+its license from its POM, and `"scope": "required"` when it ships at run time (`"excluded"` for dev and test
+dependencies), and the dependency graph. Extensions are left out. It has no timestamp and its serial number
+comes from its content, so the same lock gives the same file. `-o <file>` writes it to a file.
 
 **Checksums.** Every file downloaded from a Maven repository is checked against the strongest checksum the
 repository publishes next to it (`.sha512`, `.sha256` or `.sha1`); one that does not match is deleted and
