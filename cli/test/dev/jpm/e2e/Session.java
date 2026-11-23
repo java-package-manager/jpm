@@ -204,6 +204,17 @@ final class Session {
     private static final Pattern COMMIT = Pattern.compile("\\b[0-9a-f]{40}\\b|(?<=\\+|\\()[0-9a-f]{7}\\b");
     private static final Pattern SECONDS = Pattern.compile("in \\d+(\\.\\d+)?s\\b");
 
+    private static final Pattern WINDOWS_PATH = Pattern.compile("(?<![\\w\\\\])((?:<[a-z-]+>|[A-Za-z]:|[\\w.@+-]+)(?:\\\\[\\w.@+$-]+)+\\\\?)");
+    private static final Pattern EXE = Pattern.compile("\\b(java|javac|jpm|jar|native-image)\\.exe\\b");
+
+    private static String windows(String s) {
+        java.util.regex.Matcher m = WINDOWS_PATH.matcher(s);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(m.group(1).replace('\\', '/')));
+        m.appendTail(sb);
+        return EXE.matcher(sb.toString()).replaceAll("$1");
+    }
+
     String normalize(String s) {
         s = s.replaceAll("\u001b\\[[0-9;]*m", "").replace("\r\n", "\n");
         for (Path p : List.of(project, repo.root(), home, tmp, Path.of(System.getProperty("java.home")))) {
@@ -216,6 +227,7 @@ final class Session {
             }
             s = s.replace(p.toUri().toString(), label + "/").replace(p.toString(), label);
         }
+        if (java.io.File.separatorChar == '\\') s = windows(s);
         s = JDK_ID.matcher(s).replaceAll("<jdk>");
         s = s.replace(dev.jpm.BuildConfig.VERSION, "<jpm-version>");
         s = COMMIT.matcher(s).replaceAll("<commit>");

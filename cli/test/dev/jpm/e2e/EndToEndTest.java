@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * {@code fixtures/expected/}. These tests are the safety net for the restructure: a change to an expected
  * transcript is a change in behavior.
  */
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "the transcripts use / in paths; Windows parity is a roadmap item")
 class EndToEndTest {
     private static final String MONEY_V1 = """
             package org.example.money;
@@ -150,6 +149,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitDependencies(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path lib = tmp.resolve("git/me/lib");
@@ -177,6 +177,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void projectExtensions(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path ext = tmp.resolve("git/me/jpm-hello");
@@ -211,6 +212,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void addsAnExtensionInAWorkspaceRoot(@TempDir Path tmp) {
         Session s = new Session(tmp);
         money(s.repo);
@@ -376,7 +378,7 @@ class EndToEndTest {
     }
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "the scripts use sh syntax ($PWD)")
     void workspaceFilters(@TempDir Path tmp) {
         Session s = new Session(tmp).fixture("workspace-demo");
         money(s.repo);
@@ -542,6 +544,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void checkReportsEveryProblem(@TempDir Path tmp) {
         Session s = new Session(tmp);
         money(s.repo);
@@ -653,6 +656,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitMirrorsFollowTheirUrl(@TempDir Path tmp) {
         Session s = new Session(tmp);
         for (String base : List.of("old", "new")) {
@@ -677,6 +681,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitDependencyWithItsOwnRepository(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path other = tmp.resolve("other-repo");
@@ -703,6 +708,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitDependencyWithAMavenBuild(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path lib = tmp.resolve("git/me/maven-lib");

@@ -7,8 +7,6 @@ import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
@@ -27,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** {@code jpm api} spoken to over its real stdin and stdout, as docs/protocol.md specifies it. */
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "the e2e sessions are not run on Windows yet")
 @SuppressWarnings("unchecked")
 class ApiTest {
     private Process process;

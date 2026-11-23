@@ -12,8 +12,6 @@ import dev.jpm.api.protocol.Protocol;
 import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
@@ -27,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The client, dev.jpm:jpm-api, against a real jpm api. */
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "the e2e sessions are not run on Windows yet")
 class ClientTest {
     private static JpmClient connect(Session s) {
         List<String> cmd = new ArrayList<>(Session.binary());

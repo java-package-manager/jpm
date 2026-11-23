@@ -390,7 +390,10 @@ Items that are not in the original list but would pay off.
       give byte-identical output; checked in CI.
 - [x] **Performance budget:** measure `jpm install` and no-op `jpm build` on the fixtures in CI and fail
       on large regressions.
-- [ ] **Windows parity:** run the full test suite on Windows in CI, not only the native smoke test.
+- [~] **Windows parity:** run the full test suite on Windows in CI, not only the native smoke test.
+      The end-to-end sessions run on Windows now (paths normalized to `/`), on the JVM and on the native
+      binary; still skipped there: the Git and extension scenarios (file:// Git bases) and scripts in sh syntax.
+      Done when a Windows run is green and those are enabled too.
 - [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …) and a template
       repository for writing new ones.
 - [ ] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists.

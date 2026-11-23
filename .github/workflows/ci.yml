@@ -99,9 +99,10 @@ jobs:
         if: matrix.name == 'linux-x64'
         run: checks/perf.sh cli/dist/jpm
 
+      # On Windows too: transcripts are normalized to / and no .exe; the few tests that need sh or file:// Git
+      # bases say so with @DisabledOnOs
       - name: End-to-end tests on the native binary
-        if: runner.os != 'Windows'
-        run: JPM_E2E_BINARY="$PWD/cli/dist/jpm" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest dev.jpm.e2e.ApiTest dev.jpm.e2e.ClientTest
+        run: JPM_E2E_BINARY="$PWD/cli/dist/jpm${{ matrix.exe }}" bin/jpm test --frozen dev.jpm.e2e.EndToEndTest dev.jpm.e2e.ApiTest dev.jpm.e2e.ClientTest
 
       - name: Smoke test the native binary
         run: |
