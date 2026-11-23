@@ -5,6 +5,7 @@
 | `JPM_HOME` | Where jpm keeps its cache, JDKs and shims (default `$HOME/.jpm`) |
 | `JPM_OFFLINE`, `--offline` | Use only what is cached |
 | `JPM_REPO_<HOST>_USERNAME`, `_PASSWORD`, `_TOKEN` | Credentials for a Maven repository that needs them, see [Repositories](dependencies.md#repositories) |
+| `JPM_MAVEN_SEARCH_URL` | The search service `dependencies/search` asks for Maven coordinates (default `https://search.maven.org`) |
 | `JPM_OSV_URL` | The OSV server `jpm audit` asks (default `https://api.osv.dev`) |
 | `JPM_SPDX_BASE` | Where `jpm license` downloads license texts (default `https://spdx.org/licenses`) |
 | `JPM_VERBOSE`, `-v` | Show what jpm runs and downloads; `JPM_VERBOSE=2` or `-vv` shows trace messages too |

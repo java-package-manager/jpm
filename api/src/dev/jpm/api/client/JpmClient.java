@@ -280,6 +280,26 @@ public final class JpmClient implements AutoCloseable {
     }
 
     /**
+     * {@code dependencies/search} (protocol 1.2): Maven packages whose coordinates match {@code query}, for completing
+     * {@code group:artifact}: first those in jpm's download cache, then what Maven Central's search finds. Check
+     * {@link #supports(String)} first: a jpm with protocol 1.1 or older does not have it.
+     *
+     * @param query a word of a group or artifact, such as {@code guava}, or a group, a colon and the start of an
+     *              artifact, such as {@code com.google.guava:gu}
+     * @param limit how many to return at most
+     * @return each package's {@code key} ({@code group:artifact}) and, when the search service says, its {@code latest}
+     * version
+     * @throws JpmError when jpm cannot search and has nothing cached that matches
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> search(String query, int limit) {
+        Map<String, Object> r = call("dependencies/search", Map.of("query", query, "limit", limit));
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (r.get("results") instanceof List<?> l) for (Object o : l) if (o instanceof Map<?, ?> m) out.add((Map<String, Object>) m);
+        return out;
+    }
+
+    /**
      * {@code schema/manifest}: the JSON Schema of {@code project.jsonc} that this jpm reads.
      *
      * @return the schema, as {@link Jsonc#parse(String)} gives JSON

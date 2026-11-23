@@ -63,6 +63,7 @@ result type is defined in section 5.
 | `check/run` | `dir`, `checks?`, `tests?` | `{problems: [Problem], ran: [String]}` | |
 | `dependencies/versions` (1.1) | `keys`, `dir?`, `refresh?` | `{versions: {key: {versions: [String], latest?}}}` | `jpm outdated` for editors |
 | `dependencies/resolve` (1.2) | `dependencies`, `dir?` | `{classpath: [String]}` | |
+| `dependencies/search` (1.2) | `query`, `limit?` | `{results: [{key, latest?}]}` | |
 | `$/cancelRequest` (notification) | `id` | | |
 
 ### `project/load`
@@ -124,6 +125,15 @@ they need at run time, in resolution order. With `dir`, the project's `"reposito
 it, Maven Central only. For tools that load a library at run time, such as jpm-format running a formatter by
 name. A key that is not a Maven key, or a missing version, is an `InvalidParams` error; a version that does not
 exist is a `JpmError` with the resolver's message.
+
+### `dependencies/search`
+
+Since protocol 1.2. Maven packages whose coordinates match `query`, for editors that complete `group:artifact`:
+a word of a group or artifact (`guava`), or a group, a colon and the start of an artifact
+(`com.google.guava:gu`). With a group, the packages in jpm's download cache come first; then Maven Central's
+search service (`JPM_MAVEN_SEARCH_URL`, else https://search.maven.org) adds what it finds, with the newest
+version as `latest`. At most `limit` results (default 20, at most 200). When the service cannot be asked, the
+cached ones are the answer; with none, it is a `JpmError`. An empty `query` is an `InvalidParams` error.
 
 ## 4. Notifications from jpm
 

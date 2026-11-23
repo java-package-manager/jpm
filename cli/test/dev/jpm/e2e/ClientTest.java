@@ -70,6 +70,39 @@ class ClientTest {
         }
     }
 
+    @Test
+    void searchesCoordinates(@TempDir Path tmp) throws Exception {
+        Session s = workspace(tmp);
+        List<String> asked = new ArrayList<>();
+        com.sun.net.httpserver.HttpServer search = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        search.createContext("/solrsearch/select", ex -> {
+            asked.add(java.net.URLDecoder.decode(ex.getRequestURI().getRawQuery(), java.nio.charset.StandardCharsets.UTF_8));
+            byte[] b = ("{\"response\": {\"docs\": [{\"g\": \"org.example\", \"a\": \"money\", \"latestVersion\": \"2.0.0\"},"
+                    + " {\"g\": \"org.example\", \"a\": \"money-extra\", \"latestVersion\": \"0.3\"}]}}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            ex.sendResponseHeaders(200, b.length);
+            ex.getResponseBody().write(b);
+            ex.close();
+        });
+        search.start();
+        try {
+            s.env("JPM_MAVEN_SEARCH_URL", "http://127.0.0.1:" + search.getAddress().getPort());
+            try (JpmClient jpm = connect(s)) {
+                jpm.load(s.project, LoadOptions.defaults());
+                assertTrue(jpm.supports("dependencies/search"));
+                List<Map<String, Object>> hits = jpm.search("org.example:mo", 5);
+                assertEquals(List.of(Map.of("key", "org.example:money", "latest", "2.0.0"), Map.of("key", "org.example:money-extra", "latest", "0.3")), hits);
+                assertEquals(List.of("q=g:\"org.example\" AND a:mo*&rows=5&wt=json"), asked);
+                assertEquals(List.of(Map.of("key", "org.example:money")), jpm.search("org.example:mo", 1));
+            }
+            search.stop(0);
+            try (JpmClient jpm = connect(s)) {
+                assertEquals(List.of(Map.of("key", "org.example:money")), jpm.search("org.example:", 5), "the cache answers when the service cannot");
+            }
+        } finally {
+            search.stop(0);
+        }
+    }
+
     private static void git(Path dir, String... args) {
         List<String> cmd = new ArrayList<>(List.of("git", "-c", "user.name=e2e", "-c", "user.email=e2e@example.com",
                 "-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false"));

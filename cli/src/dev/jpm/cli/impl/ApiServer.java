@@ -28,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 final class ApiServer {
     static final List<String> METHODS = List.of("initialize", "shutdown", "exit", "project/load", "project/classpaths",
-            "schema/manifest", "extensions/list", "check/run", "dependencies/versions", "dependencies/resolve", "$/cancelRequest");
+            "schema/manifest", "extensions/list", "check/run", "dependencies/versions", "dependencies/resolve", "dependencies/search", "$/cancelRequest");
 
     private static final Object EOF = new Object();
 
@@ -135,6 +135,7 @@ final class ApiServer {
             case "check/run" -> check(params);
             case "dependencies/versions" -> versions(params);
             case "dependencies/resolve" -> resolve(params);
+            case "dependencies/search" -> search(params);
             case "extensions/list" -> Map.of("extensions", ExtensionList.list(params.get("dir") instanceof String ? Project.find(dir(params)) : null));
             default -> throw new ApiError(-32601, "no method \"" + method + "\"; this jpm has " + String.join(", ", METHODS), null);
         };
@@ -190,6 +191,21 @@ final class ApiServer {
             out.put(key.toString(), entry);
         }
         return Map.of("versions", out);
+    }
+
+    private Object search(Map<?, ?> params) {
+        if (!(params.get("query") instanceof String query) || query.isBlank()) {
+            throw new ApiError(-32602, "\"query\" is required: a word of a group or artifact, or group: and the start of an artifact", null);
+        }
+        int limit = params.get("limit") instanceof Number n ? Math.max(1, Math.min(200, n.intValue())) : 20;
+        List<Object> out = new ArrayList<>();
+        for (dev.jpm.maven.MavenSearch.Hit h : dev.jpm.maven.MavenSearch.search(query, limit)) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("key", h.key());
+            if (h.latest() != null) entry.put("latest", h.latest());
+            out.add(entry);
+        }
+        return Map.of("results", out);
     }
 
     private Object resolve(Map<?, ?> params) {
