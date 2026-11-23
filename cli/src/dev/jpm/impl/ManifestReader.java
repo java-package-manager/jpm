@@ -55,6 +55,16 @@ public final class ManifestReader {
         return new Manifest.Kotlin(checkKotlinVersion(v, (String) v.value), plugins, strings(n.get("args"), "kotlin.args"));
     }
 
+    public String languageVersion(String key) {
+        Jsonc.Node n = root.get(key);
+        if (n == null) return null;
+        if (!n.isString() || !((String) n.value).matches("\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?")) {
+            throw err(n, key + " must be an exact " + (key.equals("groovy") ? "Groovy" : "Scala") + " version, such as \""
+                    + (key.equals("groovy") ? "4.0.24" : "3.5.2") + "\"");
+        }
+        return (String) n.value;
+    }
+
     String checkKotlinVersion(Jsonc.Node n, String v) {
         if (!v.matches("\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?")) throw err(n, "kotlin version must be exact, such as \"2.2.20\"");
         return v;

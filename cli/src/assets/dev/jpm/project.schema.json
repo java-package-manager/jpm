@@ -1026,6 +1026,22 @@
         "type": "string"
       }
     },
+    "groovy": {
+      "description": "The module has Groovy sources (.groovy, in the source folders; src/main/groovy and src/test/groovy in the maven layout): groovyc of this version compiles them before javac, jointly with the Java sources. The runtime library (org.apache.groovy:groovy for Groovy 4 and later, org.codehaus.groovy:groovy before) is an ordinary dependency. Workspace modules inherit it from the root.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?$",
+      "examples": [
+        "4.0.24"
+      ]
+    },
+    "scala": {
+      "description": "The module has Scala sources (.scala, in the source folders; src/main/scala and src/test/scala in the maven layout): the Scala compiler of this version (2.13 or 3) compiles them before javac, seeing the Java sources. The runtime library (org.scala-lang:scala3-library_3 for Scala 3, org.scala-lang:scala-library for 2.13) is an ordinary dependency. Workspace modules inherit it from the root.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?$",
+      "examples": [
+        "3.5.2"
+      ]
+    },
     "kotlin": {
       "description": "The module has Kotlin sources: kotlinc of this version compiles them (before javac, seeing the Java sources). In the maven layout, src/main/kotlin and src/test/kotlin are source folders too. The standard library, org.jetbrains.kotlin:kotlin-stdlib, is an ordinary dependency. Workspace modules inherit it from the root.",
       "oneOf": [

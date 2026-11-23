@@ -20,7 +20,7 @@ final class Watch {
 
     static boolean code(Path f) {
         String n = f.getFileName().toString();
-        return n.endsWith(".java") || n.endsWith(".kt");
+        return n.endsWith(".java") || n.endsWith(".kt") || n.endsWith(".groovy") || n.endsWith(".scala");
     }
 
     static String code(Project.Module m) {

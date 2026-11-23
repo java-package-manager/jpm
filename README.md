@@ -484,6 +484,21 @@ names of Kotlin's own: `assignment`, `sam-with-receiver`, `allopen`, `noarg`, `s
 `power-assert`, `parcelize`, `atomicfu`, `js-plain-objects`, `compose`. `-J` entries in `args` go to the JVM
 running kotlinc. Workspace modules inherit `kotlin` from the root.
 
+## Groovy and Scala
+
+`"groovy": "4.0.24"` or `"scala": "3.5.2"` (Scala 2.13 works too) compiles the module's `.groovy` or `.scala`
+sources, in its source folders (and `src/main/groovy` or `src/main/scala`, with the test folders to match, in
+the `maven` layout), before javac. groovyc compiles jointly with the Java sources, and the Scala compiler
+reads them, so Java and the other language can use each other's classes. The compiler is downloaded from
+Maven Central like any tool; the runtime library is an ordinary dependency, and jpm says which to add when
+it is missing (`org.apache.groovy:groovy`, before Groovy 4 `org.codehaus.groovy:groovy`;
+`org.scala-lang:scala3-library_3`, for 2.13 `org.scala-lang:scala-library`). Workspace modules inherit both
+fields from the root.
+
+```jsonc
+{ "name": "app", "version": "1.0.0", "scala": "3.5.2", "runtime": { "org.scala-lang:scala3-library_3": "3.5.2" } }
+```
+
 ## Gradle plugins
 
 `gradle:api` is the Gradle API, as Gradle's `gradleApi()` gives it to plugins. Gradle publishes no API jar

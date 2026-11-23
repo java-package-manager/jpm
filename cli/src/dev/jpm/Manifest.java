@@ -31,7 +31,7 @@ public final class Manifest {
     /** Every top-level field jpm reads. The schema describes the same set (SchemaTest checks). */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
-            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "$schema");
+            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "groovy", "scala", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "$schema");
 
     /** The dependency sections of a manifest; {@link #key} is the section's name in {@code project.jsonc}. */
     public enum Scope {
@@ -146,6 +146,10 @@ public final class Manifest {
     public final Set<String> exclude;
     /** Kotlin settings, or null for a module without Kotlin. */
     public final Kotlin kotlin;
+    /** {@code "groovy"}: the Groovy version that compiles the module's .groovy sources (joint with its Java), or null. */
+    public final String groovy;
+    /** {@code "scala"}: the Scala version (2.13 or 3) that compiles the module's .scala sources (seeing its Java), or null. */
+    public final String scala;
     public final Layout layout;
     /** Resources (globs relative to the resource folder) copied with ${NAME} replaced by define values. */
     public final List<String> filter;
@@ -201,7 +205,7 @@ public final class Manifest {
      * Fields a workspace module takes from the workspace root when it does not set them itself.
      * {@code javacArgs}, {@code nativeArgs} and {@code testJvmArgs} are the root's followed by the module's own.
      */
-    public static final List<String> INHERITED = List.of("java", "target", "group", "license", "url", "layout", "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "exclude");
+    public static final List<String> INHERITED = List.of("java", "target", "group", "license", "url", "layout", "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "groovy", "scala", "exclude");
 
     private Manifest(Path file, String source) {
         this(file, source, null);
@@ -363,6 +367,9 @@ public final class Manifest {
         this.testJvmArgs = parent == null ? reader.stringList("testJvmArgs") : concat(parent.testJvmArgs, reader.stringList("testJvmArgs"));
         Kotlin ownKotlin = reader.parseKotlin();
         this.kotlin = ownKotlin != null || parent == null ? ownKotlin : parent.kotlin;
+        String ownGroovy = reader.languageVersion("groovy"), ownScala = reader.languageVersion("scala");
+        this.groovy = ownGroovy != null || parent == null ? ownGroovy : parent.groovy;
+        this.scala = ownScala != null || parent == null ? ownScala : parent.scala;
         this.packaging = reader.str("package", false) == null ? "jar" : reader.str("package", false);
         this.description = reader.str("description", false);
         this.license = inherit(reader.str("license", false), parent == null ? null : parent.license);
@@ -537,14 +544,24 @@ public final class Manifest {
     /** The module's source folders: {@code "sources"}, or the layout's one. */
     public List<Path> sourceDirs(Path moduleDir) {
         if (!sources.isEmpty()) return sources.stream().map(moduleDir::resolve).toList();
-        if (kotlin != null && layout == Layout.MAVEN) return List.of(layout.sources(moduleDir), moduleDir.resolve("src/main/kotlin"));
-        return List.of(layout.sources(moduleDir));
+        List<Path> out = new java.util.ArrayList<>(List.of(layout.sources(moduleDir)));
+        if (layout == Layout.MAVEN) {
+            if (kotlin != null) out.add(moduleDir.resolve("src/main/kotlin"));
+            if (groovy != null) out.add(moduleDir.resolve("src/main/groovy"));
+            if (scala != null) out.add(moduleDir.resolve("src/main/scala"));
+        }
+        return List.copyOf(out);
     }
 
-    /** The module's test source folders: the layout's, and {@code src/test/kotlin} for Kotlin in the Maven layout. */
+    /** The module's test source folders: the layout's, and {@code src/test/kotlin}, {@code groovy} or {@code scala} for those languages in the Maven layout. */
     public List<Path> testSourceDirs(Path moduleDir) {
-        if (kotlin != null && layout == Layout.MAVEN) return List.of(layout.tests(moduleDir), moduleDir.resolve("src/test/kotlin"));
-        return List.of(layout.tests(moduleDir));
+        List<Path> out = new java.util.ArrayList<>(List.of(layout.tests(moduleDir)));
+        if (layout == Layout.MAVEN) {
+            if (kotlin != null) out.add(moduleDir.resolve("src/test/kotlin"));
+            if (groovy != null) out.add(moduleDir.resolve("src/test/groovy"));
+            if (scala != null) out.add(moduleDir.resolve("src/test/scala"));
+        }
+        return List.copyOf(out);
     }
 
     /** The module's resource folders: {@code "resources"}, or the layout's one. */
