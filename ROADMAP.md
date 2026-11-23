@@ -403,7 +403,9 @@ Items that are not in the original list but would pay off.
       reaches a project. `jpm check` fails on any locked version younger than the minimum age, however it
       got there (a hand edit, `jpm add`, a Renovate pull request, an explicit pin). The only way past it is
       an exception for that dependency and version, added by hand in `project.jsonc` (for example to take
-      a security fix at once); jpm never writes one itself.
+      a security fix at once); jpm never writes one itself, but the failure shows the exception to add.
+      `jpm check` warns about a stale exception: the locked version is no longer the excepted one, or the
+      excepted version is now older than the minimum age and needs no exception.
 - [x] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
 - [x] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension (`jpm sbom`, CycloneDX).
 - [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
