@@ -166,7 +166,7 @@ final class Session {
             }
             return;
         }
-        assertEquals(Fs.read(expected), actual, "transcript differs from " + expected
+        assertEquals(Fs.read(expected).replace("\r\n", "\n"), actual, "transcript differs from " + expected
                 + " (JPM_UPDATE_EXPECTED=1 writes it, if the change is intended)");
     }
 

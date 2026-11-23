@@ -364,7 +364,7 @@ class EndToEndTest {
         Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"runtime\": { \"org.example:money\": \"1.0.0\" } }");
         s.jpm("install");
         Fs.write(s.home.resolve("global").resolve("keep.txt"), "an installed extension");
-        String size = s.jpmUnrecorded("cache", "size");
+        String size = s.jpmUnrecorded("cache", "size").replace("\r\n", "\n");
         org.junit.jupiter.api.Assertions.assertTrue(size.matches("(?s).*\\d+(\\.\\d)? (B|KB|MB)  repository +Maven packages\n.*total.*"), size);
         String clean = s.jpmUnrecorded("cache", "clean", "repository");
         org.junit.jupiter.api.Assertions.assertTrue(clean.contains("Cleaned repository: "), clean);

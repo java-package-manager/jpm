@@ -37,7 +37,7 @@ class ReproducibleBuildTest {
                     "package org.apache.commons.text; public final class WordUtils { public static String capitalizeFully(String s) { return s; } }").publish();
             s.jpm("build", "--bundle");
             try (Stream<Path> files = Files.walk(s.project)) {
-                for (Path f : files.filter(p -> Files.isRegularFile(p) && p.toString().contains("/dist/")).toList()) {
+                for (Path f : files.filter(p -> Files.isRegularFile(p) && p.toString().replace('\\', '/').contains("/dist/")).toList()) {
                     out.put(fixture + "/" + s.project.relativize(f), Hash.sha256(f));
                 }
             } catch (IOException e) {
