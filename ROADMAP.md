@@ -342,8 +342,9 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 - [x] Run the GraalVM tracing agent during tests (open question); today `start --trace` records what one
       run of the app does. Decided: opt in with `jpm test --trace`, merged into the same configuration,
       with the test framework and the test classes filtered out.
-- [ ] Hot reload in the running JVM (JetBrains Runtime or similar; open question); today `jpm dev`
-      restarts the app.
+- [x] Hot reload in the running JVM (JetBrains Runtime or similar; open question); today `jpm dev`
+      restarts the app. Decided: a jpm agent redefines changed classes (method bodies on any JDK, any change
+      on JetBrains Runtime with enhanced redefinition), and jpm restarts when that fails.
 
 ---
 

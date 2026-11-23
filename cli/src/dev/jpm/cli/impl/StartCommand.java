@@ -34,8 +34,10 @@ final class StartCommand extends Command {
     @Override
     List<Usage> usages() {
         if (development) {
-            return List.of(new Usage(Group.BUILD, "dev [entry] [-- args]", "Run main with development env variables, restarting on changes",
-                    "Run `main` with the development env, restarting when sources, assets, manifest or env files change"));
+            return List.of(new Usage(Group.BUILD, "dev [entry] [-- args]", "Run main with development env variables, reloading code on changes",
+                    "Run `main` with the development env: a change to the module's code is recompiled and reloaded into the running"
+                            + " JVM (method bodies; any change on JetBrains Runtime), anything else, or a change that cannot be reloaded,"
+                            + " restarts it; `--restart` always restarts"));
         }
         return List.of(
                 new Usage(Group.BUILD, "start [entry] [-- args]", "Build, then run main with production env variables",
@@ -46,13 +48,14 @@ final class StartCommand extends Command {
 
     @Override
     List<String> flags() {
-        return development ? List.of() : List.of("--trace");
+        return development ? List.of("--restart") : List.of("--trace");
     }
 
     @Override
     int run(List<String> args) {
         List<String> appArgs = passthrough(args);
         boolean trace = flag(args, "--trace");
+        boolean restart = development && flag(args, "--restart");
         noMoreFlags(args);
         if (trace && development) throw new JpmException("--trace works with `jpm start`, not `jpm dev`");
         String entry = args.isEmpty() ? null : args.remove(0);
@@ -71,7 +74,7 @@ final class StartCommand extends Command {
             }
             return code;
         }
-        return new DevLoop(this, entry, appArgs).run();
+        return new DevLoop(this, entry, appArgs, !restart).run();
     }
 
     List<String> javaCommand(Builder b, Project.Module m, String entry, List<String> appArgs) {

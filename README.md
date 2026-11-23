@@ -96,7 +96,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `build --native` | Also build a native executable of `main` with GraalVM into `dist/` |
 | `start [entry] [-- args]` | Build, then run `main` with the production env |
 | `start --trace` | Run under the native-image tracing agent, recording configuration for native builds |
-| `dev [entry] [-- args]` | Run `main` with the development env, restarting when sources, assets, manifest or env files change |
+| `dev [entry] [-- args]` | Run `main` with the development env: a change to the module's code is recompiled and reloaded into the running JVM (method bodies; any change on JetBrains Runtime), anything else, or a change that cannot be reloaded, restarts it; `--restart` always restarts |
 | `test [filter...]` | Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag; `--reports <dir>` writes JUnit XML reports for CI (one folder per module in a workspace); in a workspace, `--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves modules out |
 | `check [check...]` | Run jpm's checks (manifest, dependencies, paths, license, compile, unused-dependencies, duplicate-classes), the checks of the extensions the project declares, then the tests, and report every problem; `--no-test`, `--fail-on-warning`, `--exclude-tag <tag>`, `--sarif <file>`, `--junit <file>`, `--frozen` |
 | `run <script> [args]` | Run a script from `scripts` (no shorthand); `<module>:<script>` runs a workspace module's script from anywhere in the workspace |
@@ -414,6 +414,14 @@ tests, for example a coverage agent (`-javaagent:jacocoagent.jar=destfile=jacoco
 `jpm test --reports <dir>` writes JUnit XML reports (`TEST-*.xml`) for CI to show, in `<dir>/<module>` in a
 workspace. `jpm test --watch` runs the tests again whenever a source, test, resource or manifest
 changes, until Ctrl+C.
+
+**Hot reload.** `jpm dev` runs the app with a small agent of jpm's. When only the module's code changes, jpm
+recompiles it and redefines the classes that changed in the running JVM, so the app keeps its state; a
+compile error leaves it running the code it had. The JVM can only replace method bodies, so a change that adds
+or removes members, or a change to anything else (resources, the manifest, env files, other modules),
+restarts the app. On JetBrains Runtime (`"java": "jetbrains-21"`), jpm adds
+`-XX:+AllowEnhancedClassRedefinition`, which takes structural changes too. `jpm dev --restart` always
+restarts.
 
 **Scripts** run with `jpm run <name>`. `.java` scripts run on the source launcher with the runtime
 classpath. A script that needs libraries of its own lists them with it:

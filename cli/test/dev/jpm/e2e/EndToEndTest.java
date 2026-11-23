@@ -448,6 +448,50 @@ class EndToEndTest {
         }
     }
 
+    @Test
+    void devReloadsCode(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp);
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"hr\", \"version\": \"1.0.0\", \"main\": \"hr.App\" }");
+        Fs.write(s.project.resolve("src/hr/App.java"), "package hr;\n\npublic class App {\n    public static void main(String[] args) throws Exception {\n"
+                + "        Greeter g = new Greeter();\n        for (int i = 0; i < 2400; i++) {\n            System.out.println(\"tick \" + g.greet());\n"
+                + "            Thread.sleep(50);\n        }\n    }\n}\n");
+        Path greeter = s.project.resolve("src/hr/Greeter.java");
+        Fs.write(greeter, greeter("v1", ""));
+        List<String> cmd = new java.util.ArrayList<>(Session.binary());
+        cmd.add("dev");
+        ProcessBuilder pb = new ProcessBuilder(cmd).directory(s.project.toFile()).redirectErrorStream(true);
+        pb.environment().keySet().removeIf(k -> k.startsWith("JPM_") || k.equals("NO_COLOR") || k.equals("FORCE_COLOR"));
+        pb.environment().putAll(s.env());
+        Process p = pb.start();
+        StringBuffer out = new StringBuffer();
+        Thread reader = new Thread(() -> {
+            try (var in = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                for (String l; (l = in.readLine()) != null; ) out.append(l).append('\n');
+            } catch (java.io.IOException ignored) {
+            }
+        });
+        reader.start();
+        try {
+            waitFor(out, "tick v1", 1);
+            Fs.write(greeter, greeter("v2", ""));
+            waitFor(out, "tick v2", 1);
+            org.junit.jupiter.api.Assertions.assertTrue(out.toString().contains("Reloaded 1 class"), out.toString());
+            org.junit.jupiter.api.Assertions.assertFalse(out.toString().contains("Restarting"), out.toString());
+            Fs.write(greeter, greeter("v3", "    public int added() {\n        return 1;\n    }\n"));
+            waitFor(out, "tick v3", 1);
+            org.junit.jupiter.api.Assertions.assertTrue(out.toString().contains("Restarting the change cannot be reloaded"), out.toString());
+        } finally {
+            ProcessHandle.of(p.pid()).ifPresent(h -> h.descendants().forEach(ProcessHandle::destroy));
+            p.destroy();
+            if (!p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) p.destroyForcibly();
+            reader.join(10_000);
+        }
+    }
+
+    private static String greeter(String text, String more) {
+        return "package hr;\n\npublic class Greeter {\n    public String greet() {\n        return \"" + text + "\";\n    }\n" + more + "}\n";
+    }
+
     private static String cartTest(String total) {
         return "package shop.core;\n\nimport org.junit.jupiter.api.Test;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\n\n"
                 + "class CartTest {\n    @Test\n    void addsPrices() {\n        assertEquals(\"" + total
