@@ -399,6 +399,19 @@ class EndToEndTest {
         s.verify("workspace-filters");
     }
 
+    @Test
+    void testReports(@TempDir Path tmp) {
+        Session s = new Session(tmp).fixture("workspace-demo");
+        money(s.repo);
+        s.jpmUnrecorded("test", "--reports", "reports");
+        s.tree("reports");
+        String xml = Fs.read(s.project.resolve("reports/core/TEST-junit-jupiter.xml"));
+        org.junit.jupiter.api.Assertions.assertTrue(xml.contains("<testsuite") && xml.contains("CartTest"), xml);
+        s.jpmUnrecorded("test", "--filter", "core", "--reports", "core-reports");
+        s.tree("core-reports");
+        s.verify("test-reports");
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }

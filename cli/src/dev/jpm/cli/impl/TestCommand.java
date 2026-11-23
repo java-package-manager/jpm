@@ -27,12 +27,13 @@ final class TestCommand extends Command {
         return List.of(
                 new Usage(Group.BUILD, "test [filter...]", "Run tests on the JUnit Platform (--tag, --exclude-tag select by JUnit tag)",
                         "Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag;"
-                                + " in a workspace, " + WorkspaceFilter.USAGE));
+                                + " `--reports <dir>` writes JUnit XML reports for CI (one folder per module in a workspace); in a workspace, "
+                                + WorkspaceFilter.USAGE));
     }
 
     @Override
     List<String> flags() {
-        return List.of("--frozen", "--module", "--tag", "--exclude-tag", "--filter");
+        return List.of("--frozen", "--module", "--tag", "--exclude-tag", "--filter", "--reports");
     }
 
     @Override
@@ -44,6 +45,7 @@ final class TestCommand extends Command {
         List<String> excludedTags = new ArrayList<>();
         for (String t; (t = option(args, "--exclude-tag")) != null; ) excludedTags.add(t);
         List<String> filters = WorkspaceFilter.options(args);
+        String reports = option(args, "--reports");
         noMoreFlags(args);
         TestRunner.Selection selection = new TestRunner.Selection(args, tags, excludedTags);
         Ctx c = open(frozen);
@@ -54,7 +56,8 @@ final class TestCommand extends Command {
         for (Project.Module m : mods) {
             Builder mb = b.forModule(m);
             Scripts.hooks(mb, m, m.manifest, "pre", "test", null, Env.Mode.DEVELOPMENT);
-            int code = TestRunner.run(mb, m, selection);
+            Path dir = reports == null ? null : mods.size() == 1 ? cwd.resolve(reports) : cwd.resolve(reports).resolve(m.name());
+            int code = TestRunner.run(mb, m, selection, dir);
             if (code == TestRunner.NO_MATCH) continue;
             matched = true;
             if (code != 0) worst = code;

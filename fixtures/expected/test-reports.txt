@@ -1,0 +1,12 @@
+$ jpm test --reports reports
+(output not recorded)
+
+--- files in reports
+core/TEST-junit-jupiter.xml
+
+$ jpm test --filter core --reports core-reports
+(output not recorded)
+
+--- files in core-reports
+TEST-junit-jupiter.xml
+

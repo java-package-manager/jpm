@@ -97,7 +97,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `start [entry] [-- args]` | Build, then run `main` with the production env |
 | `start --trace` | Run under the native-image tracing agent, recording configuration for native builds |
 | `dev [entry] [-- args]` | Run `main` with the development env, restarting when sources, assets, manifest or env files change |
-| `test [filter...]` | Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag; in a workspace, `--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves modules out |
+| `test [filter...]` | Run tests on the JUnit Platform: a class, `Class#method` or a pattern selects tests, `--tag` and `--exclude-tag` select by JUnit tag; `--reports <dir>` writes JUnit XML reports for CI (one folder per module in a workspace); in a workspace, `--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves modules out |
 | `check [check...]` | Run jpm's checks (manifest, dependencies, paths, license, compile, unused-dependencies, duplicate-classes), the checks of the extensions the project declares, then the tests, and report every problem; `--no-test`, `--fail-on-warning`, `--exclude-tag <tag>`, `--sarif <file>`, `--junit <file>`, `--frozen` |
 | `run <script> [args]` | Run a script from `scripts` (no shorthand); `<module>:<script>` runs a workspace module's script from anywhere in the workspace |
 | `run -r <script> [args]` | Run a script in every workspace module that has it, in build order, stopping at the first that fails; `--filter <pattern>` (repeatable) picks workspace modules: a name or glob (`app`, `lib-*`), a folder (`./libs/*`), `<pattern>...` with what it depends on, `...<pattern>` with what depends on it, `!<pattern>` leaves modules out (and implies `-r`) |
@@ -406,6 +406,8 @@ platform engine works. `jpm test com.example.FooTest`, `jpm test 'com.example.*'
 by JUnit tag (`jpm test --exclude-tag live`). In a workspace, a class runs in the modules whose tests have
 it; naming a class no module has is an error. `JPM_TEST_JVM_ARGS` adds options to the JVM running the
 tests, for example a coverage agent (`-javaagent:jacocoagent.jar=destfile=jacoco.exec`).
+`jpm test --reports <dir>` writes JUnit XML reports (`TEST-*.xml`) for CI to show, in `<dir>/<module>` in a
+workspace.
 
 **Scripts** run with `jpm run <name>`. `.java` scripts run on the source launcher with the runtime
 classpath. A script that needs libraries of its own lists them with it:
