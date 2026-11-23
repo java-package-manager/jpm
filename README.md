@@ -85,6 +85,7 @@ CI (`.github/workflows/ci.yml`) runs the tests and builds and smoke-tests the na
 | `install` | Resolve dependencies and declared extensions and write `project.lock`; `--frozen` fails if the lock is stale (CI) |
 | `update [dep...]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |
 | `outdated` | Show dependencies with newer versions |
+| `audit` | Report the locked dependencies with known vulnerabilities, from the OSV database: id, severity, the version that fixes it and how the project gets it; exits 1 when there are any. `--ignore <id>` (repeatable) accepts one, `--json` prints them as JSON, `--frozen` |
 | `why <dep>` | Show why a dependency is in the graph |
 | `info` | Describe the project: each module's version and folder, and its dependencies with what they resolve to. Programs use the jpm protocol instead (`jpm api`, [docs/protocol.md](docs/protocol.md)) |
 | `import [dir]` | Create `project.jsonc` from a Maven or Gradle build (`--dry-run`, `--static`, `--force`) |
@@ -315,6 +316,12 @@ from the folder of their `-SNAPSHOT` version.
 **Lockfile.** `project.lock` is sorted JSONC with one line per package: exact version, tag and commit
 for Git, a SHA-256 for Maven jars (verified on every install) and for their POMs (`"pom"`, verified when
 resolving), and its edges. It is reused as long as the declared dependencies are unchanged.
+
+**Vulnerabilities.** `jpm audit` asks the [OSV](https://osv.dev) database about every locked package (Maven
+packages by name and version, Git packages by commit) and prints each known vulnerability with its id and
+CVE, its severity, the version that fixes it and how the project gets the package; it exits 1 when there is
+one, so it can run in CI. `--ignore <id>` accepts one (an OSV id or a CVE), and `--json` prints them as JSON.
+`JPM_OSV_URL` points it at another OSV server.
 
 **Checksums.** Every file downloaded from a Maven repository is checked against the strongest checksum the
 repository publishes next to it (`.sha512`, `.sha256` or `.sha1`); one that does not match is deleted and
@@ -669,6 +676,8 @@ jar and is picked up by native-image automatically.
 |---|---|
 | `JPM_HOME` | Where jpm keeps its cache, JDKs and shims (default `$HOME/.jpm`) |
 | `JPM_OFFLINE`, `--offline` | Use only what is cached |
+| `JPM_OSV_URL` | The OSV server `jpm audit` asks (default `https://api.osv.dev`) |
+| `JPM_SPDX_BASE` | Where `jpm license` downloads license texts (default `https://spdx.org/licenses`) |
 | `JPM_VERBOSE`, `-v` | Show what jpm runs and downloads; `JPM_VERBOSE=2` or `-vv` shows trace messages too |
 | `-q`, `--quiet` | Show only errors and warnings |
 | `--color=auto\|always\|never`, `JPM_COLOR`, `NO_COLOR`, `FORCE_COLOR` | Colored output. The first that is set decides: `--color`, `JPM_COLOR` (`1`/`always`, `0`/`never`, `auto`), `NO_COLOR` (never), `FORCE_COLOR` (always, unless `0`); otherwise jpm colors when stderr is a terminal. Scripts and extensions get `JPM_COLOR` from jpm |

@@ -230,6 +230,55 @@ class EndToEndTest {
     }
 
     @Test
+    void audit(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp);
+        money(s.repo);
+        s.repo.artifact("org.example:shop:1.0.0").dependsOn("org.example:money:1.0.0").publish();
+        com.sun.net.httpserver.HttpServer osv = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        osv.createContext("/v1/querybatch", ex -> {
+            String body = new String(ex.getRequestBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            StringBuilder out = new StringBuilder("{\"results\": [");
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"name\":\\s*\"([^\"]+)\"\\s*\\},\\s*\"version\":\\s*\"([^\"]+)\"").matcher(body);
+            boolean first = true;
+            while (m.find()) {
+                out.append(first ? "" : ", ").append(m.group(1).equals("org.example:money") && m.group(2).equals("1.0.0")
+                        ? "{\"vulns\": [{\"id\": \"GHSA-0000-1111-2222\"}, {\"id\": \"GHSA-3333-4444-5555\"}]}" : "{}");
+                first = false;
+            }
+            byte[] b = out.append("]}").toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            ex.sendResponseHeaders(200, b.length);
+            ex.getResponseBody().write(b);
+            ex.close();
+        });
+        osv.createContext("/v1/vulns/", ex -> {
+            String id = ex.getRequestURI().getPath().substring("/v1/vulns/".length());
+            String body = id.equals("GHSA-0000-1111-2222")
+                    ? "{\"id\": \"GHSA-0000-1111-2222\", \"aliases\": [\"CVE-2026-0001\"], \"summary\": \"Rounding leaks cents\","
+                            + " \"database_specific\": {\"severity\": \"HIGH\"}, \"affected\": [{\"package\": {\"ecosystem\": \"Maven\","
+                            + " \"name\": \"org.example:money\"}, \"ranges\": [{\"type\": \"ECOSYSTEM\", \"events\": [{\"introduced\": \"0\"},"
+                            + " {\"fixed\": \"0.9.0\"}, {\"introduced\": \"1.0.0\"}, {\"fixed\": \"1.2.0\"}]}]}]}"
+                    : "{\"id\": \"GHSA-3333-4444-5555\", \"aliases\": [], \"summary\": \"Money is not a number\", \"affected\": []}";
+            byte[] b = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            ex.sendResponseHeaders(200, b.length);
+            ex.getResponseBody().write(b);
+            ex.close();
+        });
+        osv.start();
+        try {
+            s.env("JPM_OSV_URL", "http://127.0.0.1:" + osv.getAddress().getPort());
+            Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"runtime\": { \"org.example:shop\": \"1.0.0\" } }");
+            s.jpm("audit");
+            s.jpm("audit", "--ignore", "CVE-2026-0001", "--ignore", "GHSA-3333-4444-5555");
+            s.jpm("audit", "--json", "--ignore", "GHSA-3333-4444-5555");
+            Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"runtime\": { \"org.example:money\": \"2.0.0\" } }");
+            s.jpm("audit");
+        } finally {
+            osv.stop(0);
+        }
+        s.verify("audit");
+    }
+
+    @Test
     void licenses(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path spdx = tmp.resolve("spdx");

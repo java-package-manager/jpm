@@ -384,7 +384,7 @@ Items that are not in the original list but would pay off.
 - [x] **Supply-chain checks:** verify checksums of every downloaded artifact against what the repository
       publishes, store hashes in `project.lock` (jars and POMs), and fail on a mismatch (ADR 0017).
 - [ ] **Signatures:** check `.asc` signatures where published, against a list of trusted keys.
-- [ ] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
+- [x] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
 - [ ] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension.
 - [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
       give byte-identical output; checked in CI.

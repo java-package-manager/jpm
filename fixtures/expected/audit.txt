@@ -1,0 +1,20 @@
+$ jpm audit
+   Resolving dependencies
+  + org.example:money 1.0.0
+  + org.example:shop 1.0.0
+      Locked 2 packages (2 added, 0 changed, 0 removed)
+     Audited 2 packages: no known vulnerabilities
+
+$ jpm audit --ignore CVE-2026-0001 --ignore GHSA-3333-4444-5555
+     Audited 2 packages: no known vulnerabilities (2 ignored)
+
+$ jpm audit --json --ignore GHSA-3333-4444-5555
+[]
+
+$ jpm audit
+   Resolving dependencies
+  ~ org.example:money 1.0.0 -> 2.0.0
+  - org.example:shop 1.0.0
+      Locked 1 package (0 added, 1 changed, 1 removed)
+     Audited 1 package: no known vulnerabilities
+

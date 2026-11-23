@@ -44,6 +44,24 @@ public final class Http {
         return HttpRequest.newBuilder(URI.create(url)).timeout(timeout).header("User-Agent", "jpm").GET().build();
     }
 
+    /** The body of a POST of JSON; fails on any status but 200. */
+    public static String postJson(String url, String json) {
+        if (Fs.offline()) throw new JpmException("Offline: cannot reach " + url);
+        Log.debug("POST " + url);
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(60)).header("User-Agent", "jpm")
+                .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8)).build();
+        try {
+            HttpResponse<String> r = client().send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (r.statusCode() != 200) throw new JpmException("POST " + url + " failed with HTTP " + r.statusCode());
+            return r.body();
+        } catch (IOException e) {
+            throw new JpmException("Could not reach " + url + ": " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new JpmException("Interrupted");
+        }
+    }
+
     /** The body of a GET request; fails on any status but 200. */
     public static String getString(String url) {
         if (Fs.offline()) throw new JpmException("Offline: cannot fetch " + url);
