@@ -150,11 +150,10 @@ public final class VersionSpecs {
 
         static Any named(String s, String text) {
             return switch (s.toLowerCase(Locale.ROOT)) {
-                case "+" -> new Any(text, true, true);
+                case "+", "latest.integration" -> new Any(text, true, true);
                 case "*", "x", "latest", "latest.release", "release" ->
                     s.equals("LATEST") ? new Any(text, true, true) : new Any(text, false, false);
                 case "latest.milestone" -> new Any(text, true, false);
-                case "latest.integration" -> new Any(text, true, true);
                 default -> null;
             };
         }

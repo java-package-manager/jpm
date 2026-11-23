@@ -20,6 +20,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -98,7 +99,7 @@ class GradleMetadataTest {
         assertTrue(g.get("test.kmp:mockk").deps.containsKey("test.kmp:mockk-jvm"));
         assertTrue(g.get("test.kmp:mockk-jvm").hasJar);
         assertTrue(g.get("test.kotlin:kotlin-test").hasJar);
-        assertEquals(null, g.get("test.kotlin:kotlin-test-junit5"));
+        assertNull(g.get("test.kotlin:kotlin-test-junit5"));
     }
 
     /**

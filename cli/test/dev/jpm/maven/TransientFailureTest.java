@@ -116,7 +116,7 @@ class TransientFailureTest {
     @Test
     void timestampedSnapshotsLiveInTheirSnapshotFolder() {
         assertEquals("0.1-SNAPSHOT", MavenRepo.snapshotBase("0.1-20240720.200737-2"));
-        assertEquals(null, MavenRepo.snapshotBase("0.1-SNAPSHOT"));
-        assertEquals(null, MavenRepo.snapshotBase("1.2.3"));
+        assertNull(MavenRepo.snapshotBase("0.1-SNAPSHOT"));
+        assertNull(MavenRepo.snapshotBase("1.2.3"));
     }
 }

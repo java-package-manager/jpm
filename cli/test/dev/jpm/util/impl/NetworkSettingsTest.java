@@ -87,7 +87,6 @@ class NetworkSettingsTest {
 
     @Test
     void readsCertificateBundles(@TempDir Path dir) throws Exception {
-        java.security.KeyStore ks = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType());
         javax.net.ssl.TrustManagerFactory f = javax.net.ssl.TrustManagerFactory.getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
         f.init((java.security.KeyStore) null);
         java.security.cert.X509Certificate[] cas = ((javax.net.ssl.X509TrustManager) f.getTrustManagers()[0]).getAcceptedIssuers();

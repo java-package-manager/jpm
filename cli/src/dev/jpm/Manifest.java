@@ -80,12 +80,6 @@ public final class Manifest {
     }
 
     /**
-     * A declared dependency. Written as a version string, or as an object
-     * {@code {"version": "...", "exclude": [...], "runtimeOnly": true}}. {@code api}: a dev dependency that
-     * consumers compile against too (Gradle's compileOnlyApi); never at run time.
-     */
-
-    /**
      * Options of a patch: {@code dependencies} are compile-only for the patched classes (resolved with the
      * project, never on anyone's runtime classpath); {@code release} compiles them for a newer Java than
      * the library's own bytecode level.
@@ -93,7 +87,11 @@ public final class Manifest {
     public record PatchOptions(List<Dependency> dependencies, Integer release) {}
 
     /**
-     * {@code tests}: a {@code test} dependency on a workspace module that brings that module's compiled tests too
+     * A declared dependency. Written as a version string, or as an object
+     * {@code {"version": "...", "exclude": [...], "runtimeOnly": true}}. {@code api}: a dev dependency that
+     * consumers compile against too (Gradle's compileOnlyApi); never at run time.
+     *
+     * <p>{@code tests}: a {@code test} dependency on a workspace module that brings that module's compiled tests too
      * (Gradle's test fixtures), so tests can share base classes and helpers.
      */
     public record Dependency(DepKey key, String spec, Scope scope, int line, Set<String> exclusions, boolean runtimeOnly, boolean api,

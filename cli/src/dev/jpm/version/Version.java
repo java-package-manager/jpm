@@ -72,8 +72,8 @@ public final class Version implements Comparable<Version> {
             char c = i < v.length() ? v.charAt(i) : '.';
             boolean sep = c == '.' || c == '-' || c == '_';
             boolean isDigit = Character.isDigit(c);
-            if (sep || (digit != null && cur.length() > 0 && isDigit != digit)) {
-                if (cur.length() > 0) {
+            if (sep || (digit != null && !cur.isEmpty() && isDigit != digit)) {
+                if (!cur.isEmpty()) {
                     Object it = item(cur.toString(), digit);
                     if (it instanceof String) {
                         while (!out.isEmpty() && out.get(out.size() - 1) instanceof Long l && l == 0L) {

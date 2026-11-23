@@ -257,7 +257,9 @@ An extension that works like [changesets](https://github.com/changesets/changese
         `jpm format` gives the same result;
   - [ ] linting rules with parity to IntelliJ IDEA's inspections;
   - [ ] a language server (LSP) for formatting and lint diagnostics in VS Code and other editors.
-- [ ] jpm-format adds `format --check` to `jpm check`, and all jpm projects run `jpm check` in CI.
+- [x] jpm-format adds `format --check` to `jpm check`, and all jpm projects run `jpm check` in CI: jpm
+      (in `bin/check`), jpm-changeset, jpm-publish and jpm-extension-template. jpm-intellij builds with Gradle,
+      and setup-jpm and changeset-action have no Java code.
 
 ### jpm-intellij: migration UI
 

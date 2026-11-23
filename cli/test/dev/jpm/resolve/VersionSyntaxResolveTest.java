@@ -60,7 +60,7 @@ class VersionSyntaxResolveTest {
             String a = "lib" + i++;
             publish(repo, a, versions);
             artifactOf.put(spec, a);
-            if (deps.length() > 0) deps.append(",\n");
+            if (!deps.isEmpty()) deps.append(",\n");
             deps.append("    \"org.example:").append(a).append("\": ").append(dev.jpm.api.json.Jsonc.quote(spec));
         }
         Path project = tmp.resolve("project");

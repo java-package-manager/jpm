@@ -97,6 +97,7 @@ public final class HotReload {
     /**
      * Asks the agent to redefine these classes from {@code classesDir}, waiting up to ten seconds for its answer.
      */
+    @SuppressWarnings("BusyWait")
     public static Result reload(Path channel, Path classesDir, List<String> classes) throws InterruptedException {
         StringBuilder sb = new StringBuilder();
         for (String c : classes) sb.append(c).append('\t').append(classesDir.resolve(c.replace('.', '/') + ".class").toAbsolutePath()).append('\n');

@@ -118,7 +118,7 @@ public final class JvmLanguages {
         command.add(r.jdk.java());
         command.add("-cp");
         command.add(Compiler.join(tool));
-        command.add(main(r.lang, r.version));
+        command.add(mainClass(r.lang, r.version));
         if (r.lang == Language.GROOVY) command.addAll(args);
         else command.add("@" + argFile);
         Log.debug(r.label + ": " + r.lang.key + "c " + r.version + " on " + own.size() + " " + r.lang.title + " and " + java.size() + " Java file(s)");
@@ -158,7 +158,7 @@ public final class JvmLanguages {
         return version.startsWith("3.") ? "org.scala-lang:scala3-compiler_3" : "org.scala-lang:scala-compiler";
     }
 
-    static String main(Language lang, String version) {
+    static String mainClass(Language lang, String version) {
         if (lang == Language.GROOVY) return "org.codehaus.groovy.tools.FileSystemCompiler";
         return version.startsWith("3.") ? "dotty.tools.dotc.Main" : "scala.tools.nsc.Main";
     }

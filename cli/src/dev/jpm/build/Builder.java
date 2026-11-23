@@ -949,7 +949,7 @@ public final class Builder {
             List<Path> proc = List.of();
             List<Manifest.Dependency> devDeps = mod.manifest().deps(Manifest.Scope.DEV);
             if (!devDeps.isEmpty()) {
-                proc = buildToolClasspath(p, mod, devDeps);
+                proc = buildToolClasspath(p, devDeps);
                 cp.addAll(proc);
             }
             cp = Compiler.distinct(cp);
@@ -1029,7 +1029,7 @@ public final class Builder {
      * Build-only dependencies of a Git dependency (its {@code dev} scope). They never reach this project's
      * classpath, so they are resolved on their own, preferring the versions in that repository's lockfile.
      */
-    private List<Path> buildToolClasspath(Graph.Pkg p, GitModule mod, List<Manifest.Dependency> devDeps) {
+    private List<Path> buildToolClasspath(Graph.Pkg p, List<Manifest.Dependency> devDeps) {
         List<Resolver.Root> roots = new ArrayList<>();
         for (Manifest.Dependency d : devDeps) roots.add(new Resolver.Root(p.id, d.key(), d.spec(), d.exclusions()));
         Graph prev = null;

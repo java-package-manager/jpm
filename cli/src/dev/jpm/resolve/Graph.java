@@ -26,11 +26,8 @@ public final class Graph {
     }
 
     /**
-     * An edge to another package. {@code runtimeOnly} edges are left off compile classpaths.
-     */
-
-    /**
-     * A dependency. {@code runtimeOnly}: on the runtime classpath only. {@code compileOnly}: on the compile
+     * An edge to another package: a dependency. {@code runtimeOnly}: on the runtime classpath only, left off
+     * compile classpaths. {@code compileOnly}: on the compile
      * classpath only, provided at run time by the platform (a library's compileOnlyApi dependencies).
      */
     public record Edge(String target, boolean runtimeOnly, Set<String> exclusions, boolean compileOnly) {

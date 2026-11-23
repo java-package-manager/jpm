@@ -124,7 +124,7 @@ class KotlinTest {
         }
         Path stamp = m.cacheDir().resolve("kotlin-classes.key");
         long before = Files.getLastModifiedTime(stamp).toMillis();
-        assertTrue(!new Builder(project, b.graph, r, Env.Mode.PRODUCTION).compileMain(m));
+        assertFalse(new Builder(project, b.graph, r, Env.Mode.PRODUCTION).compileMain(m));
         assertEquals(before, Files.getLastModifiedTime(stamp).toMillis());
 
         Fs.write(p.resolve("src/test/kotlin/app/SecretCheck.kt"), "package app\nobject SecretCheck { fun value() = secret() }\n");

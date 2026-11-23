@@ -97,7 +97,7 @@ public final class Log {
 
     private static Level level = Level.fromVerboseEnv(System.getenv("JPM_VERBOSE"));
     private static boolean color = Color.decide(null, System::getenv, TERMINAL);
-    private static boolean colors256 = Color.has256(System::getenv);
+    private static final boolean colors256 = Color.has256(System::getenv);
 
     /**
      * Sets the level and color mode from the command line; a null argument keeps what the environment chose.
@@ -174,6 +174,7 @@ public final class Log {
      * Hands the process's stdout to the caller (the {@code jpm api} protocol) and points {@code System.out} at
      * stderr, so that nothing else can write to it.
      */
+    @SuppressWarnings("IOStreamConstructor")
     public static java.io.OutputStream claimStdout() {
         java.io.OutputStream stdout = new java.io.BufferedOutputStream(new java.io.FileOutputStream(java.io.FileDescriptor.out));
         System.setOut(System.err);

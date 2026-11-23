@@ -27,8 +27,7 @@ public final class Defines {
         public String javaLiteral() {
             return switch (type) {
                 case STRING -> Jsonc.quote((String) value);
-                case INT -> value.toString();
-                case BOOLEAN -> value.toString();
+                case INT, BOOLEAN -> value.toString();
             };
         }
     }

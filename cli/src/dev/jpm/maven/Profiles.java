@@ -113,7 +113,7 @@ public final class Profiles {
         if (spec.startsWith("[") || spec.startsWith("(")) {
             StringBuilder ranges = new StringBuilder();
             for (String part : spec.split("(?<=[\\])]),")) {
-                if (ranges.length() > 0) ranges.append(',');
+                if (!ranges.isEmpty()) ranges.append(',');
                 ranges.append(normalizeRange(part.strip()));
             }
             try {

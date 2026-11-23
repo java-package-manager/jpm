@@ -3,6 +3,7 @@ package dev.jpm.cli.impl;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,7 +25,7 @@ class UpgradeTest {
     @Test
     void recognizesCanaryVersions() {
         assertTrue(Upgrade.isCanary("0.6.0-beta.0") && Upgrade.isCanary("1.0.0-rc1"), "a canary is any prerelease");
-        assertTrue(!Upgrade.isCanary("0.5.0"));
+        assertFalse(Upgrade.isCanary("0.5.0"));
         assertTrue(dev.jpm.version.Version.of("0.5.0-3ff03ab").compareTo(dev.jpm.version.Version.of("0.4.0")) > 0);
         assertTrue(dev.jpm.version.Version.of("0.5.0-3ff03ab").compareTo(dev.jpm.version.Version.of("0.6.0")) < 0);
         assertEquals("https://github.com/java-package-manager/jpm/releases/download/canary", Upgrade.canaryBase());

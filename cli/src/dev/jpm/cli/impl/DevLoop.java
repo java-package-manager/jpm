@@ -31,6 +31,7 @@ final class DevLoop {
         this.reload = reload;
     }
 
+    @SuppressWarnings("BusyWait")
     int run() {
         Process proc = null;
         String rest = null, code = null;

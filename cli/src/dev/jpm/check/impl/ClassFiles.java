@@ -87,12 +87,11 @@ public final class ClassFiles {
                 case 1 -> utf8[i] = in.readUTF();
                 case 7 -> classIndex[i] = in.readUnsignedShort();
                 case 8, 16, 19, 20 -> in.readUnsignedShort();
-                case 3, 4 -> in.readInt();
+                case 3, 4, 9, 10, 11, 12, 17, 18 -> in.readInt();
                 case 5, 6 -> {
                     in.readLong();
                     i++;
                 }
-                case 9, 10, 11, 12, 17, 18 -> in.readInt();
                 case 15 -> {
                     in.readUnsignedByte();
                     in.readUnsignedShort();

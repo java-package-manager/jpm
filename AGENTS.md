@@ -10,6 +10,7 @@ Facts for AI agents working on jpm. The reasons behind them are in [CONTRIBUTING
 | First build | `./bootstrap.sh` |
 | Build | `bin/jpm build` |
 | All local checks (run before saying a change is done) | `bin/check` |
+| Format the sources (jpm-format; `jpm check` in `bin/check` fails on unformatted code and lint findings) | `bin/jpm format` |
 | Unit and end-to-end tests | `bin/jpm test --exclude-tag live` |
 | One test class | `bin/jpm test dev.jpm.build.BuildTest` |
 | One test method | `bin/jpm test 'dev.jpm.e2e.EndToEndTest#workspace(java.nio.file.Path)'` |

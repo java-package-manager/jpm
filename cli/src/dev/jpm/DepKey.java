@@ -180,9 +180,8 @@ public record DepKey(Kind kind, String host, String group, String artifact, Stri
      */
     public String mavenArtifact() {
         return switch (kind) {
-            case MAVEN -> artifact;
+            case MAVEN, WORKSPACE, GRADLE, EXTENSION -> artifact;
             case GIT -> module != null ? module : artifact;
-            case WORKSPACE, GRADLE, EXTENSION -> artifact;
         };
     }
 

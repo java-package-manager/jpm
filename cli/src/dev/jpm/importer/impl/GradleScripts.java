@@ -293,7 +293,7 @@ public final class GradleScripts {
             if (p.path.equals(":")) continue;
             StringBuilder a = new StringBuilder();
             for (String seg : p.path.substring(1).split(":")) {
-                if (a.length() > 0) a.append('.');
+                if (!a.isEmpty()) a.append('.');
                 a.append(camel(seg));
             }
             out.put(a.toString(), p.path);
@@ -306,7 +306,7 @@ public final class GradleScripts {
         boolean up = false;
         for (char c : name.toCharArray()) {
             if (c == '-' || c == '_' || c == '.' || c == ' ') {
-                up = sb.length() > 0;
+                up = !sb.isEmpty();
                 continue;
             }
             sb.append(up ? Character.toUpperCase(c) : c);

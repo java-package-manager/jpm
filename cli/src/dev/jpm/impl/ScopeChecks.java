@@ -37,12 +37,13 @@ public final class ScopeChecks {
                 drop.add(dev);
                 dev = null;
             }
-            if (runtime != null && test != null && test.tests() && sameVersion(runtime, test)) {
-            } else if (runtime != null && test != null) {
-                Log.warn(file + ":" + test.line() + ": " + test.key() + " is in \"runtime\" and \"test\"; tests have every runtime"
-                        + " dependency already, so the \"test\" entry is ignored"
-                        + (sameVersion(runtime, test) ? "" : " and " + runtime.spec() + " is used, not " + test.spec()) + ". Remove it");
-                drop.add(test);
+            if (runtime != null && test != null) {
+                if (!(test.tests() && sameVersion(runtime, test))) {
+                    Log.warn(file + ":" + test.line() + ": " + test.key() + " is in \"runtime\" and \"test\"; tests have every runtime"
+                            + " dependency already, so the \"test\" entry is ignored"
+                            + (sameVersion(runtime, test) ? "" : " and " + runtime.spec() + " is used, not " + test.spec()) + ". Remove it");
+                    drop.add(test);
+                }
             } else if (dev != null && test != null && !sameVersion(dev, test)) {
                 throw JpmException.at(file, test.line(), test.key() + " is declared in \"dev\" (" + dev.spec()
                         + ") and in \"test\" (" + test.spec() + ") with different versions; a project uses one version of a"

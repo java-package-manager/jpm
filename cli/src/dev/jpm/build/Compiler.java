@@ -154,7 +154,7 @@ public final class Compiler {
                 st.classes.remove(s);
             }
             List<Path> files = batch.stream().map(sources::get).toList();
-            Map<String, Set<String>> produced = javac(r, files, batch, sources, true);
+            Map<String, Set<String>> produced = javac(r, files, batch, true);
             Set<String> after = new TreeSet<>();
             for (Map.Entry<String, Set<String>> e : produced.entrySet()) {
                 st.classes.put(e.getKey(), e.getValue());
@@ -213,7 +213,7 @@ public final class Compiler {
         Log.debug(r.label + ": full compile of " + sources.size() + " file(s)");
         Fs.deleteTree(r.outDir);
         Fs.mkdirs(r.outDir);
-        Map<String, Set<String>> produced = javac(r, new ArrayList<>(sources.values()), sources.keySet(), sources, false);
+        Map<String, Set<String>> produced = javac(r, new ArrayList<>(sources.values()), sources.keySet(), false);
         State st = new State();
         st.key = key;
         st.hashes.putAll(hashes);
@@ -228,7 +228,7 @@ public final class Compiler {
      * Runs javac into a temporary directory, moves the classes into place and maps them to sources.
      */
     private static Map<String, Set<String>> javac(Request r, List<Path> files, Collection<String> keys,
-                                                  Map<String, Path> sources, boolean outDirOnClasspath) {
+                                                  boolean outDirOnClasspath) {
         Path tmp = r.outDir.resolveSibling(r.outDir.getFileName() + ".tmp");
         Fs.deleteTree(tmp);
         Fs.mkdirs(tmp);

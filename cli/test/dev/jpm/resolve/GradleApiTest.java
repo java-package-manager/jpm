@@ -23,6 +23,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -65,7 +66,7 @@ class GradleApiTest {
         assertTrue(GradleDist.validVersion("9.8.0"));
         assertTrue(GradleDist.validVersion("8.14"));
         assertTrue(GradleDist.validVersion("9.0-rc-1"));
-        assertTrue(!GradleDist.validVersion("^9.0"));
+        assertFalse(GradleDist.validVersion("^9.0"));
     }
 
     @Test
