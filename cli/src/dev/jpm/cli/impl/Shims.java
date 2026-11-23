@@ -173,6 +173,11 @@ public final class Shims {
         return p;
     }
 
+    static String selfOrJar() {
+        Path self = self();
+        return self != null ? self.toString() : "running from a jar";
+    }
+
     static List<String> install() {
         Path self = self();
         if (self == null) {

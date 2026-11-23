@@ -365,7 +365,7 @@ Items that are not in the original list but would pay off.
 
 - [x] **Shell completions** for bash, zsh, fish and PowerShell, generated from the command registry
       (`jpm completions <shell>`).
-- [ ] **`jpm doctor`:** check the machine, not the project: PATH order, shims, installed JDKs, cache
+- [x] **`jpm doctor`:** check the machine, not the project: PATH order, shims, installed JDKs, cache
       health and network access to configured repositories, and print what to fix. Project checks
       belong in `jpm check`, so a CI result never depends on the runner.
 - [ ] **More project checks for `jpm check`:** unused dependencies and duplicate classes on the

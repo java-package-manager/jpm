@@ -464,6 +464,24 @@ class EndToEndTest {
         throw new AssertionError("no \"" + text + "\" (x" + times + ") in:\n" + out);
     }
 
+    @Test
+    void doctor(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        String healthy = s.jpmUnrecorded("doctor");
+        org.junit.jupiter.api.Assertions.assertTrue(healthy.contains("ok    " + s.repo.uri()) || healthy.contains("ok    " + s.repo.uri() + "/"), healthy);
+        org.junit.jupiter.api.Assertions.assertFalse(healthy.contains("  error "), healthy);
+        Fs.write(s.home.resolve("jdks/temurin-21-broken/release"), "not a JDK\n");
+        Fs.write(s.home.resolve("repository/org/example/x/1.0/x-1.0.jar12345.part"), "half");
+        Fs.write(s.home.resolve("default-java"), "zulu-11\n");
+        String sick = s.jpmUnrecorded("doctor");
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("temurin-21-broken is not a working JDK"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("1 unfinished downloads in"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("the default java \"zulu-11\" (from `jpm jvm use`) is not installed"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("fix: run `jpm cache clean repository`"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("problems to fix"), sick);
+        s.verify("doctor");
+    }
+
     private static String line(String lock, String id) {
         return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
     }
