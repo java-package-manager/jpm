@@ -1072,7 +1072,8 @@
           "properties": {
             "version": {
               "type": "string",
-              "pattern": "^\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?$"
+              "pattern": "^\\d+\\.\\d+\\.\\d+([-.][0-9A-Za-z.-]+)?$",
+              "description": "The Kotlin version, exact, such as 2.2.20."
             },
             "plugins": {
               "type": "array",
@@ -1171,7 +1172,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "description": { "type": "string" },
+              "description": { "type": "string", "description": "What the command does, shown in IDEs and in `jpm help`." },
               "options": {
                 "type": "object",
                 "description": "Options by name (\"--dry-run\").",
@@ -1181,7 +1182,7 @@
                   "additionalProperties": false,
                   "properties": {
                     "argument": { "type": "string", "description": "The name of the option's value; leave it out for a flag." },
-                    "description": { "type": "string" }
+                    "description": { "type": "string", "description": "What the option does." }
                   }
                 }
               }
@@ -1196,7 +1197,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "description": { "type": "string" },
+              "description": { "type": "string", "description": "What the check checks, shown in `jpm check`'s output." },
               "run": {
                 "type": "array",
                 "items": { "type": "string" },
@@ -1433,6 +1434,7 @@
           "additionalProperties": false,
           "properties": {
             "type": {
+              "description": "The type of the constant in the defines class.",
               "enum": [
                 "string",
                 "int",
@@ -1513,19 +1515,24 @@
             "additionalProperties": false,
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "description": "The developer's id, such as their user name."
               },
               "name": {
-                "type": "string"
+                "type": "string",
+                "description": "The developer's name."
               },
               "email": {
-                "type": "string"
+                "type": "string",
+                "description": "The developer's email address."
               },
               "url": {
-                "type": "string"
+                "type": "string",
+                "description": "The developer's web page."
               },
               "organization": {
-                "type": "string"
+                "type": "string",
+                "description": "The developer's organization."
               }
             }
           }
