@@ -74,6 +74,7 @@ Next: `jpm start` to run it, `jpm test` to test it.
 
 $ (cd lib) jpm import
     Imported project.jsonc from Maven
+     Ignored .cache/, dist/, .env.local in .gitignore
    Resolving dependencies
       Locked 0 packages
 Next: `jpm build` and `jpm test`. Sources stay where they are ("layout": "maven").
