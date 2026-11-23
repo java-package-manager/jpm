@@ -63,6 +63,10 @@ final class ImportCommand extends Command {
             }
         }
         for (String w : imp.warnings) Log.warn(w);
+        if (!dryRun) {
+            List<String> added = InitCommand.ignoreJpmFolders(dir);
+            if (!added.isEmpty()) Log.step("Ignored", String.join(", ", added) + " in .gitignore");
+        }
         if (dryRun || noInstall) return 0;
         Project p = Project.load(dir);
         Install.run(p, new MavenRepo(p.root.repositories), new Install.Options(false, false, Set.of(), false));

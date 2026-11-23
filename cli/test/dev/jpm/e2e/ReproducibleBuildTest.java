@@ -3,8 +3,6 @@ package dev.jpm.e2e;
 import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Hash;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
@@ -19,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /** The same sources and lockfile give byte-identical output, wherever and whenever they are built. */
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "the e2e sessions are not run on Windows yet")
 class ReproducibleBuildTest {
     @Test
     void twoBuildsAreByteIdentical(@TempDir Path tmp) throws Exception {
@@ -40,7 +37,7 @@ class ReproducibleBuildTest {
                     "package org.apache.commons.text; public final class WordUtils { public static String capitalizeFully(String s) { return s; } }").publish();
             s.jpm("build", "--bundle");
             try (Stream<Path> files = Files.walk(s.project)) {
-                for (Path f : files.filter(p -> Files.isRegularFile(p) && p.toString().contains("/dist/")).toList()) {
+                for (Path f : files.filter(p -> Files.isRegularFile(p) && p.toString().replace('\\', '/').contains("/dist/")).toList()) {
                     out.put(fixture + "/" + s.project.relativize(f), Hash.sha256(f));
                 }
             } catch (IOException e) {

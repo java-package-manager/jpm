@@ -79,14 +79,25 @@ public final class Fs {
         }
     }
 
-    /** Deletes a file or a folder with everything in it; nothing when it does not exist. */
+    /**
+     * Deletes a file or a folder with everything in it; nothing when it does not exist. Read-only files go too, as
+     * on Windows Git makes its object files read-only and they cannot be deleted until that is cleared.
+     */
     public static void deleteTree(Path root) {
         if (!Files.exists(root)) return;
         try {
             Files.walkFileTree(root, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Files.delete(file);
+                    try {
+                        Files.delete(file);
+                    } catch (java.nio.file.AccessDeniedException e) {
+                        java.nio.file.attribute.DosFileAttributeView dos = Files.getFileAttributeView(file,
+                                java.nio.file.attribute.DosFileAttributeView.class, java.nio.file.LinkOption.NOFOLLOW_LINKS);
+                        if (dos == null || !dos.readAttributes().isReadOnly()) throw e;
+                        dos.setReadOnly(false);
+                        Files.delete(file);
+                    }
                     return FileVisitResult.CONTINUE;
                 }
 

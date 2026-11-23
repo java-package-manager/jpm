@@ -7,8 +7,6 @@ import dev.jpm.testing.TestRepo;
 import dev.jpm.util.Fs;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
@@ -27,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** {@code jpm api} spoken to over its real stdin and stdout, as docs/protocol.md specifies it. */
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "the e2e sessions are not run on Windows yet")
 @SuppressWarnings("unchecked")
 class ApiTest {
     private Process process;
@@ -164,6 +161,23 @@ class ApiTest {
         assertEquals(List.of("workspace:core", "org.example:money"), runtime.stream().map(m -> m.get("id")).toList());
         Map<String, Object> schema = result(call("schema/manifest", Map.of()));
         assertEquals("jpm project.jsonc", ((Map<String, Object>) schema.get("schema")).get("title"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void versionsOfDependencies(@TempDir Path tmp) throws Exception {
+        Session s = workspace(tmp);
+        for (String v : List.of("1.0.0", "2.0.0", "2.1.0-rc1")) s.repo.artifact("org.example:money:" + v).publish();
+        start(s);
+        Map<String, Object> init = result(initialize());
+        assertTrue(((List<?>) init.get("methods")).contains("dependencies/versions"));
+        Map<String, Object> v = (Map<String, Object>) result(call("dependencies/versions",
+                Map.of("dir", s.project.toString(), "keys", List.of("org.example:money")))).get("versions");
+        Map<String, Object> money = (Map<String, Object>) v.get("org.example:money");
+        assertEquals(List.of("1.0.0", "1.2.0", "2.0.0", "2.1.0-rc1"), money.get("versions"));
+        assertEquals("2.0.0", money.get("latest"));
+        Map<String, Object> bad = error(call("dependencies/versions", Map.of("keys", List.of("github:me/x"))));
+        assertEquals(-32602, ((Number) bad.get("code")).intValue());
     }
 
     @Test

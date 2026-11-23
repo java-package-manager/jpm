@@ -1,0 +1,25 @@
+$ jpm install
+   Resolving dependencies
+  + org.example:money 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+
+$ jpm cache size
+(output not recorded)
+
+$ jpm cache clean repository
+(output not recorded)
+
+$ jpm cache clean nothing
+error: No cache named "nothing"; the caches are repository, git, git-src, builds, imported, patched, git-patched, gradle, downloads, cache
+[exit 2]
+
+$ jpm cache frobnicate
+error: Unknown subcommand "frobnicate". Usage: jpm cache size | jpm cache clean [cache...]
+[exit 2]
+
+$ jpm install --frozen
+  Up to date 1 package in project.lock
+
+$ jpm cache clean
+(output not recorded)
+

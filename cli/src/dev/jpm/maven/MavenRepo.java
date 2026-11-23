@@ -299,6 +299,31 @@ public final class MavenRepo {
         static final Result ABSENT = new Result(false, null);
     }
 
+    private HttpResponse<InputStream> send(String url, String auth) throws IOException, InterruptedException {
+        if (auth == null) return http.send(request(url, null), HttpResponse.BodyHandlers.ofInputStream());
+        HttpClient manual = dev.jpm.util.Http.clientWithoutRedirects();
+        String at = url;
+        for (int hops = 0; ; hops++) {
+            HttpResponse<InputStream> resp = manual.send(request(at, auth), HttpResponse.BodyHandlers.ofInputStream());
+            int s = resp.statusCode();
+            if (s != 301 && s != 302 && s != 303 && s != 307 && s != 308 || hops == 10) return resp;
+            String location = resp.headers().firstValue("Location").orElse(null);
+            resp.body().close();
+            if (location == null) return resp;
+            String next = URI.create(at).resolve(location).toString();
+            if (!Credentials.sameOrigin(url, next)) auth = null;
+            Log.debug("redirected to " + next + (auth == null ? " (without credentials)" : ""));
+            if (auth == null) return http.send(request(next, null), HttpResponse.BodyHandlers.ofInputStream());
+            at = next;
+        }
+    }
+
+    private static HttpRequest request(String url, String auth) {
+        HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofMinutes(2)).header("User-Agent", "jpm").GET();
+        if (auth != null) b.header("Authorization", auth);
+        return b.build();
+    }
+
     private Result download(String url, Path target) {
         if (url.startsWith("file:")) {
             try {
@@ -316,11 +341,8 @@ public final class MavenRepo {
         if (offline) return Result.ABSENT;
         Log.debug("GET " + url);
         try {
-            HttpRequest req = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofMinutes(2))
-                    .header("User-Agent", "jpm")
-                    .GET().build();
-            HttpResponse<InputStream> resp = http.send(req, HttpResponse.BodyHandlers.ofInputStream());
+            String auth = Credentials.authorization(url);
+            HttpResponse<InputStream> resp = send(url, auth);
             int status = resp.statusCode();
             if (status == 200) {
                 Files.createDirectories(target.getParent());
@@ -336,6 +358,12 @@ public final class MavenRepo {
             }
             resp.body().close();
             if (status == 404 || status == 410) return Result.ABSENT;
+            if ((status == 401 || status == 403) && Credentials.prefix(url) != null) {
+                String p = Credentials.prefix(url);
+                return new Result(false, url + " answered HTTP " + status + (auth == null
+                        ? "; if the repository needs a login, set " + p + "_USERNAME and " + p + "_PASSWORD (or " + p + "_TOKEN)"
+                        : "; check " + p + "_USERNAME and _PASSWORD (or _TOKEN)"));
+            }
             return new Result(false, url + " answered HTTP " + status);
         } catch (IOException e) {
             Log.debug("download failed: " + e);

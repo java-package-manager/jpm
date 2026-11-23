@@ -99,11 +99,30 @@ final class InitCommand extends Command {
                     """.formatted(pkg, name));
         }
         if (license != null) LicenseCommand.set(cwd, cwd.resolve(Manifest.FILE), license, author, false);
-        Path gi = cwd.resolve(".gitignore");
-        String ignore = ".cache/\ndist/\n.env.local\n";
-        if (!Files.exists(gi)) Fs.write(gi, ignore);
+        ignoreJpmFolders(cwd);
         Log.step("Created", Manifest.FILE + ", src/" + pkg + "/App.java and test/" + pkg + "/AppTest.java");
         Log.info("Next: `jpm start` to run it, `jpm test` to test it.");
         return 0;
+    }
+
+    static final List<String> IGNORED = List.of(".cache/", "dist/", ".env.local");
+
+    static List<String> ignoreJpmFolders(Path dir) {
+        Path gi = dir.resolve(".gitignore");
+        String text = Files.exists(gi) ? Fs.read(gi) : "";
+        java.util.Set<String> have = new java.util.HashSet<>();
+        for (String l : text.split("\\R")) have.add(l.strip());
+        List<String> missing = new java.util.ArrayList<>();
+        for (String e : IGNORED) {
+            String bare = e.endsWith("/") ? e.substring(0, e.length() - 1) : e;
+            if (!have.contains(e) && !have.contains(bare) && !have.contains("/" + e) && !have.contains("/" + bare)) missing.add(e);
+        }
+        if (missing.isEmpty()) return missing;
+        StringBuilder sb = new StringBuilder(text);
+        if (!text.isEmpty() && !text.endsWith("\n")) sb.append('\n');
+        if (!text.isEmpty()) sb.append("\n# jpm\n");
+        for (String e : missing) sb.append(e).append('\n');
+        Fs.write(gi, sb.toString());
+        return missing;
     }
 }

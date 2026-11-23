@@ -29,7 +29,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 final class ApiServer {
     static final List<String> METHODS = List.of("initialize", "shutdown", "exit", "project/load", "project/classpaths",
-            "schema/manifest", "extensions/list", "check/run", "$/cancelRequest");
+            "schema/manifest", "extensions/list", "check/run", "dependencies/versions", "$/cancelRequest");
 
     private static final Object EOF = new Object();
 
@@ -134,6 +134,7 @@ final class ApiServer {
             case "project/classpaths" -> classpaths(params);
             case "schema/manifest" -> Map.of("schema", Jsonc.parse(ManifestSchema.text()), "version", Main.VERSION);
             case "check/run" -> check(params);
+            case "dependencies/versions" -> versions(params);
             case "extensions/list" -> Map.of("extensions", ExtensionList.list(params.get("dir") instanceof String ? Project.find(dir(params)) : null));
             default -> throw new ApiError(-32601, "no method \"" + method + "\"; this jpm has " + String.join(", ", METHODS), null);
         };
@@ -166,6 +167,29 @@ final class ApiServer {
         out.put("jpmVersion", Main.VERSION);
         out.put("methods", METHODS);
         return out;
+    }
+
+    private Object versions(Map<?, ?> params) {
+        if (!(params.get("keys") instanceof List<?> keys)) throw new ApiError(-32602, "\"keys\" is required: Maven dependency keys (group:artifact)", null);
+        List<String> repos = params.get("dir") instanceof String ? Project.find(dir(params)).root.repositories : List.of();
+        dev.jpm.maven.MavenRepo repo = new dev.jpm.maven.MavenRepo(repos);
+        if (Boolean.TRUE.equals(params.get("refresh"))) repo.setRefreshMetadata(true);
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (Object k : keys) {
+            dev.jpm.DepKey key;
+            try {
+                key = dev.jpm.DepKey.parse(String.valueOf(k));
+            } catch (JpmException e) {
+                throw new ApiError(-32602, e.getMessage(), null);
+            }
+            if (!key.isMaven()) throw new ApiError(-32602, k + " is not a Maven dependency key", null);
+            List<dev.jpm.version.Version> all = repo.versions(key.group(), key.artifact());
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("versions", all.stream().map(Object::toString).toList());
+            if (!all.isEmpty()) entry.put("latest", DepArgs.latestSpec(repo, key));
+            out.put(key.toString(), entry);
+        }
+        return Map.of("versions", out);
     }
 
     private Path dir(Map<?, ?> params) {

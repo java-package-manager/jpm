@@ -1,6 +1,7 @@
 package dev.jpm.build;
 
 import dev.jpm.build.impl.BundleLauncher;
+import dev.jpm.build.impl.JvmLanguages;
 import dev.jpm.build.impl.KotlinCompiler;
 import dev.jpm.build.impl.Relocator;
 import dev.jpm.build.impl.Resources;
@@ -224,6 +225,12 @@ public final class Builder {
         return m.cacheDir().resolve("classes");
     }
 
+    /** Where the native-image tracing agent writes a module's configuration, which native builds read: its resources' META-INF/native-image/<group>/<name>. */
+    public static Path nativeConfigDir(Project.Module m) {
+        String group = m.manifest.group != null ? m.manifest.group : m.name();
+        return m.assetsDir().resolve("META-INF").resolve("native-image").resolve(group).resolve(m.name());
+    }
+
     /** Where a module's compiled tests go. */
     public static Path testClassesDir(Project.Module m) {
         return m.cacheDir().resolve("test-classes");
@@ -248,6 +255,9 @@ public final class Builder {
             roots.addAll(m.srcDirs());
             Path gen = generateSources(m);
             if (gen != null) roots.add(gen);
+            roots.addAll(Scripts.generate(this, m, "sources"));
+            List<Path> resourceDirs = new ArrayList<>(m.assetsDirs());
+            resourceDirs.addAll(Scripts.generate(this, m, "resources"));
             Path kotlinOut = m.cacheDir().resolve("kotlin-classes");
             boolean kotlinRan = KotlinCompiler.compile(this, new KotlinCompiler.Request(m.name(), m.name(), m.manifest.kotlin, jdk, release,
                     roots, m.assetsDirs(), cp, List.of(), kotlinOut, m.cacheDir().resolve("kotlin-classes.key")));
@@ -258,13 +268,27 @@ public final class Builder {
                 javaCp.add(0, kotlinOut);
                 key += treeKey(List.of(kotlinOut));
             }
+            List<Path> otherOut = new ArrayList<>();
+            for (JvmLanguages.Language lang : JvmLanguages.Language.values()) {
+                Path out = m.cacheDir().resolve(lang.key + "-classes");
+                kotlinRan |= JvmLanguages.compile(this, new JvmLanguages.Request(lang, m.name(), version(m.manifest, lang), jdk, release,
+                        roots, m.assetsDirs(), javaCp, out, m.cacheDir().resolve(lang.key + "-classes.key")));
+                if (Files.isDirectory(out)) otherOut.add(out);
+            }
+            if (!otherOut.isEmpty()) {
+                javaCp = new ArrayList<>(javaCp);
+                javaCp.addAll(0, otherOut);
+                key += treeKey(otherOut);
+            }
             boolean ran = Compiler.compile(new Compiler.Request(m.name(), jdk, release, roots, javaCp, proc,
                     classesDir(m), m.cacheDir().resolve("classes.state.json"), m.manifest.javacArgs, key,
                     m.assetsDirs()));
             ran |= kotlinRan;
-            Resources.sync(Files.isDirectory(kotlinOut) ? List.of(kotlinOut) : List.of(), classesDir(m),
-                    m.cacheDir().resolve("kotlin-classes.list"));
-            Resources.sync(m.assetsDirs(), classesDir(m), m.cacheDir().resolve("resources.list"),
+            List<Path> outs = new ArrayList<>();
+            if (Files.isDirectory(kotlinOut)) outs.add(kotlinOut);
+            outs.addAll(otherOut);
+            Resources.sync(outs, classesDir(m), m.cacheDir().resolve("kotlin-classes.list"));
+            Resources.sync(resourceDirs, classesDir(m), m.cacheDir().resolve("resources.list"),
                     m.manifest.filter, filterValues(m));
             if (ran) Log.step("Compiled", m.name() + " " + m.version() + Log.dim(" (" + jdk.id() + ", release " + release + ")"));
             compiledModules.put(m.name(), ran);
@@ -272,6 +296,17 @@ public final class Builder {
         } finally {
             building.remove(m.id());
         }
+    }
+
+    private static String version(Manifest man, JvmLanguages.Language lang) {
+        return lang == JvmLanguages.Language.GROOVY ? man.groovy : man.scala;
+    }
+
+    private static boolean hasOtherLanguage(List<Path> dirs) {
+        for (JvmLanguages.Language lang : JvmLanguages.Language.values()) {
+            for (Path d : dirs) if (!Fs.files(d, lang.ext).isEmpty()) return true;
+        }
+        return false;
     }
 
     /** Compiles and packages a module into {@code dist/}. */
@@ -353,7 +388,7 @@ public final class Builder {
         List<Path> excludes = List.of(m.testResourcesDir());
         boolean anyJava = false;
         for (Path d : testDirs) anyJava |= Fs.files(d, ".java").stream().anyMatch(f -> !f.startsWith(m.testResourcesDir()));
-        if (!anyJava && KotlinCompiler.sources(testDirs, excludes).isEmpty()) return false;
+        if (!anyJava && KotlinCompiler.sources(testDirs, excludes).isEmpty() && !hasOtherLanguage(testDirs)) return false;
         compileMain(m);
         List<Path> cp = new ArrayList<>();
         cp.add(classesDir(m));
@@ -374,12 +409,26 @@ public final class Builder {
             javaCp.add(0, kotlinOut);
             key += treeKey(List.of(kotlinOut));
         }
+        List<Path> otherOut = new ArrayList<>();
+        for (JvmLanguages.Language lang : JvmLanguages.Language.values()) {
+            Path out = m.cacheDir().resolve("test-" + lang.key + "-classes");
+            kotlinRan |= JvmLanguages.compile(this, new JvmLanguages.Request(lang, m.name() + " tests", version(m.manifest, lang), jdk, release,
+                    testDirs, excludes, javaCp, out, m.cacheDir().resolve("test-" + lang.key + "-classes.key")));
+            if (Files.isDirectory(out)) otherOut.add(out);
+        }
+        if (!otherOut.isEmpty()) {
+            javaCp = new ArrayList<>(javaCp);
+            javaCp.addAll(0, otherOut);
+            key += treeKey(otherOut);
+        }
         boolean ran = Compiler.compile(new Compiler.Request(m.name() + " tests", jdk, release, testDirs,
                 javaCp, proc, testClassesDir(m), m.cacheDir().resolve("test-classes.state.json"), m.manifest.javacArgs,
                 key, excludes));
         ran |= kotlinRan;
-        Resources.sync(Files.isDirectory(kotlinOut) ? List.of(kotlinOut) : List.of(), testClassesDir(m),
-                m.cacheDir().resolve("test-kotlin-classes.list"));
+        List<Path> outs = new ArrayList<>();
+        if (Files.isDirectory(kotlinOut)) outs.add(kotlinOut);
+        outs.addAll(otherOut);
+        Resources.sync(outs, testClassesDir(m), m.cacheDir().resolve("test-kotlin-classes.list"));
         Resources.sync(List.of(m.testResourcesDir()), testClassesDir(m), m.cacheDir().resolve("test-resources.list"));
         if (ran) Log.step("Compiled", m.name() + " tests");
         return true;

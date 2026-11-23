@@ -263,22 +263,22 @@ An extension that works like [changesets](https://github.com/changesets/changese
 
 Migrating a project today only shows the output of `jpm import` in a plain text box.
 
-- [ ] Show the generated `project.jsonc` in an editor with syntax highlighting, and let the user edit
+- [x] Show the generated `project.jsonc` in an editor with syntax highlighting, and let the user edit
       it before it is written.
-- [ ] Show warnings prominently, above or next to the manifest rather than at the bottom of the
+- [x] Show warnings prominently, above or next to the manifest rather than at the bottom of the
       output, so they are reviewed before migrating.
-- [ ] Offer to switch from the Maven layout to the jpm layout: move the source, resource and test
+- [x] Offer to switch from the Maven layout to the jpm layout: move the source, resource and test
       folders, and drop `"layout": "maven"` from the manifest.
-- [ ] Offer to delete what is left of the old build: Gradle files and folders (`build.gradle(.kts)`,
+- [x] Offer to delete what is left of the old build: Gradle files and folders (`build.gradle(.kts)`,
       `settings.gradle(.kts)`, `gradle/`, `gradlew`, `gradlew.bat`, `gradle.properties`), and `pom.xml`
       and the Maven wrapper for Maven projects.
-- [ ] Scan the whole project and flag everything that still uses Gradle or Maven, for example CI
+- [x] Scan the whole project and flag everything that still uses Gradle or Maven, for example CI
       workflows, Dockerfiles, scripts that call `./gradlew` or `mvn`, Renovate or Dependabot settings,
       `.gitignore` entries and IDE run configurations.
 
 ### Editing project.jsonc
 
-- [ ] **jpm-intellij:** ctrl+click on values in `project.jsonc` goes to what they name:
+- [~] **jpm-intellij:** ctrl+click on values in `project.jsonc` goes to what they name:
   - `main`, `defineClass` and `scripts`: the class (or the script file);
   - dependencies and `exclude`: the library under External Libraries in the project view;
   - `relocate`: the package in the project view;
@@ -290,24 +290,29 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
   - `hooks`: the script the hook runs;
   - `java`: the JDK;
   - values in `define` for a dependency: the define where that dependency declares it.
-- [ ] Every value that names a file or folder (`filter`, `patches`, `scripts`, `sources`, `resources`,
+  Done: `main`, `defineClass`, `scripts` files, `hooks`, `relocate`, `license`, `workspace`, `sources`,
+  `resources`, `patches`. Open: dependencies and `exclude`, `filter`, `java`, `define` values.
+- [~] Every value that names a file or folder (`filter`, `patches`, `scripts`, `sources`, `resources`,
       workspace modules, env files) gives a warning when it does not exist. One shared check, not one
-      per field.
-- [ ] **jpm-intellij:** renames update the manifest: renaming a class updates `main` and
+      per field. Done in jpm-intellij for `patches`, script files, `sources`, `resources` and workspace
+      modules; open: `filter` (globs) and env files.
+- [x] **jpm-intellij:** renames update the manifest: renaming a class updates `main` and
       `defineClass`, moving a package updates `relocate`, renaming a script updates the `hooks` that run
       it, moving a file or folder updates the paths that name it.
-- [ ] Completion of dependency coordinates and versions, and the resolved version from `project.lock`
-      shown next to each dependency (inlay hint).
-- [ ] An inspection for dependencies with a newer version, with a quick fix that runs `jpm update`.
-- [ ] Documentation from the schema on hover, for every field.
-- [ ] jpm-intellij and the language server (see jpm-format) highlight jpm's warnings and errors in
+- [~] Completion of dependency coordinates and versions, and the resolved version from `project.lock`
+      shown next to each dependency (inlay hint). Done: versions (from `dependencies/versions`, protocol 1.1) and the
+      inlay hint. Open: completing `group:artifact` coordinates, which needs a search service.
+- [x] An inspection for dependencies with a newer version, with a quick fix that runs `jpm update`.
+- [x] Documentation from the schema on hover, for every field.
+- [~] jpm-intellij and the language server (see jpm-format) highlight jpm's warnings and errors in
       `project.jsonc`, at the value they are about.
+      Done in jpm-intellij (jpm check over the protocol, on save); the language server is jpm-format's.
 
 ### jpm-intellij: more
 
-- [ ] Run configurations generated from `main` entries and `scripts`.
-- [ ] A dependency graph view, using what `jpm why` knows.
-- [ ] New projects ignore jpm's folders (`dist/`, `.cache/`, `.env.local`) in Git. The wizard runs
+- [x] Run configurations generated from `main` entries and `scripts`.
+- [x] A dependency graph view, using what `jpm why` knows.
+- [x] New projects ignore jpm's folders (`dist/`, `.cache/`, `.env.local`) in Git. The wizard runs
       `jpm init`, which only writes `.gitignore` when there is none, so a `.gitignore` that exists
       already (for example one IntelliJ created) is left without them. `jpm init` and `jpm import`
       add the missing entries to an existing `.gitignore` instead of skipping it.
@@ -334,27 +339,31 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 
 ### More
 
-- [ ] Evaluate POM profiles (activation by JDK, OS and properties) when reading POMs.
-- [ ] Maven and Gradle features with no manifest equivalent yet: code-generating plugins, and Groovy and
-      Scala sources.
+- [x] Evaluate POM profiles (activation by JDK, OS and properties) when reading POMs.
+- [x] Maven and Gradle features with no manifest equivalent yet: code-generating plugins, and Groovy and
+      Scala sources. Done: Groovy and Scala (`"groovy"`, `"scala"`), and code generators (scripts with
+      `"generates"` and `"inputs"`).
 - [ ] Kotlin: compile a module's Kotlin incrementally (per file) instead of as a whole; Kotlin
       Multiplatform builds with targets other than the JVM.
-- [ ] Run the GraalVM tracing agent during tests (open question); today `start --trace` records what one
-      run of the app does.
-- [ ] Hot reload in the running JVM (JetBrains Runtime or similar; open question); today `jpm dev`
-      restarts the app.
+- [x] Run the GraalVM tracing agent during tests (open question); today `start --trace` records what one
+      run of the app does. Decided: opt in with `jpm test --trace`, merged into the same configuration,
+      with the test framework and the test classes filtered out.
+- [x] Hot reload in the running JVM (JetBrains Runtime or similar; open question); today `jpm dev`
+      restarts the app. Decided: a jpm agent redefines changed classes (method bodies on any JDK, any change
+      on JetBrains Runtime with enhanced redefinition), and jpm restarts when that fails.
 
 ---
 
 ## Phase 6: User-facing documentation
 
-- [ ] Rewrite the README for users, not contributors: what jpm is, install, a five-minute start, the
+- [x] Rewrite the README for users, not contributors: what jpm is, install, a five-minute start, the
       everyday commands, and links to the rest. The README is about 600 lines today and mixes release
       engineering, internals and reference.
-- [ ] Move reference material (manifest fields, version syntax, environment variables, how resolution
+- [x] Move reference material (manifest fields, version syntax, environment variables, how resolution
       works) into `docs/`, generated from the schema and command registry where possible.
-- [ ] Move release and CI details into `CONTRIBUTING.md`.
-- [ ] Keep `MIGRATION.md`, linked from the README.
+      `docs/commands.md` and the field reference in `docs/manifest.md` are generated (CommandsTest, DocsTest).
+- [x] Move release and CI details into `CONTRIBUTING.md`.
+- [x] Keep `MIGRATION.md`, linked from the README.
 - [ ] A docs site built from `docs/` (optional, once the content has settled).
 
 ---
@@ -365,32 +374,35 @@ Items that are not in the original list but would pay off.
 
 - [x] **Shell completions** for bash, zsh, fish and PowerShell, generated from the command registry
       (`jpm completions <shell>`).
-- [ ] **`jpm doctor`:** check the machine, not the project: PATH order, shims, installed JDKs, cache
+- [x] **`jpm doctor`:** check the machine, not the project: PATH order, shims, installed JDKs, cache
       health and network access to configured repositories, and print what to fix. Project checks
       belong in `jpm check`, so a CI result never depends on the runner.
 - [ ] **More project checks for `jpm check`:** unused dependencies and duplicate classes on the
       classpath, both read from compiled classes, not sources.
-- [ ] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
+- [x] **Lockfile merge conflicts:** `jpm install` resolves a `project.lock` with conflict markers by
       resolving again, instead of failing.
-- [ ] **Private repositories:** credentials for downloading from Maven repositories that need them,
+- [x] **Private repositories:** credentials for downloading from Maven repositories that need them,
       from environment variables like jpm-publish's (`JPM_REPO_<NAME>_USERNAME` / `_PASSWORD`), never
       from `project.jsonc`.
-- [ ] **Cache commands:** `jpm cache size` and `jpm cache clean`.
-- [ ] **Workspace-wide commands:** run a script or command in every workspace module, with a
+- [x] **Cache commands:** `jpm cache size` and `jpm cache clean`.
+- [x] **Workspace-wide commands:** run a script or command in every workspace module, with a
       `--filter` like pnpm's.
-- [ ] **Testing:** `jpm test --watch`, and JUnit XML reports for CI.
+- [x] **Testing:** `jpm test --watch`, and JUnit XML reports for CI (`--reports <dir>`).
 - [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest
       errors), and what to do next; no stack traces unless `--verbose`.
 - [x] **Supply-chain checks:** verify checksums of every downloaded artifact against what the repository
       publishes, store hashes in `project.lock` (jars and POMs), and fail on a mismatch (ADR 0017).
 - [ ] **Signatures:** check `.asc` signatures where published, against a list of trusted keys.
 - [x] **`jpm audit`:** report dependencies with known vulnerabilities (OSV database).
-- [ ] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension.
+- [x] **SBOM:** generate CycloneDX or SPDX from the lockfile, as a command or an extension (`jpm sbom`, CycloneDX).
 - [x] **Reproducible builds:** fixed timestamps and entry order in jars, so the same sources and lock
       give byte-identical output; checked in CI.
 - [x] **Performance budget:** measure `jpm install` and no-op `jpm build` on the fixtures in CI and fail
       on large regressions.
-- [ ] **Windows parity:** run the full test suite on Windows in CI, not only the native smoke test.
+- [~] **Windows parity:** run the full test suite on Windows in CI, not only the native smoke test.
+      The end-to-end sessions run on Windows now (paths normalized to `/`), on the JVM and on the native
+      binary; still skipped there: the Git and extension scenarios (file:// Git bases) and scripts in sh syntax.
+      Done when a Windows run is green and those are enabled too.
 - [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …) and a template
       repository for writing new ones.
 - [ ] **Changelog for jpm itself:** use jpm-changeset on the jpm repositories once it exists.
@@ -611,7 +623,7 @@ In this order (decided 2026-11-23):
 
 1. **Supply chain** (in jpm): checksums of every download checked against what the repository publishes and
    kept in `project.lock` (POMs too), failing `--frozen` installs on a mismatch; then `jpm audit` (OSV);
-   then an SBOM (CycloneDX) from the lockfile.
+   then an SBOM (CycloneDX) from the lockfile. Done: checksums, `jpm audit`, `jpm sbom`.
 2. **The smaller items:**
    - lockfile conflict resolution;
    - private repository credentials;
@@ -629,6 +641,9 @@ In this order (decided 2026-11-23):
      hover docs, and diagnostics from `jpm check` over the protocol.
    - Then run configurations and the dependency graph.
    - The `.gitignore` fix is done in `jpm init`/`jpm import`, so it ships with any jpm release.
+   - Done (jpm-intellij, unreleased): the migration UI, run configurations, the dependency tree, and in
+     `project.jsonc` navigation and renames, missing paths, resolved versions, version completion, the
+     newer-version inspection and jpm's check results. Open: see the `[~]` items above.
 4. **jpm-format.**
    - Formatter parity is measured against IntelliJ on a corpus of real projects, with a stored diff
      count as a ratchet. Then lint parity, then the LSP.
@@ -650,6 +665,9 @@ can be generated.
 3. Move release and CI details into `CONTRIBUTING.md`.
 4. Keep `MIGRATION.md` and link it from the README.
 5. A docs site, once `docs/` has been stable for a release.
+
+Done: 1 to 4 (README, docs/ with the generated command and field references, CONTRIBUTING,
+MIGRATION.md linked). Open: 5.
 
 ### Risks
 

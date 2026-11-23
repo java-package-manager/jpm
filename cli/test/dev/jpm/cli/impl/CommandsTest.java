@@ -19,14 +19,14 @@ class CommandsTest {
     private static final String END = "<!-- /commands -->";
 
     @Test
-    void theReadmeTableIsTheRegistrys() {
-        Path readme = Checkout.root().resolve("README.md");
-        String text = Fs.read(readme).replace("\r\n", "\n");
+    void theCommandReferenceIsTheRegistrys() {
+        Path doc = Checkout.root().resolve("docs/commands.md");
+        String text = Fs.read(doc).replace("\r\n", "\n");
         int a = text.indexOf(START), b = text.indexOf(END);
-        assertTrue(a >= 0 && b > a, "README.md has no command table markers");
-        String want = text.substring(0, a + START.length()) + "\n" + Commands.readmeTable() + "\n" + text.substring(b);
-        if ("1".equals(System.getenv("JPM_UPDATE_EXPECTED"))) Fs.write(readme, want);
-        else assertEquals(want, text, "the command table in README.md is out of date: JPM_UPDATE_EXPECTED=1 rewrites it");
+        assertTrue(a >= 0 && b > a, "docs/commands.md has no command table markers");
+        String want = text.substring(0, a + START.length()) + "\n" + Commands.referenceTable() + "\n" + text.substring(b);
+        if ("1".equals(System.getenv("JPM_UPDATE_EXPECTED"))) Fs.write(doc, want);
+        else assertEquals(want, text, "the command table in docs/commands.md is out of date: JPM_UPDATE_EXPECTED=1 rewrites it");
     }
 
     @Test

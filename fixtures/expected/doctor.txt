@@ -1,0 +1,7 @@
+$ jpm doctor
+(output not recorded)
+
+$ jpm doctor
+(output not recorded)
+[exit 1]
+

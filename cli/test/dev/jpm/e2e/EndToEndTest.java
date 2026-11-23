@@ -11,12 +11,13 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * Runs the {@code jpm} binary on the projects in {@code fixtures/} and compares everything it prints with
  * {@code fixtures/expected/}. These tests are the safety net for the restructure: a change to an expected
  * transcript is a change in behavior.
  */
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "the transcripts use / in paths; Windows parity is a roadmap item")
 class EndToEndTest {
     private static final String MONEY_V1 = """
             package org.example.money;
@@ -148,6 +149,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitDependencies(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path lib = tmp.resolve("git/me/lib");
@@ -175,6 +177,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void projectExtensions(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path ext = tmp.resolve("git/me/jpm-hello");
@@ -209,6 +212,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void addsAnExtensionInAWorkspaceRoot(@TempDir Path tmp) {
         Session s = new Session(tmp);
         money(s.repo);
@@ -279,6 +283,318 @@ class EndToEndTest {
     }
 
     @Test
+    void lockfileMergeConflicts(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        s.repo.artifact("org.example:tax:1.0.0").publish();
+        s.repo.artifact("org.example:tax:1.1.0").publish();
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\","
+                + " \"runtime\": { \"org.example:money\": \"^1.0.0\", \"org.example:tax\": \"^1.0.0\" } }");
+        Fs.write(s.project.resolve("project.lock"), "{ \"lockfileVersion\": 1, \"inputs\": \"\", \"packages\": {"
+                + " \"org.example:money\": { \"version\": \"1.0.0\" }, \"org.example:tax\": { \"version\": \"1.0.0\" } } }");
+        s.jpmUnrecorded("install");
+        String base = Fs.read(s.project.resolve("project.lock"));
+        s.jpmUnrecorded("update");
+        String updated = Fs.read(s.project.resolve("project.lock"));
+        String money = line(base, "org.example:money"), tax = line(base, "org.example:tax");
+        String theirsMoney = line(updated, "org.example:money");
+        Fs.write(s.project.resolve("project.lock"), base.replace(money + ",\n" + tax, "<<<<<<< HEAD\n" + money + ",\n"
+                + line(updated, "org.example:tax") + "\n=======\n" + theirsMoney + "\n>>>>>>> feature"));
+        s.show("project.lock");
+        s.jpm("install", "--frozen");
+        s.jpm("install");
+        s.show("project.lock");
+        s.jpm("install", "--frozen");
+        s.verify("lockfile-conflicts");
+    }
+
+    @Test
+    void privateRepositories(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp);
+        TestRepo secret = new TestRepo(tmp.resolve("private"));
+        secret.artifact("com.acme:internal:1.0.0").publish();
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        java.util.List<String> cdnAuth = new java.util.ArrayList<>();
+        server.createContext("/releases/", ex -> {
+            String auth = ex.getRequestHeaders().getFirst("Authorization");
+            if (!("Basic " + java.util.Base64.getEncoder().encodeToString("me:secret".getBytes(java.nio.charset.StandardCharsets.UTF_8))).equals(auth)) {
+                ex.sendResponseHeaders(401, -1);
+                ex.close();
+                return;
+            }
+            ex.getResponseHeaders().add("Location", "http://localhost:" + server.getAddress().getPort() + "/cdn/"
+                    + ex.getRequestURI().getPath().substring("/releases/".length()));
+            ex.sendResponseHeaders(302, -1);
+            ex.close();
+        });
+        server.createContext("/cdn/", ex -> {
+            String auth = ex.getRequestHeaders().getFirst("Authorization");
+            if (auth != null) cdnAuth.add(auth);
+            Path f = secret.root().resolve(ex.getRequestURI().getPath().substring("/cdn/".length()));
+            if (!java.nio.file.Files.isRegularFile(f)) {
+                ex.sendResponseHeaders(404, -1);
+                ex.close();
+                return;
+            }
+            byte[] b = java.nio.file.Files.readAllBytes(f);
+            ex.sendResponseHeaders(200, b.length);
+            ex.getResponseBody().write(b);
+            ex.close();
+        });
+        server.start();
+        try {
+            String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/releases";
+            Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"repositories\": [\""
+                    + url + "\"], \"runtime\": { \"com.acme:internal\": \"1.0.0\" } }");
+            String out = s.jpmUnrecorded("install");
+            org.junit.jupiter.api.Assertions.assertTrue(out.contains("set JPM_REPO_127_0_0_1_USERNAME and JPM_REPO_127_0_0_1_PASSWORD"), out);
+            s.env("JPM_REPO_127_0_0_1_USERNAME", "me").env("JPM_REPO_127_0_0_1_PASSWORD", "secret");
+            s.jpm("install");
+        } finally {
+            server.stop(0);
+        }
+        assertEquals(List.of(), cdnAuth, "credentials do not follow a redirect to another host");
+        s.verify("private-repositories");
+    }
+
+    @Test
+    void cacheSizeAndClean(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"runtime\": { \"org.example:money\": \"1.0.0\" } }");
+        s.jpm("install");
+        Fs.write(s.home.resolve("global").resolve("keep.txt"), "an installed extension");
+        String size = s.jpmUnrecorded("cache", "size").replace("\r\n", "\n");
+        org.junit.jupiter.api.Assertions.assertTrue(size.matches("(?s).*\\d+(\\.\\d)? (B|KB|MB)  repository +Maven packages\n.*total.*"), size);
+        String clean = s.jpmUnrecorded("cache", "clean", "repository");
+        org.junit.jupiter.api.Assertions.assertTrue(clean.contains("Cleaned repository: "), clean);
+        org.junit.jupiter.api.Assertions.assertFalse(java.nio.file.Files.exists(s.home.resolve("repository")));
+        s.jpm("cache", "clean", "nothing");
+        s.jpm("cache", "frobnicate");
+        s.jpm("install", "--frozen");
+        s.jpmUnrecorded("cache", "clean");
+        org.junit.jupiter.api.Assertions.assertTrue(java.nio.file.Files.exists(s.home.resolve("global").resolve("keep.txt")));
+        s.verify("cache");
+    }
+
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "the scripts use sh syntax ($PWD)")
+    void workspaceFilters(@TempDir Path tmp) {
+        Session s = new Session(tmp).fixture("workspace-demo");
+        money(s.repo);
+        Fs.write(s.project.resolve("core/project.jsonc"), "{ \"name\": \"core\", \"runtime\": { \"org.example:money\": \"^1.0.0\" }, \"test\": { \"org.junit.jupiter:junit-jupiter\": \"*\" },"
+                + " \"scripts\": { \"where\": \"echo core in $PWD\", \"fail\": \"exit 2\" } }");
+        Fs.write(s.project.resolve("app/project.jsonc"), "{ \"name\": \"app\", \"main\": \"shop.app.Main\", \"define\": { \"GREETING\": \"Welcome\" },"
+                + " \"defineClass\": \"shop.app.Config\", \"runtime\": { \"workspace:core\": \"*\" },"
+                + " \"scripts\": { \"where\": \"echo app in $PWD\", \"fail\": \"exit 3\" } }");
+        s.jpmUnrecorded("install");
+        s.jpm("run", "-r", "where");
+        s.jpm("run", "--filter", "app", "where");
+        s.jpm("run", "--filter", "app...", "where");
+        s.jpm("run", "--filter", "...core", "where");
+        s.jpm("run", "-r", "--filter", "!core", "where");
+        s.jpm("run", "--filter", "./a*", "where");
+        s.jpm("run", "-r", "fail");
+        s.jpm("run", "-r", "nothing");
+        s.jpm("run", "--filter", "nope", "where");
+        s.jpm("build", "--filter", "core");
+        s.verify("workspace-filters");
+    }
+
+    @Test
+    void testReports(@TempDir Path tmp) {
+        Session s = new Session(tmp).fixture("workspace-demo");
+        money(s.repo);
+        s.jpmUnrecorded("test", "--reports", "reports");
+        s.tree("reports");
+        String xml = Fs.read(s.project.resolve("reports/core/TEST-junit-jupiter.xml"));
+        org.junit.jupiter.api.Assertions.assertTrue(xml.contains("<testsuite") && xml.contains("CartTest"), xml);
+        s.jpmUnrecorded("test", "--filter", "core", "--reports", "core-reports");
+        s.tree("core-reports");
+        s.verify("test-reports");
+    }
+
+    @Test
+    void testWatch(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp).fixture("workspace-demo");
+        money(s.repo);
+        s.jpmUnrecorded("install");
+        List<String> cmd = new java.util.ArrayList<>(Session.binary());
+        cmd.addAll(List.of("test", "--watch"));
+        ProcessBuilder pb = new ProcessBuilder(cmd).directory(s.project.resolve("core").toFile()).redirectErrorStream(true);
+        pb.environment().keySet().removeIf(k -> k.startsWith("JPM_") || k.equals("NO_COLOR") || k.equals("FORCE_COLOR"));
+        pb.environment().putAll(s.env());
+        Process p = pb.start();
+        StringBuffer out = new StringBuffer();
+        Thread reader = new Thread(() -> {
+            try (var in = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                for (String l; (l = in.readLine()) != null; ) out.append(l).append('\n');
+            } catch (java.io.IOException ignored) {
+            }
+        });
+        reader.start();
+        try {
+            waitFor(out, "tests passed; watching for changes", 1);
+            Path test = s.project.resolve("core/test/shop/core/CartTest.java");
+            Fs.write(test, cartTest("EUR 4.00"));
+            waitFor(out, "tests failed; watching for changes", 1);
+            org.junit.jupiter.api.Assertions.assertTrue(out.toString().contains("Rerunning files changed"), out.toString());
+            Fs.write(test, cartTest("EUR 3.50"));
+            waitFor(out, "tests passed; watching for changes", 2);
+        } finally {
+            p.destroy();
+            if (!p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) p.destroyForcibly();
+            reader.join(10_000);
+        }
+    }
+
+    @Test
+    void devReloadsCode(@TempDir Path tmp) throws Exception {
+        Session s = new Session(tmp);
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"hr\", \"version\": \"1.0.0\", \"main\": \"hr.App\" }");
+        Fs.write(s.project.resolve("src/hr/App.java"), "package hr;\n\npublic class App {\n    public static void main(String[] args) throws Exception {\n"
+                + "        Greeter g = new Greeter();\n        for (int i = 0; i < 2400; i++) {\n            System.out.println(\"tick \" + g.greet());\n"
+                + "            Thread.sleep(50);\n        }\n    }\n}\n");
+        Path greeter = s.project.resolve("src/hr/Greeter.java");
+        Fs.write(greeter, greeter("v1", ""));
+        List<String> cmd = new java.util.ArrayList<>(Session.binary());
+        cmd.add("dev");
+        ProcessBuilder pb = new ProcessBuilder(cmd).directory(s.project.toFile()).redirectErrorStream(true);
+        pb.environment().keySet().removeIf(k -> k.startsWith("JPM_") || k.equals("NO_COLOR") || k.equals("FORCE_COLOR"));
+        pb.environment().putAll(s.env());
+        Process p = pb.start();
+        StringBuffer out = new StringBuffer();
+        Thread reader = new Thread(() -> {
+            try (var in = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
+                for (String l; (l = in.readLine()) != null; ) out.append(l).append('\n');
+            } catch (java.io.IOException ignored) {
+            }
+        });
+        reader.start();
+        try {
+            waitFor(out, "tick v1", 1);
+            Fs.write(greeter, greeter("v2", ""));
+            waitFor(out, "tick v2", 1);
+            waitFor(out, "Reloaded 1 class", 1);
+            org.junit.jupiter.api.Assertions.assertFalse(out.toString().contains("Restarting"), out.toString());
+            Fs.write(greeter, greeter("v3", "    public int added() {\n        return 1;\n    }\n"));
+            waitFor(out, "tick v3", 1);
+            org.junit.jupiter.api.Assertions.assertTrue(out.toString().contains("Restarting the change cannot be reloaded"), out.toString());
+        } finally {
+            ProcessHandle.of(p.pid()).ifPresent(h -> h.descendants().forEach(ProcessHandle::destroy));
+            p.destroy();
+            if (!p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) p.destroyForcibly();
+            reader.join(10_000);
+        }
+    }
+
+    private static String greeter(String text, String more) {
+        return "package hr;\n\npublic class Greeter {\n    public String greet() {\n        return \"" + text + "\";\n    }\n" + more + "}\n";
+    }
+
+    private static String cartTest(String total) {
+        return "package shop.core;\n\nimport org.junit.jupiter.api.Test;\n\nimport static org.junit.jupiter.api.Assertions.assertEquals;\n\n"
+                + "class CartTest {\n    @Test\n    void addsPrices() {\n        assertEquals(\"" + total
+                + "\", new Cart().add(150).add(200).total());\n    }\n}\n";
+    }
+
+    private static void waitFor(StringBuffer out, String text, int times) throws InterruptedException {
+        long until = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(120);
+        while (System.nanoTime() < until) {
+            String now = out.toString();
+            int n = 0;
+            for (int i = now.indexOf(text); i >= 0; i = now.indexOf(text, i + 1)) n++;
+            if (n >= times) return;
+            Thread.sleep(100);
+        }
+        throw new AssertionError("no \"" + text + "\" (x" + times + ") in:\n" + out);
+    }
+
+    @Test
+    void doctor(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        String healthy = s.jpmUnrecorded("doctor");
+        org.junit.jupiter.api.Assertions.assertTrue(healthy.contains("ok    " + s.repo.uri()) || healthy.contains("ok    " + s.repo.uri() + "/"), healthy);
+        org.junit.jupiter.api.Assertions.assertFalse(healthy.contains("  error "), healthy);
+        Fs.write(s.home.resolve("jdks/temurin-21-broken/release"), "not a JDK\n");
+        Fs.write(s.home.resolve("repository/org/example/x/1.0/x-1.0.jar12345.part"), "half");
+        Fs.write(s.home.resolve("default-java"), "zulu-11\n");
+        String sick = s.jpmUnrecorded("doctor");
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("temurin-21-broken is not a working JDK"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("1 unfinished downloads in"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("the default java \"zulu-11\" (from `jpm jvm use`) is not installed"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("fix: run `jpm cache clean repository`"), sick);
+        org.junit.jupiter.api.Assertions.assertTrue(sick.contains("problems to fix"), sick);
+        s.verify("doctor");
+    }
+
+    @Test
+    void pomProfiles(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        money(s.repo);
+        s.repo.artifact("org.example:compat:1.0.0").publish();
+        s.repo.artifact("org.example:modern:1.0.0").publish();
+        s.repo.artifact("org.example:lib:1.0.0").pom("<profiles>"
+                + "<profile><id>old-jdk</id><activation><jdk>(,17)</jdk></activation><dependencies><dependency><groupId>org.example</groupId>"
+                + "<artifactId>compat</artifactId><version>1.0.0</version></dependency></dependencies></profile>"
+                + "<profile><id>new-jdk</id><activation><jdk>[17,)</jdk></activation><properties><money.version>1.2.0</money.version></properties>"
+                + "<dependencies><dependency><groupId>org.example</groupId><artifactId>modern</artifactId><version>1.0.0</version></dependency>"
+                + "<dependency><groupId>org.example</groupId><artifactId>money</artifactId><version>${money.version}</version></dependency>"
+                + "</dependencies></profile></profiles>").publish();
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \"21\", \"runtime\": { \"org.example:lib\": \"1.0.0\" } }");
+        s.jpm("install");
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"java\": \"11\", \"runtime\": { \"org.example:lib\": \"1.0.0\" } }");
+        s.jpm("install");
+        s.verify("pom-profiles");
+    }
+
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "the generators are sh commands")
+    void codeGenerators(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Fs.write(s.project.resolve("project.jsonc"), """
+                { "name": "app", "version": "1.0.0", "main": "app.Main",
+                  "scripts": {
+                    "codename": { "run": "mkdir -p $JPM_GENERATED/app && printf 'package app; public class Codename { public static final String NAME = \\"%s\\"; }' \\"$(cat codename.txt)\\" > $JPM_GENERATED/app/Codename.java",
+                                  "generates": "sources", "inputs": ["codename.txt"] },
+                    "banner": { "run": "printf 'generated banner' > $JPM_GENERATED/banner.txt", "generates": "resources" }
+                  } }
+                """);
+        Fs.write(s.project.resolve("codename.txt"), "falcon");
+        Fs.write(s.project.resolve("src/app/Main.java"), "package app;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n"
+                + "        System.out.println(Codename.NAME + \" / \" + new String(Main.class.getResourceAsStream(\"/banner.txt\").readAllBytes()));\n    }\n}\n");
+        s.jpm("start");
+        s.jpm("start");
+        Fs.write(s.project.resolve("codename.txt"), "osprey");
+        s.jpm("start");
+        s.verify("code-generators");
+    }
+
+    private static String line(String lock, String id) {
+        return lock.lines().filter(l -> l.contains("\"" + id + "\"")).findFirst().orElseThrow().replaceAll(",$", "");
+    }
+
+    @Test
+    void sbom(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        s.repo.artifact("org.example:money:1.0.0").javaClass("org.example.money.Money", MONEY_V1)
+                .pom("<licenses><license><name>The Apache Software License, Version 2.0</name></license></licenses>").publish();
+        s.repo.artifact("org.example:shop:1.0.0").dependsOn("org.example:money:1.0.0")
+                .pom("<licenses><license><name>Shop Proprietary License</name><url>https://shop.example/license</url></license></licenses>").publish();
+        s.repo.artifact("org.example:checks:1.0.0").publish();
+        Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\", \"group\": \"org.example\","
+                + " \"license\": \"MIT\", \"main\": \"app.Main\", \"runtime\": { \"org.example:shop\": \"1.0.0\" },"
+                + " \"test\": { \"org.example:checks\": \"1.0.0\" } }");
+        s.jpm("sbom");
+        s.jpm("sbom", "-o", "bom.json");
+        String first = Fs.read(s.project.resolve("bom.json"));
+        s.jpmUnrecorded("sbom", "-o", "bom.json");
+        assertEquals(first, Fs.read(s.project.resolve("bom.json")), "the same lock gives the same SBOM");
+        s.jpm("sbom", "extra");
+        s.verify("sbom");
+    }
+
+    @Test
     void licenses(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path spdx = tmp.resolve("spdx");
@@ -314,6 +630,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void checkReportsEveryProblem(@TempDir Path tmp) {
         Session s = new Session(tmp);
         money(s.repo);
@@ -425,6 +742,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitMirrorsFollowTheirUrl(@TempDir Path tmp) {
         Session s = new Session(tmp);
         for (String base : List.of("old", "new")) {
@@ -449,6 +767,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitDependencyWithItsOwnRepository(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path other = tmp.resolve("other-repo");
@@ -475,6 +794,7 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void gitDependencyWithAMavenBuild(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path lib = tmp.resolve("git/me/maven-lib");

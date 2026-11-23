@@ -1,0 +1,128 @@
+$ jpm sbom
+   Resolving dependencies
+  + org.example:checks 1.0.0
+  + org.example:money 1.0.0
+  + org.example:shop 1.0.0
+      Locked 3 packages (3 added, 0 changed, 0 removed)
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:<uuid>",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "group": "dev.jpm",
+          "name": "jpm",
+          "version": "<jpm-version>"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:maven/org.example/app@1.0.0",
+      "group": "org.example",
+      "name": "app",
+      "version": "1.0.0",
+      "purl": "pkg:maven/org.example/app@1.0.0",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.example/checks@1.0.0",
+      "group": "org.example",
+      "name": "checks",
+      "version": "1.0.0",
+      "purl": "pkg:maven/org.example/checks@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "<sha256>"
+        }
+      ],
+      "scope": "excluded"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.example/money@1.0.0",
+      "group": "org.example",
+      "name": "money",
+      "version": "1.0.0",
+      "purl": "pkg:maven/org.example/money@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "<sha256>"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.example/shop@1.0.0",
+      "group": "org.example",
+      "name": "shop",
+      "version": "1.0.0",
+      "purl": "pkg:maven/org.example/shop@1.0.0",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "<sha256>"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "name": "Shop Proprietary License",
+            "url": "https://shop.example/license"
+          }
+        }
+      ],
+      "scope": "required"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:maven/org.example/app@1.0.0",
+      "dependsOn": ["pkg:maven/org.example/shop@1.0.0", "pkg:maven/org.example/checks@1.0.0"]
+    },
+    {
+      "ref": "pkg:maven/org.example/checks@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.example/money@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:maven/org.example/shop@1.0.0",
+      "dependsOn": ["pkg:maven/org.example/money@1.0.0"]
+    }
+  ]
+}
+
+$ jpm sbom -o bom.json
+       Wrote bom.json (CycloneDX 1.6, 3 components)
+
+$ jpm sbom -o bom.json
+(output not recorded)
+
+$ jpm sbom extra
+error: Usage: jpm sbom [-o <file>] [--frozen]
+[exit 2]
+

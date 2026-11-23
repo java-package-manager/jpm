@@ -3,13 +3,32 @@ $ jpm audit
   + org.example:money 1.0.0
   + org.example:shop 1.0.0
       Locked 2 packages (2 added, 0 changed, 0 removed)
-     Audited 2 packages: no known vulnerabilities
+HIGH  org.example:money 1.0.0  GHSA-0000-1111-2222 (CVE-2026-0001)
+  Rounding leaks cents
+  fixed in 1.2.0; via app > org.example:shop > org.example:money
+UNKNOWN  org.example:money 1.0.0  GHSA-3333-4444-5555
+  Money is not a number
+  no fixed version known; via app > org.example:shop > org.example:money
+error: 2 vulnerabilities in 1 package; update them, or `--ignore <id>` what does not apply
+[exit 1]
 
 $ jpm audit --ignore CVE-2026-0001 --ignore GHSA-3333-4444-5555
      Audited 2 packages: no known vulnerabilities (2 ignored)
 
 $ jpm audit --json --ignore GHSA-3333-4444-5555
-[]
+[
+  {
+    "package": "org.example:money",
+    "version": "1.0.0",
+    "id": "GHSA-0000-1111-2222",
+    "aliases": ["CVE-2026-0001"],
+    "severity": "high",
+    "summary": "Rounding leaks cents",
+    "fixed": "1.2.0",
+    "path": ["app", "org.example:shop", "org.example:money"]
+  }
+]
+[exit 1]
 
 $ jpm audit
    Resolving dependencies

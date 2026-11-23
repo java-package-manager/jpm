@@ -15,10 +15,10 @@ public final class Commands {
     static List<Command> all(Path cwd) {
         return List.of(
                 new InitCommand(cwd), new AddCommand(cwd), new RemoveCommand(cwd), new InstallCommand(cwd), new UpdateCommand(cwd),
-                new OutdatedCommand(cwd), new AuditCommand(cwd), new WhyCommand(cwd), new InfoCommand(cwd), new ImportCommand(cwd), new LicenseCommand(cwd),
+                new OutdatedCommand(cwd), new AuditCommand(cwd), new SbomCommand(cwd), new WhyCommand(cwd), new InfoCommand(cwd), new ImportCommand(cwd), new LicenseCommand(cwd),
                 new BuildCommand(cwd), new StartCommand(cwd, false), new StartCommand(cwd, true), new TestCommand(cwd), new CheckCommand(cwd),
                 new RunCommand(cwd), new CleanCommand(cwd), new PatchCommand(cwd), new JavaCommand(cwd, false),
-                new JavaCommand(cwd, true), new UpgradeCommand(cwd), new VersionCommand(cwd), new HelpCommand(cwd),
+                new JavaCommand(cwd, true), new CacheCommand(cwd), new DoctorCommand(cwd), new UpgradeCommand(cwd), new VersionCommand(cwd), new HelpCommand(cwd),
                 new CompletionsCommand(cwd), new ApiCommand(cwd));
     }
 
@@ -74,14 +74,23 @@ public final class Commands {
         return out.append('\n').toString();
     }
 
-    static String readmeTable() {
+    static String referenceTable() {
         List<String> rows = new ArrayList<>();
-        rows.add("| Command | |");
-        rows.add("|---|---|");
-        for (Command c : all(Path.of(""))) {
-            for (Command.Usage u : c.usages()) rows.add("| `" + u.synopsis() + "` | " + u.docs() + " |");
+        for (Command.Group g : Command.Group.values()) {
+            rows.add("## " + g.title);
+            rows.add("");
+            rows.add("| Command | |");
+            rows.add("|---|---|");
+            for (Command c : all(Path.of(""))) {
+                for (Command.Usage u : c.usages()) {
+                    if (u.group() == g) rows.add("| `" + (u.synopsis().startsWith("jvm ") ? "" : "jpm ") + u.synopsis() + "` | " + u.docs().replace("docs/protocol.md", "protocol.md") + " |");
+                }
+            }
+            if (g == Command.Group.MAINTENANCE) {
+                rows.add("| `jpm <anything else>` | Runs the extension `<name>`: the one the project declares, else `jpm-<name>` from `~/.jpm/bin` or `PATH` (see [Extensions](extensions.md)) |");
+            }
+            rows.add("");
         }
-        rows.add("| `<anything else>` | Runs the extension `<name>`: the one the project declares, else `jpm-<name>` from `~/.jpm/bin` or `PATH` (see [Extensions](#extensions)) |");
-        return String.join("\n", rows) + "\n";
+        return String.join("\n", rows).stripTrailing() + "\n";
     }
 }

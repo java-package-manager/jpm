@@ -1,0 +1,50 @@
+$ jpm install
+(output not recorded)
+
+$ jpm run -r where
+     Running where in core
+core in <project>/core
+     Running where in app
+app in <project>/app
+
+$ jpm run --filter app where
+     Running where in app
+app in <project>/app
+
+$ jpm run --filter app... where
+     Running where in core
+core in <project>/core
+     Running where in app
+app in <project>/app
+
+$ jpm run --filter ...core where
+     Running where in core
+core in <project>/core
+     Running where in app
+app in <project>/app
+
+$ jpm run -r --filter !core where
+     Running where in app
+app in <project>/app
+
+$ jpm run --filter ./a* where
+     Running where in app
+app in <project>/app
+
+$ jpm run -r fail
+     Running fail in core
+error: fail failed in core (exit 2); not run in app
+[exit 2]
+
+$ jpm run -r nothing
+error: No workspace module has a script "nothing"
+[exit 1]
+
+$ jpm run --filter nope where
+error: --filter nope matches no workspace module; the modules are core, app
+[exit 2]
+
+$ jpm build --filter core
+    Compiled core 1.0.0 (<jdk>, release 21)
+    Packaged dist/core-1.0.0.jar
+

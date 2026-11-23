@@ -23,8 +23,9 @@ final class BuildCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(
-                new Usage(Group.BUILD, "build", "Compile and package into dist/ (--release, --profile <name>)",
-                        "Build into `dist/` (`--release`, `--profile <name>`)"),
+                new Usage(Group.BUILD, "build", "Compile and package into dist/ (--release, --profile <name>, --filter <pattern>)",
+                        "Build into `dist/` (`--release`, `--profile <name>`); in a workspace, every module, the one you are in, or the"
+                                + " modules named; " + WorkspaceFilter.USAGE),
                 new Usage(Group.TOOLCHAIN, "build --bundle", "Also build a runnable jar-in-jar bundle with isolated modules",
                         "Also build `dist/<name>-<version>-bundle.jar` with the runtime dependencies: a runnable jar-in-jar with isolated modules for a module with a `main`, one flat jar (like a shadow jar) for one without, such as a Paper or Velocity plugin; `--flat` makes it flat either way. `\"package\": \"bundle\"` makes it the default"),
                 new Usage(Group.TOOLCHAIN, "build --native", "Also build a native executable with GraalVM",
@@ -33,7 +34,7 @@ final class BuildCommand extends Command {
 
     @Override
     List<String> flags() {
-        return List.of("--release", "--native", "--bundle", "--flat", "--frozen", "--profile");
+        return List.of("--release", "--native", "--bundle", "--flat", "--frozen", "--profile", "--filter");
     }
 
     @Override
@@ -45,10 +46,11 @@ final class BuildCommand extends Command {
         boolean frozen = flag(args, "--frozen");
         String profile = option(args, "--profile");
         if (release && profile == null) profile = "release";
+        List<String> filters = WorkspaceFilter.options(args);
         noMoreFlags(args);
         Ctx c = open(frozen);
         Builder b = c.builder(Env.Mode.PRODUCTION);
-        List<Project.Module> mods = targets(c.project(), args);
+        List<Project.Module> mods = targets(c.project(), args, filters);
         boolean all = mods.size() == c.project().modules.size() && c.project().root.isWorkspaceRoot();
         Project.Module rootMod = c.project().rootModule();
         if (all) Scripts.hooks(b, rootMod, c.project().root, "pre", "build", profile, Env.Mode.PRODUCTION);

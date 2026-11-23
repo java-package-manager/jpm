@@ -4,6 +4,7 @@ $ jpm import --static
     Imported app/project.jsonc from Gradle
 warning: the Gradle build was read without running it; check the result
 warning: core: platform com.fasterxml.jackson:jackson-bom is not carried over; the versions it manages are written out instead
+     Ignored .cache/, dist/, .env.local in .gitignore
    Resolving dependencies
   + com.fasterxml.jackson.core:jackson-databind 2.17.2
   + com.google.guava:guava 33.3.1-jre

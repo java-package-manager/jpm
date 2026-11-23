@@ -1,0 +1,9 @@
+$ jpm install
+(output not recorded)
+[exit 1]
+
+$ jpm install
+   Resolving dependencies
+  + com.acme:internal 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+

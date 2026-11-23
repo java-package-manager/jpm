@@ -80,11 +80,15 @@ checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/p
 ## Releases
 
 - The version is `"version"` in `project.jsonc`. When `main` has a version with no tag yet, CI tags that
-  commit and releases it: native binaries for Linux, macOS and Windows, `SHA256SUMS`, the install scripts
-  and `project.schema.json`. A version with a `-` (such as `1.0.0-rc1`) is a prerelease.
+  commit (the plain version, no `v` prefix) and releases it: native binaries for Linux (x64, arm64), macOS
+  (arm64, x64) and Windows (x64), `SHA256SUMS`, the install scripts and `project.schema.json`. Nothing is
+  published unless every platform passes, and a version is never released twice.
+- A version with a `-` (such as `1.0.0-rc1`, or `0.13.0-beta.0` from jpm-changeset's prerelease mode) is a
+  GitHub prerelease, which `jpm upgrade` and the install scripts skip. The `canary` release holds a `VERSION`
+  file naming the newest release or prerelease, which `jpm upgrade --canary` and `JPM_VERSION=canary` install.
 - Every push and pull request, the Version packages one too, gets the full suite: every platform, live
   tests, Java versions and coverage, so a release is known to pass before it is merged. Only a release
-  publishes (the binaries, the GitHub release and `dev.jpm:jpm-api`); there are no canary builds.
+  publishes (the binaries, the GitHub release and `dev.jpm:jpm-api`); there are no builds of other commits.
 - A change users notice comes with a changeset: `jpm changeset add --module jpm --patch -m "..."` (or
   `--minor`, `--major`) writes one to `.changeset/`; commit it with the change. Pull requests are checked
   for one (`jpm changeset status --check`).
@@ -95,3 +99,19 @@ checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/p
   (with a changeset) when there is a new list.
 - So releasing is merging that pull request (or any commit that changes `"version"`); nothing is tagged by
   hand.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and every push to `main`:
+
+- **version** decides whether the run releases (`main` with an untagged version).
+- **build**, on Linux (x64, arm64), macOS (arm64, x64) and Windows (x64): `bin/check`, the native binary, the
+  end-to-end tests on the native binary, smoke tests of the binary (a project, toolchains, native builds,
+  imports of real Maven and Gradle builds, Git dependencies, bundles) and the install scripts against this
+  build; on linux-x64 also the performance budget (`checks/perf.sh`). The binaries are uploaded as artifacts.
+- **live tests** (`--tag live`, against Maven Central), **java versions** (every target with every supported
+  JDK, see [docs/java-versions.md](docs/java-versions.md)) and **coverage** (the report is an artifact).
+- **changesets**, on pull requests: a changed module needs a changeset.
+- **publish api** and **release**, only when the run releases.
+
+`release.yml` keeps the Version packages pull request, and `spdx.yml` the weekly SPDX license list update.

@@ -237,6 +237,28 @@ public final class JpmClient implements AutoCloseable {
     }
 
     /**
+     * {@code dependencies/versions} (protocol 1.1): the versions the Maven repositories have of each {@code group:artifact},
+     * oldest first. Check {@link #supports(String)} first: a jpm with protocol 1.0 does not have it.
+     *
+     * @param dir     the project's folder, whose repositories are asked too; null for Maven Central only
+     * @param keys    Maven dependency keys
+     * @param refresh whether to ask the repositories again instead of reading the cached metadata
+     * @return for each key, its versions and, under {@code latest}, the newest that is not a prerelease or snapshot
+     * @throws JpmError when jpm cannot answer, for example for a key that is not a Maven key
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Map<String, Object>> versions(Path dir, List<String> keys, boolean refresh) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        if (dir != null) params.put("dir", dir.toAbsolutePath().toString());
+        params.put("keys", keys);
+        params.put("refresh", refresh);
+        Map<String, Object> r = call("dependencies/versions", params);
+        Map<String, Map<String, Object>> out = new LinkedHashMap<>();
+        if (r.get("versions") instanceof Map<?, ?> m) for (Map.Entry<?, ?> e : m.entrySet()) out.put(String.valueOf(e.getKey()), (Map<String, Object>) e.getValue());
+        return out;
+    }
+
+    /**
      * {@code schema/manifest}: the JSON Schema of {@code project.jsonc} that this jpm reads.
      *
      * @return the schema, as {@link Jsonc#parse(String)} gives JSON

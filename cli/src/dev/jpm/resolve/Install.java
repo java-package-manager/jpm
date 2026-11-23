@@ -51,11 +51,16 @@ public final class Install {
                 ResolveInputs.addLocal(ext, Extensions.project(project, d));
             }
         } else {
+            if (o.frozen() && lock != null && lock.conflicted) {
+                throw new JpmException(Manifest.LOCK + " has merge conflicts and --frozen was given. Run `jpm install`, which"
+                        + " resolves them, and commit the lockfile.");
+            }
             if (o.frozen()) {
                 throw new JpmException(lock == null ? Manifest.LOCK + " is missing and --frozen was given"
                         : Manifest.LOCK + " is out of date with " + Manifest.FILE + " and --frozen was given. Run `jpm install` and commit the lockfile.");
             }
-            if (!o.quiet() || lock == null || !inputs.equals(lock.inputs)) Log.step("Resolving", "dependencies");
+            if (lock != null && lock.conflicted) Log.step("Merging", Manifest.LOCK + ": it has merge conflicts, so both sides are resolved again");
+            else if (!o.quiet() || lock == null || !inputs.equals(lock.inputs)) Log.step("Resolving", "dependencies");
             if (o.updateAll()) repo.setRefreshMetadata(true);
             Graph prev = lock == null ? null : lock.graph;
             graph = new Resolver(project, repo, prev, o.update(), o.updateAll()).resolve();

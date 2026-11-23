@@ -1,0 +1,16 @@
+$ jpm start
+   Resolving dependencies
+      Locked 0 packages
+   Generated app sources with codename
+   Generated app resources with banner
+    Compiled app 1.0.0 (<jdk>, release 21)
+falcon / generated banner
+
+$ jpm start
+falcon / generated banner
+
+$ jpm start
+   Generated app sources with codename
+    Compiled app 1.0.0 (<jdk>, release 21)
+osprey / generated banner
+
