@@ -8,7 +8,7 @@ public final class Protocol {
     private Protocol() {}
 
     /** The protocol version of this jpm and of this client jar. */
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.1";
 
     /** JSON-RPC error code: {@code initialize} with another major version. */
     public static final int PROTOCOL_MISMATCH = -32001;

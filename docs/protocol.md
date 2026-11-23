@@ -61,6 +61,7 @@ result type is defined in section 5.
 | `schema/manifest` | none | `{schema, version}` | `jpm schema`, `jpm schema --path` |
 | `extensions/list` | `dir?` | `{extensions: [ExtensionDescriptor]}` | the plugin's built-in command list |
 | `check/run` | `dir`, `checks?`, `tests?` | `{problems: [Problem], ran: [String]}` | |
+| `dependencies/versions` (1.1) | `keys`, `dir?`, `refresh?` | `{versions: {key: {versions: [String], latest?}}}` | `jpm outdated` for editors |
 | `$/cancelRequest` (notification) | `id` | | |
 
 ### `project/load`
@@ -103,6 +104,15 @@ Runs `jpm check` and returns its problems instead of printing them. `checks` lim
 `problems` holds all of them and `ran` lists the checks that ran (one skipped because an earlier check failed
 is not in it). Problem locations are absolute paths. What jpm prints while it runs (compiler and test output)
 comes as `log` notifications.
+
+### `dependencies/versions`
+
+Since protocol 1.1. The versions the Maven repositories have of each `group:artifact` in `keys`, oldest first,
+and `latest`, the newest that is not a prerelease or snapshot (the one `jpm add` picks). With `dir`, the
+project's `"repositories"` are asked too, after Maven Central. It reads `maven-metadata.xml` as resolution does,
+from the cache while it is fresh; `refresh: true` asks the repositories again. Editors use it to complete
+versions and to show dependencies with newer versions. A key that is not a Maven key is an `InvalidParams`
+error.
 
 ## 4. Notifications from jpm
 

@@ -164,6 +164,23 @@ class ApiTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void versionsOfDependencies(@TempDir Path tmp) throws Exception {
+        Session s = workspace(tmp);
+        for (String v : List.of("1.0.0", "2.0.0", "2.1.0-rc1")) s.repo.artifact("org.example:money:" + v).publish();
+        start(s);
+        Map<String, Object> init = result(initialize());
+        assertTrue(((List<?>) init.get("methods")).contains("dependencies/versions"));
+        Map<String, Object> v = (Map<String, Object>) result(call("dependencies/versions",
+                Map.of("dir", s.project.toString(), "keys", List.of("org.example:money")))).get("versions");
+        Map<String, Object> money = (Map<String, Object>) v.get("org.example:money");
+        assertEquals(List.of("1.0.0", "1.2.0", "2.0.0", "2.1.0-rc1"), money.get("versions"));
+        assertEquals("2.0.0", money.get("latest"));
+        Map<String, Object> bad = error(call("dependencies/versions", Map.of("keys", List.of("github:me/x"))));
+        assertEquals(-32602, ((Number) bad.get("code")).intValue());
+    }
+
+    @Test
     void errorsAreProblems(@TempDir Path tmp) throws Exception {
         Session s = workspace(tmp);
         Fs.write(s.project.resolve("core/project.jsonc"), "{\n  \"name\": \"core\",\n  \"runtim\": {}\n}\n");
