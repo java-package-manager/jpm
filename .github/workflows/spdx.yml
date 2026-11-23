@@ -1,0 +1,57 @@
+# Keeps jpm's copy of the SPDX license list current: once a week (or on demand) it runs schema/spdx.py against
+# spdx.org, and when SPDX published a new list it opens or updates a pull request with the new list, the
+# schema's ids and a patch changeset, which CI then tests in full like any other pull request.
+name: SPDX license list
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: spdx
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: update the SPDX license list
+    runs-on: ubuntu-latest
+    env:
+      # a token of its own, so CI runs on the pull request (one opened with github.token starts no workflows)
+      GH_TOKEN: ${{ secrets.CHANGESET_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.CHANGESET_TOKEN || github.token }}
+      - name: Update from spdx.org
+        run: python3 schema/spdx.py
+      - name: Open or update the pull request
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "The SPDX license list is current."
+            exit 0
+          fi
+          version=$(python3 -c 'import json; print(json.load(open("cli/src/assets/dev/jpm/spdx-licenses.json"))["version"])')
+          branch="spdx/update"
+          title="SPDX license list $version"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -B "$branch"
+          printf -- '---\n"jpm": patch\n---\n\nThe SPDX license list is %s: the schema offers its ids for "license", and `jpm check` and `jpm license` know them.\n' \
+            "$version" > ".changeset/spdx-$version.md"
+          git add -A
+          git commit -q -m "$title"
+          git push -q --force origin "$branch"
+          body="schema/spdx.py found a new SPDX license list ($version) on https://spdx.org/licenses/. This updates
+          cli/src/assets/dev/jpm/spdx-licenses.json and the schema's ids, with a patch changeset."
+          number="$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$number" ]; then
+            gh pr edit "$number" --title "$title" --body "$body"
+          else
+            gh pr create --head "$branch" --base "${{ github.event.repository.default_branch }}" --title "$title" --body "$body"
+          fi

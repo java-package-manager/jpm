@@ -7,7 +7,8 @@ Status: accepted
 - jpm carries a copy of the SPDX license list (`cli/src/assets/dev/jpm/spdx-licenses.json`: each license's id,
   name, whether it is deprecated, and its reference URLs), and the schema's `"license"` lists the same ids.
   `schema/spdx.py` updates both from https://spdx.org/licenses/licenses.json; builds and tests never go to
-  the network for it. A test keeps the two in step. The schema also accepts SPDX expressions
+  the network for it. A test keeps the two in step, and a weekly workflow (`.github/workflows/spdx.yml`)
+  keeps them current: when SPDX publishes a new list it opens a pull request with it and a patch changeset. The schema also accepts SPDX expressions
   (`MIT OR Apache-2.0`), and `LicenseRef-` ids are not checked.
 - Ids match ignoring case, as SPDX says; a misspelled id gets the closest current id as a suggestion (edit
   distance with swapped letters as one edit, or a missing `-only`/`-or-later`).

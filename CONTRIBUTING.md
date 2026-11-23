@@ -91,5 +91,7 @@ checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/p
 - The Release workflow keeps a "Version packages" pull request with what `jpm changeset version` makes of
   the pending changesets: the new `"version"` and `cli/CHANGELOG.md`. Merging it is the release; the
   version's changelog entry becomes the GitHub release's notes.
+- The SPDX license list workflow checks spdx.org weekly and opens an "SPDX license list <version>" pull request
+  (with a changeset) when there is a new list.
 - So releasing is merging that pull request (or any commit that changes `"version"`); nothing is tagged by
   hand.
