@@ -754,6 +754,7 @@ class EndToEndTest {
                   "java": "21",
                   "main": "app.Main",
                   "sources": ["src", "generated"],
+                  "filter": ["*.yml"],
                   "scripts": { "gen": "gen.java" },
                   "runtime": {
                     "org.example:money": "1.0.0",

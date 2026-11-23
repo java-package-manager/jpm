@@ -37,6 +37,19 @@ class ChecksTest {
     }
 
     @Test
+    void aFilterThatMatchesNoResourceIsAWarning(@TempDir Path dir) {
+        System.setProperty("jpm.home", dir.resolve("home").toString());
+        Path p = dir.resolve("p");
+        Fs.write(p.resolve("project.jsonc"), "{ \"name\": \"p\",\n  \"filter\": [\"*.properties\", \"*.yml\", \"conf/[a\"] }");
+        Fs.write(p.resolve("src/assets/app.properties"), "v=${VERSION}");
+        List<Problem> problems = ProjectChecks.paths(dev.jpm.Project.load(p));
+        assertEquals(List.of("the filter *.yml matches no resource", "the filter conf/[a is not a glob"),
+                problems.stream().map(x -> x.message().replaceFirst(": .*", "")).toList(), problems.toString());
+        assertEquals(List.of(Problem.Severity.WARNING, Problem.Severity.ERROR), problems.stream().map(Problem::severity).toList());
+        assertEquals(2, problems.get(0).line());
+    }
+
+    @Test
     void writesSarifAndJunit() {
         Path root = Path.of("/p").toAbsolutePath();
         List<CheckResult> results = List.of(

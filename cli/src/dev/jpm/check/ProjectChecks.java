@@ -14,8 +14,10 @@ import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * jpm's own checks of a project, each returning what it found. They never throw for what they check.
@@ -35,7 +38,8 @@ public final class ProjectChecks {
     }
 
     /**
-     * Every field that names a file or folder names one that exists: sources, resources, patches, script and hook files.
+     * Every field that names a file or folder names one that exists: sources, resources, patches, script and hook files;
+     * and every {@code filter} glob matches a resource.
      */
     public static List<Problem> paths(Project p) {
         List<Problem> out = new ArrayList<>();
@@ -52,10 +56,39 @@ public final class ProjectChecks {
                     out.add(missing("paths", mf, "patch " + e.getValue() + " of " + e.getKey(), "patches", e.getKey()));
                 }
             }
+            filters(out, m);
             files(out, m, mf.scripts, "scripts", "script");
             files(out, m, mf.hooks, "hooks", "hook");
         }
         return out;
+    }
+
+    private static void filters(List<Problem> out, Project.Module m) {
+        Manifest mf = m.manifest;
+        if (mf.filter.isEmpty()) return;
+        List<String> resources = new ArrayList<>();
+        for (Path dir : m.assetsDirs()) {
+            if (!Files.isDirectory(dir)) continue;
+            try (var files = Files.walk(dir)) {
+                files.filter(Files::isRegularFile).forEach(f -> resources.add(dir.relativize(f).toString().replace('\\', '/')));
+            } catch (IOException e) {
+                out.add(Problem.error("paths", m.name() + ": could not read " + dir + ": " + e.getMessage(), mf.file, null));
+                return;
+            }
+        }
+        for (String glob : mf.filter) {
+            PathMatcher matcher;
+            try {
+                matcher = FileSystems.getDefault().getPathMatcher("glob:" + glob);
+            } catch (PatternSyntaxException e) {
+                out.add(Problem.error("paths", "the filter " + glob + " is not a glob: " + e.getDescription(), mf.file, line(mf, "filter")));
+                continue;
+            }
+            if (resources.stream().noneMatch(r -> matcher.matches(Path.of(r)))) {
+                out.add(Problem.warning("paths", "the filter " + glob + " matches no resource", mf.file, line(mf, "filter"))
+                        .withHint("globs are relative to the resource folder, such as \"*.properties\" or \"config/**.yml\""));
+            }
+        }
     }
 
     private static void files(List<Problem> out, Project.Module m, Map<String, String> entries, String field, String what) {

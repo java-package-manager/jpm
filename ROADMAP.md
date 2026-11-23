@@ -300,7 +300,8 @@ Migrating a project today only shows the output of `jpm import` in a plain text 
 - [~] Every value that names a file or folder (`filter`, `patches`, `scripts`, `sources`, `resources`,
       workspace modules, env files) gives a warning when it does not exist. One shared check, not one
       per field. Done in jpm-intellij for `patches`, script files, `sources`, `resources` and workspace
-      modules; open: `filter` (globs) and env files.
+      modules; `filter` globs that match no resource are a warning of jpm check's `paths` check, which
+      jpm-intellij shows with the other check results. Open: env files.
 - [x] **jpm-intellij:** renames update the manifest: renaming a class updates `main` and
       `defineClass`, moving a package updates `relocate`, renaming a script updates the `hooks` that run
       it, moving a file or folder updates the paths that name it.

@@ -21,7 +21,9 @@ $ jpm check --sarif check.sarif --junit check.xml
       Locked 1 package (1 added, 0 changed, 0 removed)
     Checking files and folders the manifests name exist (paths)
 error: project.jsonc:7: the source folder generated does not exist
-error: project.jsonc:8: the script file gen.java (gen) does not exist
+warning: project.jsonc:8: the filter *.yml matches no resource
+  hint: globs are relative to the resource folder, such as "*.properties" or "config/**.yml"
+error: project.jsonc:9: the script file gen.java (gen) does not exist
     Checking the license is an SPDX id and agrees with the license file (license)
 warning: project.jsonc:3: app has a "group" but no "license"
   hint: set one with `jpm license <SPDX id>`, such as `jpm license MIT`, which also writes the license file
@@ -29,7 +31,7 @@ warning: project.jsonc:3: app has a "group" but no "license"
     Compiled app 1.0.0 (<jdk>, release 21)
     Compiled app tests
     Checking every declared dependency is used (unused-dependencies)
-warning: project.jsonc:12: app does not use org.example:unused (runtime)
+warning: project.jsonc:13: app does not use org.example:unused (runtime)
   hint: remove it with `jpm remove org.example:unused`, or make it "runtimeOnly" if it is only loaded at run time
     Checking no class is on a runtime classpath twice (duplicate-classes)
 warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 1 class (org.example.money.Money)
@@ -67,7 +69,7 @@ Test run finished after <n> ms
 [         1 tests failed          ]
 
 error: test/app/MainTest.java:9: app.MainTest > adds(): expected: <3> but was: <2>
-error: jpm check found problems (9 checks: 3 errors, 4 warnings)
+error: jpm check found problems (9 checks: 3 errors, 5 warnings)
 [exit 1]
 
 --- check.xml
@@ -78,8 +80,10 @@ error: jpm check found problems (9 checks: 3 errors, 4 warnings)
     <testcase classname="jpm check" name="dependencies"/>
     <testcase classname="jpm check" name="paths">
       <failure message="2 errors">project.jsonc:7: error: the source folder generated does not exist
-project.jsonc:8: error: the script file gen.java (gen) does not exist
+project.jsonc:9: error: the script file gen.java (gen) does not exist
 </failure>
+      <system-out>project.jsonc:8: warning: the filter *.yml matches no resource
+</system-out>
     </testcase>
     <testcase classname="jpm check" name="license">
       <system-out>project.jsonc:3: warning: app has a &quot;group&quot; but no &quot;license&quot;
@@ -87,7 +91,7 @@ project.jsonc:8: error: the script file gen.java (gen) does not exist
     </testcase>
     <testcase classname="jpm check" name="compile"/>
     <testcase classname="jpm check" name="unused-dependencies">
-      <system-out>project.jsonc:12: warning: app does not use org.example:unused (runtime)
+      <system-out>project.jsonc:13: warning: app does not use org.example:unused (runtime)
 </system-out>
     </testcase>
     <testcase classname="jpm check" name="duplicate-classes">
@@ -108,11 +112,13 @@ project.jsonc:8: error: the script file gen.java (gen) does not exist
 $ jpm check --no-test paths license
     Checking files and folders the manifests name exist (paths)
 error: project.jsonc:7: the source folder generated does not exist
-error: project.jsonc:8: the script file gen.java (gen) does not exist
+warning: project.jsonc:8: the filter *.yml matches no resource
+  hint: globs are relative to the resource folder, such as "*.properties" or "config/**.yml"
+error: project.jsonc:9: the script file gen.java (gen) does not exist
     Checking the license is an SPDX id and agrees with the license file (license)
 warning: project.jsonc:3: app has a "group" but no "license"
   hint: set one with `jpm license <SPDX id>`, such as `jpm license MIT`, which also writes the license file
-error: jpm check found problems (2 checks: 2 errors, 1 warning)
+error: jpm check found problems (2 checks: 2 errors, 2 warnings)
 [exit 1]
 
 $ jpm check --no-test pahts
@@ -124,13 +130,15 @@ $ jpm check --fail-on-warning --no-test
     Checking project.jsonc loads (manifest)
     Checking dependencies resolve (dependencies)
     Checking files and folders the manifests name exist (paths)
+warning: project.jsonc:8: the filter *.yml matches no resource
+  hint: globs are relative to the resource folder, such as "*.properties" or "config/**.yml"
     Checking the license is an SPDX id and agrees with the license file (license)
-warning: project.jsonc:8: the project is MIT but has no license file
+warning: project.jsonc:9: the project is MIT but has no license file
   hint: `jpm license MIT` writes LICENSE from SPDX's text
     Checking the sources compile (compile)
     Compiled app tests
     Checking every declared dependency is used (unused-dependencies)
-warning: project.jsonc:12: app does not use org.example:unused (runtime)
+warning: project.jsonc:13: app does not use org.example:unused (runtime)
   hint: remove it with `jpm remove org.example:unused`, or make it "runtimeOnly" if it is only loaded at run time
     Checking no class is on a runtime classpath twice (duplicate-classes)
 warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 1 class (org.example.money.Money)
@@ -138,19 +146,21 @@ warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 
     Checking the code has style (lint:style)
 jpm-lint ran with --style
 warning: src/app/Main.java:1: Main is too long
-error: jpm check found problems (8 checks: 0 errors, 4 warnings)
+error: jpm check found problems (8 checks: 0 errors, 5 warnings)
 [exit 1]
 
 $ jpm check --no-test
     Checking project.jsonc loads (manifest)
     Checking dependencies resolve (dependencies)
     Checking files and folders the manifests name exist (paths)
+warning: project.jsonc:8: the filter *.yml matches no resource
+  hint: globs are relative to the resource folder, such as "*.properties" or "config/**.yml"
     Checking the license is an SPDX id and agrees with the license file (license)
-warning: project.jsonc:8: the project is MIT but has no license file
+warning: project.jsonc:9: the project is MIT but has no license file
   hint: `jpm license MIT` writes LICENSE from SPDX's text
     Checking the sources compile (compile)
     Checking every declared dependency is used (unused-dependencies)
-warning: project.jsonc:12: app does not use org.example:unused (runtime)
+warning: project.jsonc:13: app does not use org.example:unused (runtime)
   hint: remove it with `jpm remove org.example:unused`, or make it "runtimeOnly" if it is only loaded at run time
     Checking no class is on a runtime classpath twice (duplicate-classes)
 warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 1 class (org.example.money.Money)
@@ -158,5 +168,5 @@ warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 
     Checking the code has style (lint:style)
 jpm-lint ran with --style
 warning: src/app/Main.java:1: Main is too long
-     Checked 8 checks: 0 errors, 4 warnings
+     Checked 8 checks: 0 errors, 5 warnings
 
