@@ -227,7 +227,7 @@ final class Session {
             }
             s = s.replace(p.toUri().toString(), label + "/").replace(p.toString(), label);
         }
-        if (java.io.File.separatorChar == '\\') s = windows(s);
+        if (java.io.File.separatorChar == '\\') s = windows(s).replaceAll("(?m)^stty: .*\n", "");
         s = JDK_ID.matcher(s).replaceAll("<jdk>");
         s = s.replace(dev.jpm.BuildConfig.VERSION, "<jpm-version>");
         s = COMMIT.matcher(s).replaceAll("<commit>");
