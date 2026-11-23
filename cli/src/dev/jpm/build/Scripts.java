@@ -4,9 +4,7 @@ import dev.jpm.DepKey;
 import dev.jpm.Manifest;
 import dev.jpm.Project;
 import dev.jpm.log.Log;
-import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
-import dev.jpm.resolve.ResolveInputs;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.toolchain.Jdk;
 import dev.jpm.util.Exec;
@@ -140,17 +138,7 @@ public final class Scripts {
         for (Map.Entry<String, String> d : deps.entrySet()) {
             roots.add(new Resolver.Root("script " + name, DepKey.parse(d.getKey()), d.getValue()));
         }
-        Graph g = new Resolver(roots, b.repo, null).resolve();
-        Install.fetch(g, b.repo);
-        List<Graph.Edge> edges = roots.stream().map(r -> new Graph.Edge(ResolveInputs.idOf(r.key()), false, Set.of())).toList();
-        List<Path> out = new ArrayList<>();
-        for (String id : g.closure(edges, Graph.Walk.RUNTIME)) {
-            Graph.Pkg p = g.get(id);
-            if (p != null && p.kind == Graph.Kind.MAVEN && p.hasJar) {
-                out.add(b.repo.require(p.group(), p.name(), p.version, p.classifier(), "jar"));
-            }
-        }
-        return out;
+        return Install.classpath(roots, b.repo);
     }
 
     /**

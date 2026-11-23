@@ -64,6 +64,9 @@ class ClientTest {
             Map<String, Classpaths> cps = jpm.classpaths(s.project, List.of("app"));
             assertEquals(List.of("workspace:core", "org.example:money"), cps.get("app").runtime().stream().map(x -> x.id()).toList());
             assertEquals("jpm project.jsonc", jpm.manifestSchema().get("title"));
+            assertTrue(jpm.supports("dependencies/resolve"));
+            List<Path> jars = jpm.resolve(s.project, Map.of("org.example:money", "1.2.0"));
+            assertEquals(List.of("money-1.2.0.jar"), jars.stream().map(j -> j.getFileName().toString()).toList());
         }
     }
 

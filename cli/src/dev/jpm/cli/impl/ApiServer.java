@@ -28,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 final class ApiServer {
     static final List<String> METHODS = List.of("initialize", "shutdown", "exit", "project/load", "project/classpaths",
-            "schema/manifest", "extensions/list", "check/run", "dependencies/versions", "$/cancelRequest");
+            "schema/manifest", "extensions/list", "check/run", "dependencies/versions", "dependencies/resolve", "$/cancelRequest");
 
     private static final Object EOF = new Object();
 
@@ -134,6 +134,7 @@ final class ApiServer {
             case "schema/manifest" -> Map.of("schema", Jsonc.parse(ManifestSchema.text()), "version", Main.VERSION);
             case "check/run" -> check(params);
             case "dependencies/versions" -> versions(params);
+            case "dependencies/resolve" -> resolve(params);
             case "extensions/list" -> Map.of("extensions", ExtensionList.list(params.get("dir") instanceof String ? Project.find(dir(params)) : null));
             default -> throw new ApiError(-32601, "no method \"" + method + "\"; this jpm has " + String.join(", ", METHODS), null);
         };
@@ -189,6 +190,29 @@ final class ApiServer {
             out.put(key.toString(), entry);
         }
         return Map.of("versions", out);
+    }
+
+    private Object resolve(Map<?, ?> params) {
+        if (!(params.get("dependencies") instanceof Map<?, ?> deps) || deps.isEmpty()) {
+            throw new ApiError(-32602, "\"dependencies\" is required: Maven dependency keys (group:artifact) and their versions", null);
+        }
+        List<String> repos = params.get("dir") instanceof String ? Project.find(dir(params)).root.repositories : List.of();
+        dev.jpm.maven.MavenRepo repo = new dev.jpm.maven.MavenRepo(repos);
+        List<dev.jpm.resolve.Resolver.Root> roots = new ArrayList<>();
+        for (Map.Entry<?, ?> d : deps.entrySet()) {
+            dev.jpm.DepKey key;
+            try {
+                key = dev.jpm.DepKey.parse(String.valueOf(d.getKey()));
+            } catch (JpmException e) {
+                throw new ApiError(-32602, e.getMessage(), null);
+            }
+            if (!key.isMaven()) throw new ApiError(-32602, d.getKey() + " is not a Maven dependency key", null);
+            if (!(d.getValue() instanceof String spec) || spec.isBlank()) throw new ApiError(-32602, d.getKey() + " needs a version", null);
+            roots.add(new dev.jpm.resolve.Resolver.Root("dependencies/resolve", key, spec));
+        }
+        List<String> classpath = new ArrayList<>();
+        for (Path jar : dev.jpm.resolve.Install.classpath(roots, repo)) classpath.add(jar.toString());
+        return Map.of("classpath", classpath);
     }
 
     private Path dir(Map<?, ?> params) {

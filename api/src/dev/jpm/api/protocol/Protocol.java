@@ -11,7 +11,7 @@ public final class Protocol {
     /**
      * The protocol version of this jpm and of this client jar.
      */
-    public static final String VERSION = "1.1";
+    public static final String VERSION = "1.2";
 
     /**
      * JSON-RPC error code: {@code initialize} with another major version.
