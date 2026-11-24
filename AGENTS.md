@@ -57,7 +57,7 @@ If `java` on PATH is jpm's shim and `bin/jpm` fails, set `JAVA_HOME` to a JDK 21
    variables), and in `cli/src/assets/dev/jpm/project.schema.json` for manifest fields. `docs/commands.md`
    and the field reference in `docs/manifest.md` are generated: `JPM_UPDATE_EXPECTED=1 bin/jpm test
    dev.jpm.cli.impl.CommandsTest dev.jpm.DocsTest` rewrites them. `README.md` is the short version for users.
-4. The roadmap item is ticked in `ROADMAP.md` if the change finishes it.
+4. The roadmap item is removed from `ROADMAP.md` if the change finishes it.
 5. The commit message says what changed and why, and ends with the attribution line if one is asked for.
 6. A change users notice has a changeset: `jpm changeset add --module jpm --patch -m "..."` (`--minor` for a
    feature, `--major` for a breaking change), committed with it. Never edit `"version"` or `CHANGELOG.md`

@@ -75,7 +75,7 @@ checks/perf.sh cli/dist/jpm     # no-op install, build and info against checks/p
   merged.
 - Some checks only run in CI: other operating systems, the native binary, live tests, coverage. If one
   fails after a push, fix it on `main` before starting new work.
-- A roadmap item is ticked in the commit that finishes it. Behavior changes only where the roadmap says
+- A roadmap item is removed in the commit that finishes it. Behavior changes only where the roadmap says
   so.
 
 ## Releases

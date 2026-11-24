@@ -1,7 +1,6 @@
 # jpm protocol
 
-Status: **accepted** (roadmap Milestone 4, item 1); `jpm api` serves protocol 1.0 with the methods in
-`ApiServer.METHODS` (item 2). Section 8 records the decisions.
+Status: **accepted**; `jpm api` serves the methods in `ApiServer.METHODS`. Section 8 records the decisions.
 
 The protocol is how other programs (jpm-intellij, jpm-publish, extensions, editors) ask jpm about a project.
 It replaces `jpm info --json`, `--ide`, `--classpath` and `jpm schema`, which jpm 0.12.0 removed. There is exactly one jpm on a machine, the global one; the client `dev.jpm:jpm-api` starts it
@@ -48,8 +47,7 @@ client                                  jpm api
 
 ## 3. Methods
 
-The first release has the methods below and nothing more (roadmap risk "Protocol scope creep"). Each
-result type is defined in section 5.
+The methods below; those marked with a version came with that minor. Each result type is defined in section 5.
 
 | Method | Params | Result | Replaces |
 |---|---|---|---|
@@ -312,7 +310,7 @@ try (JpmClient jpm = JpmClient.start()) {            // finds the global jpm, st
 
 - `JpmClient.start()` finds the global jpm: `JPM_EXE` when set, then `$JPM_HOME/bin/jpm`, `~/.jpm/bin/jpm`,
   then `jpm` on PATH. When there is none it throws `JpmNotInstalled`, which jpm-intellij answers by
-  offering to install jpm (roadmap decision: never bundled).
+  offering to install jpm (it never bundles one).
 - Each method is a blocking call; `log` and `progress` go to listeners the caller can register.
 - The module has no dependencies and targets the Java of the oldest IDE jpm-intellij supports (Java 21
   today).
