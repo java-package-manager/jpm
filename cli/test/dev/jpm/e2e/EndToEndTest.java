@@ -244,6 +244,34 @@ class EndToEndTest {
 
     @Test
     @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
+    void checksGlobalExtensionsForUpdates(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Path ext = tmp.resolve("git/me/jpm-hello");
+        String main = "package hello; public class Main { public static void main(String[] a) { System.out.println(\"hello VERSION\"); } }";
+        git(tmp, "init", "-q", "-b", "main", ext.toString());
+        for (String v : List.of("1.0.0", "1.1.0", "2.0.0")) {
+            Fs.write(ext.resolve("src/hello/Main.java"), main.replace("VERSION", v));
+            Fs.write(ext.resolve("project.jsonc"), "{ \"name\": \"jpm-hello\", \"version\": \"" + v + "\", \"main\": \"hello.Main\", \"extension\": {} }");
+            git(ext, "add", "-A");
+            git(ext, "commit", "-qm", v);
+            git(ext, "tag", v);
+            if (v.equals("1.0.0")) {
+                s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
+                s.jpm("add", "-g", "github:me/jpm-hello@^1.0.0");
+                s.jpm("update", "-g", "--check");
+            }
+        }
+        s.jpm("update", "-g", "--check");
+        s.jpm("hello");
+        s.jpm("update", "-g", "--check", "--latest");
+        s.jpm("update", "--check");
+        s.jpm("update", "-g");
+        s.jpm("update", "-g", "--check", "hello");
+        s.verify("global-extension-updates");
+    }
+
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Git fixtures and extensions are served from file:// bases, which CI does not run on Windows yet")
     void projectExtensions(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Path ext = tmp.resolve("git/me/jpm-hello");

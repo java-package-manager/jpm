@@ -205,9 +205,26 @@ final class Session {
         env.put("JPM_NO_MODIFY_PATH", "1");
         env.put("NO_COLOR", "1");
         env.put("JAVA_HOME", System.getProperty("java.home"));
+        env.put("PATH", pathWithoutOuterJpm());
         env.putAll(extraEnv);
         env.values().removeIf(java.util.Objects::isNull);
         return env;
+    }
+
+    /**
+     * PATH without the bin folder of the jpm that runs the tests, so extensions installed there with
+     * {@code jpm add -g} are not found by the jpm under test.
+     */
+    static String pathWithoutOuterJpm() {
+        Path outer = dev.jpm.testing.JpmHome.outerRepository().getParent().resolve("bin").toAbsolutePath().normalize();
+        String path = System.getenv("PATH");
+        if (path == null) return null;
+        List<String> kept = new ArrayList<>();
+        for (String dir : path.split(java.io.File.pathSeparator)) {
+            if (dir.isEmpty()) continue;
+            if (!Path.of(dir).toAbsolutePath().normalize().equals(outer)) kept.add(dir);
+        }
+        return String.join(java.io.File.pathSeparator, kept);
     }
 
     static List<String> binary() {

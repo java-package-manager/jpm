@@ -1,0 +1,42 @@
+$ jpm add -g github:me/jpm-hello@^1.0.0
+   Resolving dependencies
+     Cloning <tmp>/git/me/jpm-hello
+  + github:me/jpm-hello 1.0.0
+      Locked 1 package (1 added, 0 changed, 0 removed)
+    Building github:me/jpm-hello 1.0.0 (<commit>)
+   Installed jpm-hello (github:me/jpm-hello 1.0.0 (<commit>)); run it with `jpm hello`
+
+$ jpm update -g --check
+    Fetching <tmp>/git/me/jpm-hello
+  Up to date jpm-hello 1.0.0 (<commit>)
+
+$ jpm update -g --check
+    Fetching <tmp>/git/me/jpm-hello
+    Outdated jpm-hello 1.0.0 (<commit>) -> 1.1.0
+  newer outside ^1.0.0: 2.0.0. Run `jpm update -g --latest hello` to move to it.
+Run `jpm update -g` to install the update.
+
+$ jpm hello
+hello 1.0.0
+
+$ jpm update -g --check --latest
+error: `--check` and `--latest` cannot be used together: `--check` reports newer releases outside the ranges too.
+[exit 1]
+
+$ jpm update --check
+error: `--check` works with global extensions only: `jpm update -g --check`. For a project, run `jpm outdated`.
+[exit 1]
+
+$ jpm update -g
+    Fetching <tmp>/git/me/jpm-hello
+  ~ github:me/jpm-hello 1.0.0 -> 1.1.0
+      Locked 1 package (0 added, 1 changed, 0 removed)
+    Building github:me/jpm-hello 1.1.0 (<commit>)
+     Updated jpm-hello 1.0.0 (<commit>) -> 1.1.0 (<commit>)
+  newer outside ^1.0.0: ^2.0.0. Run `jpm update -g --latest hello` to move to it.
+
+$ jpm update -g --check hello
+    Fetching <tmp>/git/me/jpm-hello
+  Up to date jpm-hello 1.1.0 (<commit>)
+  newer outside ^1.0.0: 2.0.0. Run `jpm update -g --latest hello` to move to it.
+

@@ -17,6 +17,8 @@ needs no other step to run `jpm publish`. `jpm remove publish` takes it out agai
 
 Inside the project, a declared extension wins over a global one of the same name. `jpm add -g <dep>` installs an
 extension for every project, as `~/.jpm/bin/jpm-<name>`; `jpm update -g` and `jpm remove -g` manage those.
+`jpm update -g --check` only reports: each global extension with the newer release `jpm update -g` would install,
+and a newer one outside its range, which `jpm update -g --latest <name>` moves to.
 Settings for an extension that the root does not declare give a warning naming the `jpm add` that fixes it.
 
 An extension describes itself under `"extension"` in its own manifest: a `description`, its `commands` (by
