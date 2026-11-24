@@ -1,5 +1,23 @@
 # jpm
 
+## 0.15.0
+
+### Minor Changes
+
+- Protocol 1.2: `dependencies/resolve` takes Git dependency keys too when it is given the project's `dir`, and builds them, so tools can load a library from a Git repository (jpm-format's formatters from Git)
+- Kotlin compiles per file: a change recompiles the file and the files that use its classes, instead of the module
+- Known extensions: `jpm add publish`, `jpm add format` and `jpm add changeset` (also with `-g`, `@<version>` or `#<branch>`) add jpm's own extensions by name, and running one that is not installed says how to add it
+- Signatures: with `"trustedKeys"` (key fingerprints and the packages each may sign) in the workspace root, `jpm install` checks the OpenPGP signature published next to every jar: a signed jar must be signed by a trusted key and match its signature
+- `project.lock` records the repository each Maven package came from, and jpm looks there first, then on the same host, then in the other repositories, so it asks fewer repositories for every file; `jpm check` warns about a listed repository no locked package comes from
+- Protocol 1.2: `dependencies/resolve` resolves Maven dependencies in a graph of their own, downloads them and returns their jars, for tools that load a library at run time (`JpmClient.resolve`)
+- `jpm import` translates Spotless (`spotless-maven-plugin`, Gradle's `spotless { }`) into jpm-format's settings: the Java formatter, unused imports, import order and license header, and the steps for other files as `"files"`
+- Protocol 1.2: `dependencies/search` finds Maven coordinates by name, from jpm's download cache and Maven Central's search (`JpmClient.search`), so editors can complete `group:artifact`
+- A minimum release age: `"minimumReleaseAge"` in the workspace root makes jpm pick only versions at least that old, and `jpm check` fails on a younger locked version unless `"releaseAgeExceptions"` names it.
+
+### Patch Changes
+
+- `jpm check` warns about a `"filter"` glob that matches no resource, and fails on one that is not a glob.
+
 ## 0.14.0
 
 ### Minor Changes
