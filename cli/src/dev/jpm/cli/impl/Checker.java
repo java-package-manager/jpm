@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 final class Checker {
     record Options(boolean tests, Set<String> only, List<String> excludedTags, boolean frozen) {}
 
-    static final List<String> OWN = List.of("manifest", "dependencies", "release-age", "paths", "license", "compile", "unused-dependencies",
+    static final List<String> OWN = List.of("manifest", "dependencies", "release-age", "repositories", "paths", "license", "compile", "unused-dependencies",
             "duplicate-classes");
 
     private final Path cwd;
@@ -67,6 +67,7 @@ final class Checker {
         } else {
             known.add("release-age");
         }
+        list("repositories", "every listed repository serves a locked package", g == null ? null : () -> ProjectChecks.repositories(p, g, repo));
         list("paths", "files and folders the manifests name exist", () -> ProjectChecks.paths(p));
         list("license", "the license is an SPDX id and agrees with the license file", () -> ProjectChecks.license(p));
         if (g == null) return skipRest("the dependencies do not resolve");

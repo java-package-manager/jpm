@@ -77,6 +77,12 @@ Maven Central is always searched. Other Maven repositories go in `"repositories"
 jpm add -r https://repo.example.dev/releases com.example:lib:1.0.0
 ```
 
+`project.lock` records which repository each Maven package came from (`"repository"`, left out for Maven
+Central), and jpm looks for the package there first the next time: for a new version too, then in the other
+repositories on the same host (such as `/releases` and `/snapshots` of one server), and only then in the rest.
+So a project with many repositories does not ask each of them for every file. `jpm check` warns about a
+listed repository that no locked package comes from.
+
 A repository that needs a login reads it from the environment, never from `project.jsonc`:
 `JPM_REPO_<HOST>_USERNAME` and `JPM_REPO_<HOST>_PASSWORD` (basic authentication), or `JPM_REPO_<HOST>_TOKEN`
 (a bearer token), where `<HOST>` is the repository's host in upper case with every character other than a
@@ -128,7 +134,8 @@ from the folder of their `-SNAPSHOT` version.
 
 `project.lock` is sorted JSONC with one line per package: exact version, tag and commit
 for Git, a SHA-256 for Maven jars (verified on every install) and for their POMs (`"pom"`, verified when
-resolving), and its edges. It is reused as long as the declared dependencies are unchanged.
+resolving), the repository a Maven package came from when it is not Maven Central (`"repository"`), and its
+edges. It is reused as long as the declared dependencies are unchanged.
 
 **Merge conflicts in `project.lock`.** Do not resolve them by hand: `jpm install` reads both sides of every
 conflict, starts from the higher version of each package, resolves again and writes a clean lockfile.

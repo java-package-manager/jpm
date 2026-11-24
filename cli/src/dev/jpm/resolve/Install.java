@@ -44,6 +44,7 @@ public final class Install {
         Lockfile lock = Lockfile.read(lockPath);
         String inputs = ResolveInputs.inputs(project);
         boolean fresh = lock != null && inputs.equals(lock.inputs) && !o.updateAll() && o.update().isEmpty();
+        if (lock != null) prefer(lock.graph, repo);
         Graph graph;
         if (fresh) {
             graph = lock.graph;
@@ -87,6 +88,9 @@ public final class Install {
         fetch(graph, repo);
         for (Graph iso : graph.isolated.values()) fetch(iso, repo);
         for (Graph ext : graph.extensions.values()) fetch(ext, repo);
+        origins(graph, lock == null ? null : lock.graph, repo);
+        for (Map.Entry<String, Graph> e : graph.isolated.entrySet()) origins(e.getValue(), lock == null ? null : lock.graph.isolated.get(e.getKey()), repo);
+        for (Map.Entry<String, Graph> e : graph.extensions.entrySet()) origins(e.getValue(), lock == null ? null : lock.graph.extensions.get(e.getKey()), repo);
         dev.jpm.signing.Signatures.check(project.root.trustedKeys, graph, repo);
         for (Graph iso : graph.isolated.values()) dev.jpm.signing.Signatures.check(project.root.trustedKeys, iso, repo);
         for (Graph ext : graph.extensions.values()) dev.jpm.signing.Signatures.check(project.root.trustedKeys, ext, repo);
@@ -163,6 +167,38 @@ public final class Install {
             }
         }
         return out;
+    }
+
+    private static void prefer(Graph lock, MavenRepo repo) {
+        List<Graph> all = new ArrayList<>(List.of(lock));
+        all.addAll(lock.isolated.values());
+        all.addAll(lock.extensions.values());
+        for (Graph g : all) {
+            for (Graph.Pkg p : g.pkgs.values()) {
+                if (p.kind == Graph.Kind.MAVEN && p.repository != null) repo.prefer(p.group(), p.name(), p.repository);
+            }
+        }
+    }
+
+    /**
+     * Records where each Maven package's files came from, for {@code project.lock}: the repository that served its jar
+     * (or its POM), else what the lock said for the same version.
+     */
+    static void origins(Graph graph, Graph locked, MavenRepo repo) {
+        String first = repo.repositories().get(0);
+        for (Graph.Pkg p : graph.pkgs.values()) {
+            if (p.kind != Graph.Kind.MAVEN) continue;
+            String from = repo.servedBy(p.group(), p.name(), p.version, p.classifier(), p.hasJar ? "jar" : "pom");
+            if (from == null && p.hasJar) from = repo.servedBy(p.group(), p.name(), p.version, null, "pom");
+            Graph.Pkg before = locked == null ? null : locked.pkgs.get(p.id);
+            if (from == null && before != null && before.version.equals(p.version)) {
+                p.repository = before.repository;
+                p.originKnown = before.repository != null || before.originKnown;
+                continue;
+            }
+            p.originKnown = from != null;
+            p.repository = from == null || from.equals(first) ? null : from;
+        }
     }
 
     /**

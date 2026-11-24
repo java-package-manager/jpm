@@ -40,6 +40,7 @@ public final class MavenRepo {
     private boolean refreshMetadata;
     private final HttpClient http;
     private final ConcurrentHashMap<String, List<Version>> versionsMemo = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> preferred = new ConcurrentHashMap<>();
 
     /**
      * Maven Central (or {@code JPM_MAVEN_CENTRAL}), then the extra repositories.
@@ -84,6 +85,67 @@ public final class MavenRepo {
 
     private static String slash(String s) {
         return s.endsWith("/") ? s : s + "/";
+    }
+
+    /**
+     * The repositories, in the order they are searched when no package prefers one: Maven Central first.
+     */
+    public List<String> repositories() {
+        return List.copyOf(repos);
+    }
+
+    /**
+     * Searches {@code repository} first for the files of {@code group:artifact} (the one {@code project.lock} says
+     * served it), then the other repositories on the same host, then the rest. A repository this one does not search
+     * is ignored.
+     */
+    public void prefer(String group, String artifact, String repository) {
+        String r = slash(repository);
+        if (repos.contains(r)) preferred.put(group + ":" + artifact, r);
+    }
+
+    /**
+     * The repositories in the order they are searched for the files of {@code group:artifact} (see {@link #prefer}).
+     */
+    public List<String> order(String group, String artifact) {
+        String first = preferred.get(group + ":" + artifact);
+        if (first == null) return repos;
+        List<String> out = new ArrayList<>();
+        out.add(first);
+        String origin = origin(first);
+        for (String r : repos) if (!r.equals(first) && origin(r).equals(origin)) out.add(r);
+        for (String r : repos) if (!out.contains(r)) out.add(r);
+        return out;
+    }
+
+    private static String origin(String url) {
+        try {
+            URI u = URI.create(url);
+            return u.getScheme() + "://" + u.getAuthority();
+        } catch (IllegalArgumentException e) {
+            return url;
+        }
+    }
+
+    /**
+     * The repository a cached file was downloaded from, if this jpm downloaded it and searches that repository;
+     * otherwise null.
+     */
+    public String servedBy(String group, String artifact, String version, String classifier, String ext) {
+        Path from = fromFile(local(group, artifact, version, classifier, ext));
+        if (!Files.isRegularFile(from)) return null;
+        String r = Fs.read(from).strip();
+        return repos.contains(r) ? r : null;
+    }
+
+    private static Path fromFile(Path local) {
+        return local.resolveSibling(local.getFileName() + ".from");
+    }
+
+    private Path found(String repo, String url, Path local) {
+        Path p = verified(url, local);
+        Fs.write(fromFile(local), repo);
+        return p;
     }
 
     /**
@@ -144,9 +206,9 @@ public final class MavenRepo {
         String rel = path(group, artifact, version, classifier, ext);
         boolean snapshot = version.endsWith("-SNAPSHOT");
         List<String> problems = new ArrayList<>();
-        for (String repo : repos) {
+        for (String repo : order(group, artifact)) {
             Result r = download(repo + rel, local);
-            if (r.found()) return verified(repo + rel, local);
+            if (r.found()) return found(repo, repo + rel, local);
             if (r.problem() != null) problems.add(r.problem());
             if (snapshot) {
                 String timestamped = snapshotVersion(repo, group, artifact, version, classifier, ext, problems);
@@ -154,7 +216,7 @@ public final class MavenRepo {
                         + (classifier == null || classifier.isEmpty() ? "" : "-" + classifier) + "." + ext;
                 if (timestamped != null) {
                     Result t = download(repo + file, local);
-                    if (t.found()) return verified(repo + file, local);
+                    if (t.found()) return found(repo, repo + file, local);
                     if (t.problem() != null) problems.add(t.problem());
                 }
             }
@@ -163,7 +225,7 @@ public final class MavenRepo {
                 String file = group.replace('.', '/') + "/" + artifact + "/" + base + "/" + artifact + "-" + version
                         + (classifier == null || classifier.isEmpty() ? "" : "-" + classifier) + "." + ext;
                 Result t = download(repo + file, local);
-                if (t.found()) return verified(repo + file, local);
+                if (t.found()) return found(repo, repo + file, local);
                 if (t.problem() != null) problems.add(t.problem());
             }
         }
