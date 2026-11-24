@@ -21,7 +21,6 @@ Still skipped there:
 
 - [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest
       errors), and what to do next; no stack traces unless `--verbose`.
-- [ ] **Signatures:** check `.asc` signatures where published, against a list of trusted keys.
 
 ## Tests
 

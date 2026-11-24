@@ -15,6 +15,4 @@ Status: accepted
   repository's checksums when downloaded, but not pinned.
 - A `-SNAPSHOT` version's files change with every build, so a lock that pins one fails once it moves on;
   `jpm update` re-pins it.
-- Signatures (`.asc`) are not checked yet: verifying OpenPGP signatures with the JDK alone means
-  implementing OpenPGP, and a signature only helps with a trusted key list. They are a later item of the
-  supply-chain work.
+- Signatures (`.asc`) are checked only against a trusted key list: [ADR 0019](0019-signatures.md).

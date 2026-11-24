@@ -24,5 +24,6 @@ API types.
 | [0016](0016-licenses.md) | Licenses |
 | [0017](0017-checksums.md) | Checksums |
 | [0018](0018-minimum-release-age.md) | Minimum release age |
+| [0019](0019-signatures.md) | Signatures |
 
 New ADRs take the next number. An ADR that is replaced stays, with its status set to "replaced by NNNN".

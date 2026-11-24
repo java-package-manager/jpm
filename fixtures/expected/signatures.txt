@@ -1,0 +1,12 @@
+$ jpm install
+   Resolving dependencies
+error: org.other:lib 1.0.0 is signed by key ABA6E444CCEEB44EE78C293B28DEA147D8ED39D9, which "trustedKeys" does not trust for it (no key is trusted for org.other)
+  hint: once you have checked whose key it is, add "ABA6E444CCEEB44EE78C293B28DEA147D8ED39D9": "org.other" to "trustedKeys" in project.jsonc
+[exit 1]
+
+$ jpm install
+   Resolving dependencies
+  + com.example:signed 1.0.0
+  + org.other:lib 1.0.0
+      Locked 2 packages (2 added, 0 changed, 0 removed)
+

@@ -140,6 +140,24 @@ conflict, starts from the higher version of each package, resolves again and wri
 repository publishes next to it (`.sha512`, `.sha256` or `.sha1`); one that does not match is deleted and
 the install fails. See [ADR 0017](adr/0017-checksums.md).
 
+**Signatures.** With `"trustedKeys"` in the workspace root, jpm checks the OpenPGP signature (`.asc`) that a
+Maven repository publishes next to each jar. Each key is named by its full fingerprint, with the packages it
+may sign: a group, a group with `*`, `group:artifact`, or `*`.
+
+```jsonc
+"trustedKeys": {
+  "BFCD 855F E7DC 80E9 1F2D 06BA 9E15 3708 47B8 D788": "com.example",
+  "ABA6E444CCEEB44EE78C293B28DEA147D8ED39D9": ["org.apache.*", "com.google.guava:guava"]
+}
+```
+
+A signed jar must be signed by a key that is trusted for it (or by one of its signing subkeys), and the
+signature must match the jar; otherwise the install fails before `project.lock` is written, and the error
+names the key that signed it. A jar without a published signature passes. Keys are fetched by fingerprint
+from [keys.openpgp.org](https://keys.openpgp.org) (`JPM_KEYSERVER` names another server) into `~/.jpm/keys`;
+a key that is not published there can be put in `~/.jpm/keys/<FINGERPRINT>.asc` (`gpg --armor --export`).
+RSA, Ed25519 and NIST P-256/384/521 keys are supported. See [ADR 0019](adr/0019-signatures.md).
+
 **Minimum release age.** A compromised release is usually found and pulled within days, so a project can
 wait that long before it takes a new version. In the workspace root:
 

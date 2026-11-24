@@ -137,6 +137,28 @@ class EndToEndTest {
     }
 
     @Test
+    void signaturesAreCheckedAgainstTrustedKeys(@TempDir Path tmp) throws java.io.IOException {
+        Session s = new Session(tmp);
+        Path assets = dev.jpm.signing.SignaturesTest.assets();
+        for (String[] a : new String[][]{{"com.example", "signed", "rsa"}, {"org.other", "lib", "other"}}) {
+            s.repo.publish(a[0] + ":" + a[1] + ":1.0.0");
+            Path v = s.repo.root().resolve(a[0].replace('.', '/')).resolve(a[1]).resolve("1.0.0");
+            java.nio.file.Files.copy(assets.resolve("data.txt"), v.resolve(a[1] + "-1.0.0.jar"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            java.nio.file.Files.copy(assets.resolve("data.txt." + a[2] + ".asc"), v.resolve(a[1] + "-1.0.0.jar.asc"));
+        }
+        s.env("JPM_KEYSERVER", assets.resolve("keys").toUri() + "/");
+        String deps = "  \"runtime\": { \"com.example:signed\": \"1.0.0\", \"org.other:lib\": \"1.0.0\" },\n";
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n" + deps
+                + "  \"trustedKeys\": { \"" + dev.jpm.signing.SignaturesTest.RSA + "\": \"com.example\" }\n}\n");
+        s.jpm("install");
+        Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n" + deps
+                + "  \"trustedKeys\": {\n    \"" + dev.jpm.signing.SignaturesTest.RSA + "\": \"com.example\",\n    \""
+                + dev.jpm.signing.SignaturesTest.OTHER + "\": \"org.other\"\n  }\n}\n");
+        s.jpm("install");
+        s.verify("signatures");
+    }
+
+    @Test
     void removedCommandsSayWhatReplacesThem(@TempDir Path tmp) {
         Session s = new Session(tmp);
         Fs.write(s.project.resolve("project.jsonc"), "{ \"name\": \"app\", \"version\": \"1.0.0\" }");

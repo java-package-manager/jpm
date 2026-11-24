@@ -87,6 +87,9 @@ public final class Install {
         fetch(graph, repo);
         for (Graph iso : graph.isolated.values()) fetch(iso, repo);
         for (Graph ext : graph.extensions.values()) fetch(ext, repo);
+        dev.jpm.signing.Signatures.check(project.root.trustedKeys, graph, repo);
+        for (Graph iso : graph.isolated.values()) dev.jpm.signing.Signatures.check(project.root.trustedKeys, iso, repo);
+        for (Graph ext : graph.extensions.values()) dev.jpm.signing.Signatures.check(project.root.trustedKeys, ext, repo);
         Lockfile out = new Lockfile(inputs, graph);
         if (!fresh || !out.render().equals(lock == null ? null : lock.render())) {
             out.write(lockPath);
