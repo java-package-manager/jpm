@@ -9,6 +9,7 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Extensions;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
+import dev.jpm.resolve.KnownExtensions;
 import dev.jpm.util.Exec;
 import dev.jpm.util.JpmException;
 
@@ -55,6 +56,11 @@ final class ExtensionCommand extends Command {
                     + Manifest.versionedSchemaUrl(Main.VERSION) + " (or ask jpm over its protocol, schema/manifest)");
         }
         if (exe == null) {
+            KnownExtensions.Known known = KnownExtensions.named(cmd).orElse(null);
+            if (known != null) {
+                throw new JpmException("`jpm " + cmd + "` is the extension " + known.dependency() + ", which is not installed")
+                        .withHint("add it with `jpm add " + cmd + "` (for this project) or `jpm add -g " + cmd + "` (for every project)");
+            }
             throw new JpmException("Unknown command \"" + cmd + "\"").withHint("run `jpm help`, or add an extension that provides it"
                     + " with `jpm add <dependency>` (for this project) or `jpm add -g <dependency>` (it runs as jpm-" + cmd + ")");
         }

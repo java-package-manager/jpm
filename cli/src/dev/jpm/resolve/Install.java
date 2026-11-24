@@ -121,6 +121,7 @@ public final class Install {
             for (String name : m.manifest.extensions.keySet()) {
                 if (name.contains(":") || declared.contains(name) || !WARNED.add(project.dir + " " + name)) continue;
                 String key = globalKey(name);
+                if (key == null && KnownExtensions.named(name).isPresent()) key = name;
                 Path rel = project.dir.relativize(m.manifest.file);
                 Log.warn(rel + " has settings for the extension \"" + name + "\", but "
                         + (m.manifest.file.equals(project.root.file) ? "does not declare it" : project.dir.relativize(project.root.file) + " does not declare it")

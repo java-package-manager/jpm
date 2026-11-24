@@ -35,3 +35,20 @@ jpm runs an extension in the folder it was called from, with `JPM_EXE` (the jpm 
 manifest as JSON).
 
 An extension can also provide dependencies: see [Dependencies from extensions](dependencies.md#dependencies-from-extensions).
+
+## Known extensions
+
+These extensions can be added by their name: `jpm add publish` declares
+`github:java-package-manager/jpm-publish` (`jpm add publish@^0.2` with a version range, `jpm add -g format` for
+every project). Running one that is not installed, such as `jpm format`, says how to add it. Any other
+extension is added by its dependency.
+
+<!-- known: generated from KnownExtensions, `JPM_UPDATE_EXPECTED=1 bin/jpm test dev.jpm.DocsTest` rewrites it -->
+
+| Command | Extension | |
+|---|---|---|
+| `jpm changeset` | [github:java-package-manager/jpm-changeset](https://github.com/java-package-manager/jpm-changeset) | Record changes as changeset files, then bump versions, write changelogs and publish |
+| `jpm format` | [github:java-package-manager/jpm-format](https://github.com/java-package-manager/jpm-format) | Format and lint Java code: an IntelliJ-style formatter, IntelliJ's inspections and custom rules |
+| `jpm publish` | [github:java-package-manager/jpm-publish](https://github.com/java-package-manager/jpm-publish) | Publish jpm modules to Maven repositories and Maven Central |
+
+<!-- /known -->

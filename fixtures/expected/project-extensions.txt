@@ -1,3 +1,8 @@
+$ jpm publish
+error: `jpm publish` is the extension github:java-package-manager/jpm-publish, which is not installed
+  hint: add it with `jpm add publish` (for this project) or `jpm add -g publish` (for every project)
+[exit 1]
+
 $ jpm install
 warning: project.jsonc has settings for the extension "hello", but does not declare it; declare it with `jpm add <its dependency, such as github:<owner>/jpm-hello>`
    Resolving dependencies

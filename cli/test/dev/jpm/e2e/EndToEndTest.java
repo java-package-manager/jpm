@@ -240,6 +240,7 @@ class EndToEndTest {
         s.env("JPM_GIT_BASE_GITHUB", tmp.resolve("git").toUri().toString());
         Fs.write(s.project.resolve("project.jsonc"), "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"java\": \"21\",\n"
                 + "  \"extensions\": { \"hello\": { \"loud\": true } }\n}\n");
+        s.jpm("publish");
         s.jpm("install");
         s.jpm("add", "-g", "github:me/jpm-hello@1.0.0");
         s.jpm("hello", "world");
