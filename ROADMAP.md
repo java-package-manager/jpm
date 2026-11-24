@@ -255,11 +255,25 @@ An extension that works like [changesets](https://github.com/changesets/changese
 
 ### jpm-format
 
-- [ ] Get jpm-format into a usable state:
-  - [ ] formatting with parity to IntelliJ IDEA's formatter, so formatting in the IDE and with
-        `jpm format` gives the same result;
-  - [ ] linting rules with parity to IntelliJ IDEA's inspections;
-  - [ ] a language server (LSP) for formatting and lint diagnostics in VS Code and other editors.
+What is open in detail is in jpm-format's
+[ROADMAP.md](https://github.com/java-package-manager/jpm-format/blob/main/ROADMAP.md).
+
+- [~] Get jpm-format into a usable state:
+  - [~] formatting with parity to IntelliJ IDEA's formatter, so formatting in the IDE and with
+        `jpm format` gives the same result. Measured against IntelliJ on a corpus of real projects
+        (jpm-format's `checks/Parity.java`); open: the rest of IntelliJ's Javadoc formatting (`<pre>`) and its
+        code style options;
+  - [~] linting rules with parity to IntelliJ IDEA's inspections. Open: null checks and data flow;
+  - [x] a language server (LSP) for formatting and lint diagnostics in VS Code and other editors
+        (`jpm format lsp`: diagnostics as you type, document and range formatting, quick fixes).
+- [x] Other formatters through `formatter.style`: `palantir@<version>`, `google-java-format[@<version>]`,
+      `eclipse[@<version>]` (Spotless's JDT step), the URL of a jar, or a formatter from Git that jpm builds; and
+      `"files"` for Spotless's steps on files other than Java (ktfmt, ktlint, scalafmt, JSON, YAML, SQL).
+- [x] The comment lint is jpm-format's `NonJavadocComment` rule (jpm-format 0.4.0), an error in jpm's
+      `jpm check`; the `comments` and `comment-lines` ratchets are gone.
+- [ ] `jpm import` translates Spotless config (`spotless-maven-plugin`, Gradle's `spotless { }`) into
+      `formatter` settings.
+- [ ] **jpm-intellij:** runs `jpm format` on save.
 - [x] jpm-format adds `format --check` to `jpm check`, and all jpm projects run `jpm check` in CI: jpm
       (in `bin/check`), jpm-changeset, jpm-publish and jpm-extension-template. jpm-intellij builds with Gradle,
       and setup-jpm and changeset-action have no Java code.
@@ -653,6 +667,8 @@ In this order (decided 2026-11-23):
    - the full test suite on Windows in CI;
    - POM profiles, Groovy and Scala sources, code-generating plugins, incremental and Multiplatform
      Kotlin, the tracing agent in tests, in-process hot reload (Phase 5, *More*).
+   - Done: all of them but two. Open: Windows (the Git and extension scenarios and sh scripts are still
+     skipped there) and Kotlin Multiplatform.
 3. **jpm-intellij.**
    - The migration UI (editable manifest, warnings first, layout switch, cleanup of old build files,
      scan for leftover Gradle/Maven use).
@@ -668,7 +684,10 @@ In this order (decided 2026-11-23):
    - Formatter parity is measured against IntelliJ on a corpus of real projects, with a stored diff
      count as a ratchet. Then lint parity, then the LSP.
    - Replace the comment-lint script from Milestone 1 with a jpm-format rule.
-   - `format --check` in `jpm check`: done (jpm-format's descriptor).
+   - Done: `format --check` in `jpm check`, the comment lint (`NonJavadocComment`), the language server
+     (`jpm format lsp`), and other formatters (Palantir and google-java-format by version, Eclipse and Spotless's
+     steps, jars and Git). Open: the rest of formatter and lint parity, `project.jsonc` diagnostics in the
+     language server, `jpm import` of Spotless config, format on save in jpm-intellij.
 
 Done: **jpm-changeset** (add, status and its check, version, publish, prereleases, groups, changeset-action;
 jpm releases with it) and **Licenses** (the SPDX list, `jpm license`, import, the check).
