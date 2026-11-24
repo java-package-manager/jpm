@@ -8,6 +8,7 @@ import dev.jpm.build.Builder;
 import dev.jpm.build.Compiler;
 import dev.jpm.build.Env;
 import dev.jpm.build.Jars;
+import dev.jpm.git.GitRepo;
 import dev.jpm.log.Log;
 import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.GitModule;
@@ -19,11 +20,15 @@ import dev.jpm.toolchain.Jdk;
 import dev.jpm.toolchain.Toolchain;
 import dev.jpm.util.Fs;
 import dev.jpm.util.JpmException;
+import dev.jpm.version.Tags;
+import dev.jpm.version.Version;
+import dev.jpm.version.VersionSpecs;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -107,31 +112,12 @@ final class GlobalExtensions {
     }
 
     static int update(List<String> names, boolean latest) {
-        Path root = Fs.home().resolve("global");
-        List<Path> dirs = new ArrayList<>();
-        if (Files.isDirectory(root)) {
-            try (var s = Files.list(root)) {
-                s.filter(d -> Files.isRegularFile(d.resolve(Manifest.FILE))).sorted().forEach(dirs::add);
-            } catch (IOException e) {
-                throw new JpmException("Could not read " + root + ": " + e.getMessage());
-            }
-        }
-        Set<String> wanted = new LinkedHashSet<>();
-        for (String n : names) wanted.add(n.contains(":") ? globalName(DepArgs.parse(n).key()) : n.replaceFirst("^jpm-", ""));
-        for (String n : wanted) {
-            if (dirs.stream().noneMatch(d -> d.getFileName().toString().equals(n))) {
-                throw new JpmException("No global extension named " + n + ". Install it with `jpm add -g <dependency>`.");
-            }
-        }
-        if (dirs.isEmpty()) {
-            Log.info("No global extensions are installed. Install one with `jpm add -g <dependency>`.");
-            return 0;
-        }
+        List<Path> dirs = selected(names);
+        if (dirs.isEmpty()) return 0;
         MavenRepo repo = new MavenRepo(List.of());
         repo.setRefreshMetadata(true);
         for (Path dir : dirs) {
             String name = dir.getFileName().toString();
-            if (!wanted.isEmpty() && !wanted.contains(name)) continue;
             Manifest m = Manifest.load(dir);
             if (m.dependencies.size() != 1) {
                 Log.warn("skipping " + dir + ": it is not a global extension made by `jpm add -g`");
@@ -161,6 +147,92 @@ final class GlobalExtensions {
             }
         }
         return 0;
+    }
+
+    static int check(List<String> names) {
+        List<Path> dirs = selected(names);
+        if (dirs.isEmpty()) return 0;
+        MavenRepo repo = new MavenRepo(List.of());
+        repo.setRefreshMetadata(true);
+        int outdated = 0;
+        for (Path dir : dirs) {
+            String name = dir.getFileName().toString();
+            Manifest m = Manifest.load(dir);
+            if (m.dependencies.size() != 1) {
+                Log.warn("skipping " + dir + ": it is not a global extension made by `jpm add -g`");
+                continue;
+            }
+            Manifest.Dependency d = m.dependencies.get(0);
+            Lockfile lock = Lockfile.read(dir.resolve(Manifest.LOCK));
+            Graph.Pkg before = lock == null ? null : lock.graph.get(d.key().toString());
+            Available a = available(repo, d.key(), d.spec(), before);
+            String current = before == null ? "?" : describe(before);
+            if (a.update() != null) {
+                outdated++;
+                Log.step("Outdated", "jpm-" + name + " " + current + " -> " + a.update());
+            } else {
+                Log.step("Up to date", "jpm-" + name + " " + current);
+            }
+            if (a.outside() != null) {
+                Log.info("  newer outside " + d.spec() + ": " + a.outside() + ". Run `jpm update -g --latest " + name + "` to move to it.");
+            }
+        }
+        if (outdated > 0) Log.info("Run `jpm update -g` to install " + (outdated == 1 ? "the update." : "the updates."));
+        return 0;
+    }
+
+    record Available(String update, String outside) {}
+
+    static Available available(MavenRepo repo, DepKey key, String spec, Graph.Pkg before) {
+        if (key.isGit() && spec.matches("[0-9a-f]{7,40}")) return new Available(null, null);
+        if (key.isGit() && spec.startsWith("#")) {
+            String head = GitRepo.of(key).branchHead(spec.substring(1));
+            boolean behind = before == null || before.commit == null || !head.equals(before.commit);
+            return new Available(behind ? head.substring(0, 7) : null, null);
+        }
+        List<Version> releases = new ArrayList<>();
+        if (key.isGit()) {
+            Set<String> tags = GitRepo.of(key).tags().keySet();
+            for (String t : tags) {
+                String v = Tags.version(key.module(), t, tags);
+                if (v != null) releases.add(Version.of(v));
+            }
+        } else if (key.isMaven()) {
+            releases.addAll(repo.versions(key.group(), key.artifact()));
+        } else {
+            String newest = DepArgs.latestSpec(repo, key).replaceFirst("^\\^", "");
+            if (!newest.startsWith("#") && !newest.equals("*")) releases.add(Version.of(newest));
+        }
+        releases.removeIf(v -> v.isPreRelease() || v.isSnapshot());
+        Version have = before == null || before.version == null ? null : Version.of(before.version);
+        Version best = VersionSpecs.parse(spec, key.isGit()).best(releases).orElse(null);
+        Version newest = releases.stream().max(Comparator.naturalOrder()).orElse(null);
+        String update = best != null && (have == null || best.compareTo(have) > 0) ? best.toString() : null;
+        Version reach = update != null ? best : have;
+        String outside = newest != null && (reach == null || newest.compareTo(reach) > 0) ? newest.toString() : null;
+        return new Available(update, outside);
+    }
+
+    private static List<Path> selected(List<String> names) {
+        Path root = Fs.home().resolve("global");
+        List<Path> dirs = new ArrayList<>();
+        if (Files.isDirectory(root)) {
+            try (var s = Files.list(root)) {
+                s.filter(d -> Files.isRegularFile(d.resolve(Manifest.FILE))).sorted().forEach(dirs::add);
+            } catch (IOException e) {
+                throw new JpmException("Could not read " + root + ": " + e.getMessage());
+            }
+        }
+        Set<String> wanted = new LinkedHashSet<>();
+        for (String n : names) wanted.add(n.contains(":") ? globalName(DepArgs.parse(n).key()) : n.replaceFirst("^jpm-", ""));
+        for (String n : wanted) {
+            if (dirs.stream().noneMatch(d -> d.getFileName().toString().equals(n))) {
+                throw new JpmException("No global extension named " + n + ". Install it with `jpm add -g <dependency>`.");
+            }
+        }
+        if (dirs.isEmpty()) Log.info("No global extensions are installed. Install one with `jpm add -g <dependency>`.");
+        if (!wanted.isEmpty()) dirs.removeIf(d -> !wanted.contains(d.getFileName().toString()));
+        return dirs;
     }
 
     static int remove(List<String> args) {

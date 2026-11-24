@@ -9,6 +9,7 @@ import dev.jpm.maven.MavenRepo;
 import dev.jpm.resolve.Install;
 import dev.jpm.resolve.ReleaseAge;
 import dev.jpm.util.Fs;
+import dev.jpm.util.JpmException;
 
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
@@ -29,21 +30,24 @@ final class UpdateCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(
-                new Usage(Group.PROJECT, "update [dep...]", "Re-resolve within ranges (--latest goes past them; -g updates the global extensions)",
-                        "Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions"));
+                new Usage(Group.PROJECT, "update [dep...]", "Re-resolve within ranges (--latest goes past them; -g updates the global extensions, -g --check only reports)",
+                        "Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions, `update -g --check` only reports what it would update"));
     }
 
     @Override
     List<String> flags() {
-        return List.of("--latest", "-g", "--global");
+        return List.of("--latest", "-g", "--global", "--check");
     }
 
     @Override
     int run(List<String> args) {
         boolean latest = flag(args, "--latest");
         boolean global = flag(args, "-g", "--global");
+        boolean check = flag(args, "--check");
         noMoreFlags(args);
-        if (global) return GlobalExtensions.update(args, latest);
+        if (check && !global) throw new JpmException("`--check` works with global extensions only: `jpm update -g --check`. For a project, run `jpm outdated`.");
+        if (check && latest) throw new JpmException("`--check` and `--latest` cannot be used together: `--check` reports newer releases outside the ranges too.");
+        if (global) return check ? GlobalExtensions.check(args) : GlobalExtensions.update(args, latest);
         Project p = Project.find(cwd);
         MavenRepo repo = new MavenRepo(p.root.repositories);
         repo.setRefreshMetadata(true);
