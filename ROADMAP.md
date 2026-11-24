@@ -1,6 +1,7 @@
 # Roadmap
 
-What comes next for jpm and the projects around it (jpm-intellij, jpm-publish, extensions).
+What comes next for jpm. jpm-changeset, jpm-format and jpm-intellij have roadmaps of their own (*Other projects*,
+Phase 5).
 Items are grouped into phases; a phase can start before the previous one is finished, but the order
 matters where one item depends on another (noted as **Needs:**).
 
@@ -237,106 +238,32 @@ the tests.
 
 ## Phase 5: Ecosystem
 
-### jpm-changeset
+### Other projects
 
-An extension that works like [changesets](https://github.com/changesets/changesets) for npm.
-`.changeset/` is already reserved by jpm.
+Each has its own roadmap:
 
-- [x] `jpm changeset` (or `jpm changeset add`): ask which workspace modules changed, the bump
-      (major/minor/patch) and a summary; write a Markdown file to `.changeset/`.
-- [x] `jpm changeset version`: apply pending changesets: bump `version` in each `project.jsonc`, bump
-      dependents inside the workspace, write `CHANGELOG.md` per module, delete the applied files.
-- [x] `jpm changeset status`: list pending changesets. It is also a check in `jpm check`, which fails
-      when a changed module has no changeset.
-- [x] `jpm changeset publish`: publish bumped modules through jpm-publish and tag them.
-- [x] Prerelease mode (`pre enter/exit`), and linked/fixed version groups.
-- [x] A GitHub Action that opens and updates a "Version packages" pull request:
-      java-package-manager/changeset-action@v1.
+- jpm-changeset: [ROADMAP.md](https://github.com/java-package-manager/jpm-changeset/blob/main/ROADMAP.md)
+  (done: add, status and its check, version, publish, prereleases, groups, changeset-action).
+- jpm-format: [ROADMAP.md](https://github.com/java-package-manager/jpm-format/blob/main/ROADMAP.md)
+  (IntelliJ parity in formatting and lint, `project.jsonc` in the language server, the native binary).
+- jpm-intellij: [ROADMAP.md](https://github.com/java-package-manager/jpm-intellij/blob/main/ROADMAP.md)
+  (done: the migration UI, `project.jsonc` editing, run configurations, the dependency graph; open: format
+  on save).
 
-### jpm-format
+What jpm itself does for them:
 
-What is open in detail is in jpm-format's
-[ROADMAP.md](https://github.com/java-package-manager/jpm-format/blob/main/ROADMAP.md).
-
-- [~] Get jpm-format into a usable state:
-  - [~] formatting with parity to IntelliJ IDEA's formatter, so formatting in the IDE and with
-        `jpm format` gives the same result. Measured against IntelliJ on a corpus of real projects
-        (jpm-format's `checks/Parity.java`); open: the rest of IntelliJ's Javadoc formatting (`<pre>`) and its
-        code style options;
-  - [~] linting rules with parity to IntelliJ IDEA's inspections. Open: null checks and data flow;
-  - [x] a language server (LSP) for formatting and lint diagnostics in VS Code and other editors
-        (`jpm format lsp`: diagnostics as you type, document and range formatting, quick fixes).
-- [x] Other formatters through `formatter.style`: `palantir@<version>`, `google-java-format[@<version>]`,
-      `eclipse[@<version>]` (Spotless's JDT step), the URL of a jar, or a formatter from Git that jpm builds; and
-      `"files"` for Spotless's steps on files other than Java (ktfmt, ktlint, scalafmt, JSON, YAML, SQL).
-- [x] The comment lint is jpm-format's `NonJavadocComment` rule (jpm-format 0.4.0), an error in jpm's
-      `jpm check`; the `comments` and `comment-lines` ratchets are gone.
-- [ ] `jpm import` translates Spotless config (`spotless-maven-plugin`, Gradle's `spotless { }`) into
-      `formatter` settings.
-- [ ] **jpm-intellij:** runs `jpm format` on save.
 - [x] jpm-format adds `format --check` to `jpm check`, and all jpm projects run `jpm check` in CI: jpm
       (in `bin/check`), jpm-changeset, jpm-publish and jpm-extension-template. jpm-intellij builds with Gradle,
       and setup-jpm and changeset-action have no Java code.
-
-### jpm-intellij: migration UI
-
-Migrating a project today only shows the output of `jpm import` in a plain text box.
-
-- [x] Show the generated `project.jsonc` in an editor with syntax highlighting, and let the user edit
-      it before it is written.
-- [x] Show warnings prominently, above or next to the manifest rather than at the bottom of the
-      output, so they are reviewed before migrating.
-- [x] Offer to switch from the Maven layout to the jpm layout: move the source, resource and test
-      folders, and drop `"layout": "maven"` from the manifest.
-- [x] Offer to delete what is left of the old build: Gradle files and folders (`build.gradle(.kts)`,
-      `settings.gradle(.kts)`, `gradle/`, `gradlew`, `gradlew.bat`, `gradle.properties`), and `pom.xml`
-      and the Maven wrapper for Maven projects.
-- [x] Scan the whole project and flag everything that still uses Gradle or Maven, for example CI
-      workflows, Dockerfiles, scripts that call `./gradlew` or `mvn`, Renovate or Dependabot settings,
-      `.gitignore` entries and IDE run configurations.
-
-### Editing project.jsonc
-
-- [x] **jpm-intellij:** ctrl+click on values in `project.jsonc` goes to what they name:
-  - `main`, `defineClass` and `scripts`: the class (or the script file);
-  - dependencies and `exclude`: the library under External Libraries in the project view;
-  - `relocate`: the package in the project view;
-  - `license`: the license file (`LICENSE`, `LICENSE.md`, `LICENSE.txt`, `LICENCE`, `COPYING` and the
-    other common spellings);
-  - `filter`: the file;
-  - `workspace`, `sources` and `resources`: the folder in the project view;
-  - `patches`: the patch file;
-  - `hooks`: the script the hook runs;
-  - `java`: the JDK;
-  - values in `define` for a dependency: the define where that dependency declares it.
-  Done: all of them (jpm-intellij, unreleased).
-- [x] Every value that names a file or folder (`filter`, `patches`, `scripts`, `sources`, `resources`,
-      workspace modules, env files) gives a warning when it does not exist. One shared check, not one
-      per field. Done in jpm-intellij for `patches`, script files, `sources`, `resources` and workspace
-      modules; `filter` globs that match no resource are a warning of jpm check's `paths` check, which
-      jpm-intellij shows with the other check results. Env files need nothing: no field names one (jpm
-      reads `.env`, `.env.<mode>` and `.env.local` by their fixed names, and each is optional).
-- [x] **jpm-intellij:** renames update the manifest: renaming a class updates `main` and
-      `defineClass`, moving a package updates `relocate`, renaming a script updates the `hooks` that run
-      it, moving a file or folder updates the paths that name it.
-- [x] Completion of dependency coordinates and versions, and the resolved version from `project.lock`
-      shown next to each dependency (inlay hint). Done: versions (from `dependencies/versions`, protocol 1.1), the
-      inlay hint, and `group:artifact` coordinates (from `dependencies/search`, protocol 1.2: jpm's cache, then
-      Maven Central's search).
-- [x] An inspection for dependencies with a newer version, with a quick fix that runs `jpm update`.
-- [x] Documentation from the schema on hover, for every field.
-- [~] jpm-intellij and the language server (see jpm-format) highlight jpm's warnings and errors in
-      `project.jsonc`, at the value they are about.
-      Done in jpm-intellij (jpm check over the protocol, on save); the language server is jpm-format's.
-
-### jpm-intellij: more
-
-- [x] Run configurations generated from `main` entries and `scripts`.
-- [x] A dependency graph view, using what `jpm why` knows.
-- [x] New projects ignore jpm's folders (`dist/`, `.cache/`, `.env.local`) in Git. The wizard runs
-      `jpm init`, which only writes `.gitignore` when there is none, so a `.gitignore` that exists
-      already (for example one IntelliJ created) is left without them. `jpm init` and `jpm import`
-      add the missing entries to an existing `.gitignore` instead of skipping it.
+- [x] The comment lint is jpm-format's `NonJavadocComment` rule (jpm-format 0.4.0), an error in jpm's
+      `jpm check`; the `comments` and `comment-lines` ratchets are gone.
+- [x] `filter` globs that match no resource are a warning of `jpm check`'s `paths` check.
+- [x] Protocol 1.1 and 1.2 for editors: `dependencies/versions` and `dependencies/search` (jpm's cache, then
+      Maven Central's search) for completion in `project.jsonc`.
+- [x] `jpm init` and `jpm import` add jpm's folders (`dist/`, `.cache/`, `.env.local`) to an existing
+      `.gitignore` instead of skipping it.
+- [ ] `jpm import` translates Spotless config (`spotless-maven-plugin`, Gradle's `spotless { }`) into
+      `formatter` settings.
 
 ### Licenses
 
@@ -669,27 +596,12 @@ In this order (decided 2026-11-23):
      Kotlin, the tracing agent in tests, in-process hot reload (Phase 5, *More*).
    - Done: all of them but two. Open: Windows (the Git and extension scenarios and sh scripts are still
      skipped there) and Kotlin Multiplatform.
-3. **jpm-intellij.**
-   - The migration UI (editable manifest, warnings first, layout switch, cleanup of old build files,
-     scan for leftover Gradle/Maven use).
-   - Then `project.jsonc` editing: navigation, renames, completion and inlay hints, update inspection,
-     hover docs, and diagnostics from `jpm check` over the protocol.
-   - Then run configurations and the dependency graph.
-   - The `.gitignore` fix is done in `jpm init`/`jpm import`, so it ships with any jpm release.
-   - Done (jpm-intellij, unreleased): the migration UI, run configurations, the dependency tree, and in
-     `project.jsonc` navigation and renames, missing paths, resolved versions, version completion, the
-     newer-version inspection, jpm's check results, ctrl+click on every value that names something, and
-     coordinate completion. Open: the language server's highlighting (jpm-format).
-4. **jpm-format.**
-   - Formatter parity is measured against IntelliJ on a corpus of real projects, with a stored diff
-     count as a ratchet. Then lint parity, then the LSP.
-   - Replace the comment-lint script from Milestone 1 with a jpm-format rule.
-   - Done: `format --check` in `jpm check`, the comment lint (`NonJavadocComment`), the language server
-     (`jpm format lsp`), and other formatters (Palantir and google-java-format by version, Eclipse and Spotless's
-     steps, jars and Git). Open: the rest of formatter and lint parity, `project.jsonc` diagnostics in the
-     language server, `jpm import` of Spotless config, format on save in jpm-intellij.
+3. **jpm-intellij**: see its [ROADMAP.md](https://github.com/java-package-manager/jpm-intellij/blob/main/ROADMAP.md).
+   The `.gitignore` fix is done in `jpm init`/`jpm import`, so it ships with any jpm release.
+4. **jpm-format**: see its [ROADMAP.md](https://github.com/java-package-manager/jpm-format/blob/main/ROADMAP.md).
+   In jpm: `format --check` in `jpm check` and the comment lint are done; `jpm import` of Spotless config is open.
 
-Done: **jpm-changeset** (add, status and its check, version, publish, prereleases, groups, changeset-action;
+Done: **jpm-changeset** ([its roadmap](https://github.com/java-package-manager/jpm-changeset/blob/main/ROADMAP.md);
 jpm releases with it) and **Licenses** (the SPDX list, `jpm license`, import, the check).
 
 Renovate comes last, after everything else (*Last: Renovate*, at the end of this file).
