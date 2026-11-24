@@ -60,7 +60,8 @@ final class Completions {
             if (c.flags().isEmpty()) continue;
             s.append("        ").append(String.join("|", names(c))).append(") compadd -- ").append(String.join(" ", c.flags())).append(" ;;\n");
         }
-        s.append("    esac\n    _files\n}\ncompdef _jpm jpm\n");
+        s.append("    esac\n    _files\n}\n");
+        s.append("if [ \"$funcstack[1]\" = _jpm ]; then\n    _jpm \"$@\"\nelse\n    compdef _jpm jpm\nfi\n");
         return s.toString();
     }
 

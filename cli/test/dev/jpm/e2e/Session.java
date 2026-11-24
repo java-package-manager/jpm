@@ -58,6 +58,14 @@ final class Session {
     }
 
     /**
+     * Leaves an environment variable out of every command run after this, including one {@link #env()} sets.
+     */
+    Session unsetEnv(String name) {
+        extraEnv.put(name, null);
+        return this;
+    }
+
+    /**
      * Copies {@code fixtures/<name>} into the project folder.
      */
     Session fixture(String name) {
@@ -198,6 +206,7 @@ final class Session {
         env.put("NO_COLOR", "1");
         env.put("JAVA_HOME", System.getProperty("java.home"));
         env.putAll(extraEnv);
+        env.values().removeIf(java.util.Objects::isNull);
         return env;
     }
 

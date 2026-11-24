@@ -632,6 +632,23 @@ class EndToEndTest {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "jvm setup changes no shell startup files on Windows")
+    void shellCompletions(@TempDir Path tmp) {
+        Session s = new Session(tmp);
+        Path user = tmp.resolve("user");
+        s.unsetEnv("JPM_NO_MODIFY_PATH").env("HOME", user.toString()).env("ZDOTDIR", user.toString()).env("SHELL", "/bin/zsh")
+                .env("PATH", s.home.resolve("bin") + java.io.File.pathSeparator + "/usr/bin" + java.io.File.pathSeparator + "/bin");
+        s.jpm("jvm", "setup", "--no-shims");
+        s.show("../user/.zshrc").tree("../home/completions");
+        s.exec(".", "bash", "-c", ". \"$JPM_HOME/completions/jpm.bash\"; COMP_WORDS=(jpm bu); COMP_CWORD=1; _jpm; echo \"${COMPREPLY[*]}\"");
+        s.exec(".", "bash", "-c", ". \"$JPM_HOME/completions/jpm.bash\"; COMP_WORDS=(jpm add --d); COMP_CWORD=2; _jpm; echo \"${COMPREPLY[*]}\"");
+        s.jpm("jvm", "setup", "--no-shims");
+        s.env("JPM_NO_COMPLETIONS", "1").jpm("jvm", "setup", "--no-shims");
+        s.tree("../home/completions");
+        s.verify("shell-completions");
+    }
+
+    @Test
     void doctor(@TempDir Path tmp) {
         Session s = new Session(tmp);
         String healthy = s.jpmUnrecorded("doctor");

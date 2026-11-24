@@ -26,7 +26,7 @@ eval "$(jvm env graalvm-21)"  # this shell only
 jvm install temurin-17 · jvm list · jvm remove temurin-17 · jvm home 21 · jvm use --unset
 ```
 
-`jvm setup` creates the shims and the PATH setup (the installer does this, and `jpm upgrade` refreshes
-it; `JPM_NO_SHIMS=1` skips the shims) and `jvm setup --remove` takes the shims away. `JPM_JAVA=21` overrides the choice for one shell or command.
+`jvm setup` creates the shims, the PATH setup and tab completion for jpm (the installer does this, and
+`jpm upgrade` refreshes it; `JPM_NO_SHIMS=1` skips the shims, `JPM_NO_COMPLETIONS=1` the completions) and `jvm setup --remove` takes the shims away. `JPM_JAVA=21` overrides the choice for one shell or command.
 
 Native builds are described in [Building](building.md#native-builds).

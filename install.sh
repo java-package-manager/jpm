@@ -5,7 +5,8 @@
 #
 # JPM_VERSION=0.3.0 picks a version (JPM_VERSION=canary the newest prerelease or release), JPM_HOME changes the install root, and JPM_INSTALL_BASE replaces the
 # download URL (a mirror, or file:///path for testing). The install folder is added to PATH in your shell's
-# startup file (one marked line, added once); JPM_NO_MODIFY_PATH=1 skips that.
+# startup file (one marked line, added once); JPM_NO_MODIFY_PATH=1 skips that. Tab completion for bash, zsh and fish
+# comes with it; JPM_NO_COMPLETIONS=1 skips that.
 set -eu
 
 repo="${JPM_REPO:-java-package-manager/jpm}"

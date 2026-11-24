@@ -24,5 +24,6 @@
 | `JPM_VERSION_OVERRIDE` | Every module's version, e.g. one CI computes for publishing |
 | `JPM_GRADLE_DISTRIBUTIONS`, `JPM_GRADLE_VERSIONS` | Mirrors for Gradle distributions (`gradle:api`) and for the current Gradle version (`jpm outdated`) |
 | `JPM_GIT_BASE_GITHUB` (`_GITLAB`, `_CODEBERG`) | Redirect a Git host, e.g. to a mirror or `file:///…` for tests |
-| `JPM_VERSION`, `JPM_NO_MODIFY_PATH`, `JPM_NO_SHIMS` | Install scripts: version, skip the PATH change, skip the shims |
+| `JPM_VERSION`, `JPM_NO_MODIFY_PATH`, `JPM_NO_SHIMS` | Install scripts: version, skip the PATH change (and with it the shell completions), skip the shims |
+| `JPM_NO_COMPLETIONS` | Install scripts and `jvm setup`: leave out the tab completion for bash, zsh and fish |
 | `JPM_REPO`, `JPM_INSTALL_BASE` | Install scripts and `jpm upgrade`: another GitHub repository, or another download location |

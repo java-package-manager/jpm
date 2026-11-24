@@ -73,7 +73,7 @@ public final class JavaCommand extends Command {
               exec [java] <command...>        Run one command with a JDK (java is implied for -jar, .jar, -version)
               env <java>                      Print exports for this shell only: eval "$(jvm env 21)"
               home [java]                     Print the home directory of a JDK
-              setup [--remove]                Create (or remove) the shims, and keep ~/.jpm/bin first on PATH
+              setup [--remove]                Create (or remove) the shims, keep ~/.jpm/bin first on PATH, set up tab completion
 
             How `java` is chosen (the shims in ~/.jpm/bin, first on PATH):
               1. inside a jpm project: its "java"     2. the default from `jvm use`

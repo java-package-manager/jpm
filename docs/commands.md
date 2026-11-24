@@ -67,7 +67,7 @@ Every command jpm has, from its command registry (the same list `jpm help` print
 | `jpm upgrade [version]` | Upgrade jpm itself to the latest release (`--check` only reports, `--canary` also takes prereleases, such as `0.13.0-beta.0`) |
 | `jpm version` | Show jpm's version (also `--version`), and whether a newer one is out |
 | `jpm help` | Show this list of commands (also -h, --help) |
-| `jpm completions <shell>` | Print shell completions: `jpm completions bash > ~/.local/share/bash-completion/completions/jpm`, and the same for `zsh`, `fish` and `powershell` |
+| `jpm completions <shell>` | Print shell completions. `jvm setup` (run by the installer and `jpm upgrade`) sets them up for bash, zsh and fish; elsewhere: `jpm completions powershell | Out-String | Invoke-Expression` in your profile |
 | `jpm api` | Serve the jpm protocol (JSON-RPC on stdin and stdout, see [protocol.md](protocol.md)) for IDEs, extensions and tools; the client `dev.jpm:jpm-api` starts it |
 | `jpm <anything else>` | Runs the extension `<name>`: the one the project declares, else `jpm-<name>` from `~/.jpm/bin` or `PATH` (see [Extensions](extensions.md)) |
 
@@ -82,4 +82,5 @@ Dependency arguments: `group:artifact@1.2.3`, `group:artifact:1.2.3`, `'group:ar
 Global options, for every command: `-v`/`--verbose` (`-vv` for more), `-q`/`--quiet`, `--color=auto|always|never`
 and `--offline`; see [Environment variables](environment.md).
 
-Shell completions: `jpm completions bash|zsh|fish|powershell`.
+Shell completions: the installer sets them up for bash, zsh and fish (`jvm setup` does it, and `jpm upgrade`
+keeps them current); `jpm completions bash|zsh|fish|powershell` prints them for anything else.

@@ -19,8 +19,8 @@ final class CompletionsCommand extends Command {
     @Override
     List<Usage> usages() {
         return List.of(new Usage(Group.MAINTENANCE, "completions <shell>", "Print shell completions for bash, zsh, fish or powershell",
-                "Print shell completions: `jpm completions bash > ~/.local/share/bash-completion/completions/jpm`, and the same for"
-                        + " `zsh`, `fish` and `powershell`"));
+                "Print shell completions. `jvm setup` (run by the installer and `jpm upgrade`) sets them up for bash, zsh and fish;"
+                        + " elsewhere: `jpm completions powershell | Out-String | Invoke-Expression` in your profile"));
     }
 
     @Override

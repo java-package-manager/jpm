@@ -1,0 +1,26 @@
+$ jpm jvm setup --no-shims
+ Completions for bash, zsh and fish in <home>/completions
+       Shell keeps <home>/bin first on PATH, via <tmp>/user/.zshrc
+
+--- ../user/.zshrc
+# Added by the jpm installer
+[ -f "<home>/env" ] && . "<home>/env"
+
+--- files in ../home/completions
+_jpm
+jpm.bash
+jpm.fish
+jpm.zsh
+
+$ bash -c . "$JPM_HOME/completions/jpm.bash"; COMP_WORDS=(jpm bu); COMP_CWORD=1; _jpm; echo "${COMPREPLY[*]}"
+build
+
+$ bash -c . "$JPM_HOME/completions/jpm.bash"; COMP_WORDS=(jpm add --d); COMP_CWORD=2; _jpm; echo "${COMPREPLY[*]}"
+--dev
+
+$ jpm jvm setup --no-shims
+
+$ jpm jvm setup --no-shims
+
+--- files in ../home/completions
+

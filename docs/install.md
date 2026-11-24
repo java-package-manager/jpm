@@ -14,6 +14,11 @@ The scripts:
   first and moves it back to the front before every prompt, so a JDK that something else prepends later
   cannot shadow the shims (fish gets `conf.d/jpm.fish`; Windows gets the folder in the user PATH, but
   the system PATH comes first there). `JPM_NO_MODIFY_PATH=1` skips this;
+- set up tab completion for `jpm` in bash, zsh and fish: the scripts go into `~/.jpm/completions`, which
+  `~/.jpm/env` loads in interactive bash and zsh and fish finds through `conf.d/jpm.fish`. `jpm upgrade`
+  rewrites them, so new commands complete too. `JPM_NO_COMPLETIONS=1` skips this (and removes them on the
+  next `jvm setup`); on Windows, add `jpm completions powershell | Out-String | Invoke-Expression` to your
+  `$PROFILE`;
 - create `java`, `javac`, ... shims there, so `java` runs your project's JDK (see
   [JDKs and GraalVM](jdks.md)). Outside projects nothing changes until you run `jvm use`.
   `JPM_NO_SHIMS=1` skips this.
