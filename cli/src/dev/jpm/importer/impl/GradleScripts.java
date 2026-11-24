@@ -100,7 +100,7 @@ public final class GradleScripts {
                 if (v != null) p.version = v;
             }
             String noComments = stripComments(build);
-            String own = p.dir.isEmpty() ? withoutBlocks(noComments, "subprojects", "allprojects") : noComments;
+            String own = p.dir.isEmpty() ? withoutBlocks(noComments, "subprojects", "allprojects", "spotless") : withoutBlocks(noComments, "spotless");
             p.java = Pattern.compile("\\b(java|java-library|application)\\b|id\\s*\\(?\\s*[\"'](java|java-library|application)[\"']|apply\\s+plugin:\\s*[\"']java")
                     .matcher(own).find() || own.contains("libs.plugins.");
             p.kotlin = noComments.contains("kotlin(\"jvm\")") || noComments.contains("org.jetbrains.kotlin.jvm");
@@ -129,7 +129,20 @@ public final class GradleScripts {
         applyPlatforms(projects, repo, imp);
         imp.warn(null, "the Gradle build was read without running it; check the result");
         GradleConvert.convert(projects, imp);
+        spotless(dir, projects, imp);
         return imp;
+    }
+
+    static void spotless(Path dir, List<GProject> projects, Imported imp) {
+        Map<String, Map<String, Object>> byDir = new LinkedHashMap<>();
+        for (GProject p : projects) {
+            String build = firstExisting(p.dir.isEmpty() ? dir : dir.resolve(p.dir), "build.gradle.kts", "build.gradle");
+            if (build == null) continue;
+            if (p.dir.isEmpty() && !imp.manifests.containsKey("")) continue;
+            Map<String, Object> cfg = Spotless.fromGradle(build, imp, p.dir.isEmpty() ? null : p.dir);
+            if (cfg != null) byDir.put(p.dir, cfg);
+        }
+        Spotless.place(imp, byDir);
     }
 
     static void applyPlatforms(List<GProject> projects, dev.jpm.maven.MavenRepo repo, Imported imp) {

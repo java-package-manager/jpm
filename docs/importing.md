@@ -26,6 +26,16 @@ Exclusions, classifiers and runtime-only dependencies carry over. Anything witho
 listed as a warning: plugins that generate code, custom source directories. Kotlin projects get `"kotlin"`
 with the version of the standard library the Kotlin plugin added.
 
+**Spotless** (`spotless-maven-plugin`, Gradle's `spotless { }`) becomes
+[jpm-format](https://github.com/java-package-manager/jpm-format)'s settings under `"extensions": { "format": … }`:
+the Java formatter (`palantirJavaFormat`, `googleJavaFormat` and `eclipse` with their versions and the Eclipse
+profile), `removeUnusedImports`, `importOrder` as import groups and the license header; the steps for other
+files (`kotlin`, `kotlinGradle`, `scala`, `json`, `yaml`, `sql`, `groovy` and `format` blocks, such as ktfmt,
+ktlint, scalafmt, trailing whitespace and indentation) become `"files"`. Without a Java formatter step, the
+formatter is turned off, as Spotless did not format; steps with no jpm-format equivalent are listed as
+warnings. `jpm add format` then installs jpm-format: `jpm format` is `spotlessApply`, `jpm format --check`
+`spotlessCheck`.
+
 **Git dependencies without a `project.jsonc`** are imported the same way when they have a `pom.xml` or
 a Gradle build, then built from source like any Git dependency. jpm never runs a dependency's build
 scripts: Gradle builds of dependencies are always read as text. Imports are cached per commit in

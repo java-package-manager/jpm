@@ -232,4 +232,98 @@ class ImportTest {
         String s = GradleScripts.withoutBlocks("a { x }\nsubprojects { apply plugin: 'java'\n inner { y } }\nb", "subprojects");
         assertEquals("a { x }\n\nb", s);
     }
+
+    @Test
+    void translatesSpotlessInGradleBuilds(@TempDir Path dir) {
+        Fs.write(dir.resolve("settings.gradle"), "rootProject.name = 'demo'\n");
+        Fs.write(dir.resolve("build.gradle"), """
+                plugins { id 'java'; id 'com.diffplug.spotless' version '7.0.2' }
+                spotless {
+                    java {
+                        target 'src/*/java/**/*.java'
+                        palantirJavaFormat('2.50.0')
+                        removeUnusedImports()
+                        importOrder 'java', 'javax', '', '\\#'
+                        licenseHeaderFile rootProject.file('config/HEADER')
+                        trimTrailingWhitespace()
+                        formatAnnotations()
+                    }
+                    kotlinGradle { ktlint('1.5.0') }
+                    format 'misc', {
+                        target '*.md', '.gitignore'
+                        trimTrailingWhitespace()
+                        indentWithSpaces(2)
+                        endWithNewline()
+                    }
+                }
+                """);
+        Imported imp = GradleScripts.runStatic(dir);
+        Map<String, Object> format = format(imp.manifests.get(""));
+        assertEquals(Map.of("style", "palantir@2.50.0", "licenseHeader", Map.of("file", "config/HEADER")), format.get("formatter"));
+        assertEquals(Map.of("groups", List.of("java.*", "javax.*", "*", "static *")), format.get("imports"));
+        assertEquals(List.of(
+                Map.of("include", List.of("**/*.gradle.kts"), "steps", List.of("ktlint@1.5.0")),
+                Map.of("include", List.of("**/*.md", "**/.gitignore"), "steps", List.of("trimTrailingWhitespace",
+                        Map.of("step", "indent", "type", "space", "width", 2L), "endWithNewline"))), format.get("files"));
+        assertTrue(imp.warnings.stream().anyMatch(w -> w.contains("formatAnnotations")), imp.warnings.toString());
+        assertTrue(imp.warnings.stream().anyMatch(w -> w.contains("`jpm add format`")), imp.warnings.toString());
+    }
+
+    @Test
+    void translatesSpotlessInKotlinBuildsAndModules(@TempDir Path dir) {
+        Fs.write(dir.resolve("settings.gradle.kts"), "rootProject.name = \"demo\"\ninclude(\"core\")\n");
+        Fs.write(dir.resolve("build.gradle.kts"), "plugins { java }\n");
+        Fs.write(dir.resolve("core/build.gradle.kts"), """
+                plugins { `java-library`; id("com.diffplug.spotless") }
+                spotless {
+                    java {
+                        googleJavaFormat("1.25.2").aosp()
+                        licenseHeader("/* (C) $YEAR Acme */")
+                    }
+                    kotlin { ktfmt() }
+                }
+                """);
+        Imported imp = GradleScripts.runStatic(dir);
+        assertNull(imp.manifests.get("").get("extensions"));
+        Map<String, Object> format = format(imp.manifests.get("core"));
+        assertEquals(Map.of("style", "google-java-format@1.25.2", "licenseHeader", "/* (C) $YEAR Acme */"), format.get("formatter"));
+        assertEquals(Map.of("removeUnused", false, "sort", false), format.get("imports"));
+        assertNull(format.get("files"));
+        assertTrue(imp.warnings.stream().anyMatch(w -> w.contains("AOSP")), imp.warnings.toString());
+        assertTrue(imp.warnings.stream().anyMatch(w -> w.startsWith("core: ") && w.contains("\"files\" from the root only")), imp.warnings.toString());
+    }
+
+    @Test
+    void translatesTheSpotlessMavenPlugin(@TempDir Path dir) {
+        pom(dir, """
+                <groupId>com.acme</groupId><artifactId>app</artifactId><version>1.0.0</version>
+                <properties><eclipse.version>4.33</eclipse.version></properties>
+                <build><plugins><plugin><groupId>com.diffplug.spotless</groupId><artifactId>spotless-maven-plugin</artifactId>
+                  <configuration>
+                    <java>
+                      <eclipse><version>${eclipse.version}</version><file>${project.basedir}/eclipse-formatter.xml</file></eclipse>
+                      <removeUnusedImports/>
+                      <importOrder><order>java|javax,com.acme,,\\#</order></importOrder>
+                      <licenseHeader><content>/* Acme */</content></licenseHeader>
+                    </java>
+                    <json><includes><include>src/**/*.json</include></includes><simple><indentSpaces>2</indentSpaces></simple></json>
+                    <formats><format><includes><include>*.md</include></includes><trimTrailingWhitespace/><endWithNewline/></format></formats>
+                  </configuration>
+                </plugin></plugins></build>
+                """);
+        Imported imp = MavenImport.run(dir, new MavenRepo(List.of()));
+        Map<String, Object> format = format(imp.manifests.get(""));
+        assertEquals(Map.of("style", "eclipse@4.33", "eclipseConfig", "eclipse-formatter.xml", "licenseHeader", "/* Acme */"),
+                format.get("formatter"));
+        assertEquals(Map.of("groups", List.of(List.of("java.*", "javax.*"), "com.acme.*", "*", "static *")), format.get("imports"));
+        assertEquals(List.of(
+                Map.of("include", List.of("src/**/*.json"), "steps", List.of(Map.of("step", "jsonSimple", "indent", 2L))),
+                Map.of("include", List.of("**/*.md"), "steps", List.of("trimTrailingWhitespace", "endWithNewline"))), format.get("files"));
+        Manifest.parse(Path.of("project.jsonc"), imp.render(""));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> format(Map<String, Object> manifest) {
+        return (Map<String, Object>) ((Map<String, Object>) manifest.get("extensions")).get("format");
+    }
 }

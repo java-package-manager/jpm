@@ -17,11 +17,6 @@ Still skipped there:
 
 - [ ] Kotlin Multiplatform builds with targets other than the JVM.
 
-## Import
-
-- [ ] `jpm import` translates Spotless config (`spotless-maven-plugin`, Gradle's `spotless { }`) into
-      `formatter` settings.
-
 ## Errors and supply chain
 
 - [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest

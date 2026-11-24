@@ -109,6 +109,7 @@ public final class GradleImport {
             }
             GradleScripts.applyPlatforms(projects, repo, imp);
             GradleConvert.convert(projects, imp);
+            GradleScripts.spotless(dir, projects, imp);
             return imp;
         } finally {
             Fs.deleteTree(tmp);
