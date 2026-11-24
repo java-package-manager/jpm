@@ -1,5 +1,11 @@
 # jpm
 
+## 0.17.0
+
+### Minor Changes
+
+- `jpm update -g --check` reports the updates of global extensions without installing them
+
 ## 0.16.0
 
 ### Minor Changes
