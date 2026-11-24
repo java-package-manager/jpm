@@ -60,7 +60,10 @@ jobs:
       # smoke tests run jpm --version a lot; they should not ask GitHub for newer versions each time
       JPM_NO_UPDATE_CHECK: "1"
     steps:
+      # the whole history: `jpm check` runs jpm-changeset's check, which compares with origin/main
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: graalvm/setup-graalvm@v1
         with:

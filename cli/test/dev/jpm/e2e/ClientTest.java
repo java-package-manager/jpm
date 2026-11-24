@@ -184,7 +184,7 @@ class ClientTest {
         try (JpmClient jpm = connect(s)) {
             assertTrue(jpm.supports("check/run"));
             CheckReport r = jpm.check(s.project, List.of(), false);
-            assertEquals(List.of("manifest", "dependencies", "paths", "license", "compile", "unused-dependencies", "duplicate-classes"), r.ran());
+            assertEquals(List.of("manifest", "dependencies", "repositories", "paths", "license", "compile", "unused-dependencies", "duplicate-classes"), r.ran());
             assertTrue(r.failed());
             dev.jpm.api.model.Problem p = r.problems().get(0);
             assertEquals("paths", p.check());

@@ -6,6 +6,11 @@ cli="$(ls -t "$here"/cli/dist/jpm-[0-9]*.jar 2>/dev/null | head -n 1 || true)"
 api="$(ls -t "$here"/api/dist/jpm-api-[0-9]*.jar 2>/dev/null | head -n 1 || true)"
 if [ -n "$cli" ] && [ -n "$api" ]; then cp="$cli:$api"; else cp="$here/.cache/bootstrap/jpm.jar"; fi
 [ -f "${cp%%:*}" ] || { echo "jpm is not built yet; run $here/bootstrap.sh" >&2; exit 1; }
-# scripts, hooks and extensions call back into jpm through JPM_EXE
-JPM_EXE="$here/bin/jpm"; export JPM_EXE
+# scripts, hooks and extensions call back into jpm through JPM_EXE; on Windows they start it as a program,
+# which this sh script is not there, so they get the cmd launcher
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*) JPM_EXE="$here/bin/jpm.cmd" ;;
+  *) JPM_EXE="$here/bin/jpm" ;;
+esac
+export JPM_EXE
 exec "${JAVA_HOME:+$JAVA_HOME/bin/}java" -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xshare:auto -cp "$cp" dev.jpm.cli.Main "$@"

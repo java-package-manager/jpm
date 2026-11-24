@@ -77,6 +77,12 @@ Maven Central is always searched. Other Maven repositories go in `"repositories"
 jpm add -r https://repo.example.dev/releases com.example:lib:1.0.0
 ```
 
+`project.lock` records which repository each Maven package came from (`"repository"`, left out for Maven
+Central), and jpm looks for the package there first the next time: for a new version too, then in the other
+repositories on the same host (such as `/releases` and `/snapshots` of one server), and only then in the rest.
+So a project with many repositories does not ask each of them for every file. `jpm check` warns about a
+listed repository that no locked package comes from.
+
 A repository that needs a login reads it from the environment, never from `project.jsonc`:
 `JPM_REPO_<HOST>_USERNAME` and `JPM_REPO_<HOST>_PASSWORD` (basic authentication), or `JPM_REPO_<HOST>_TOKEN`
 (a bearer token), where `<HOST>` is the repository's host in upper case with every character other than a
@@ -128,7 +134,8 @@ from the folder of their `-SNAPSHOT` version.
 
 `project.lock` is sorted JSONC with one line per package: exact version, tag and commit
 for Git, a SHA-256 for Maven jars (verified on every install) and for their POMs (`"pom"`, verified when
-resolving), and its edges. It is reused as long as the declared dependencies are unchanged.
+resolving), the repository a Maven package came from when it is not Maven Central (`"repository"`), and its
+edges. It is reused as long as the declared dependencies are unchanged.
 
 **Merge conflicts in `project.lock`.** Do not resolve them by hand: `jpm install` reads both sides of every
 conflict, starts from the higher version of each package, resolves again and writes a clean lockfile.
@@ -139,6 +146,24 @@ conflict, starts from the higher version of each package, resolves again and wri
 **Checksums.** Every file downloaded from a Maven repository is checked against the strongest checksum the
 repository publishes next to it (`.sha512`, `.sha256` or `.sha1`); one that does not match is deleted and
 the install fails. See [ADR 0017](adr/0017-checksums.md).
+
+**Signatures.** With `"trustedKeys"` in the workspace root, jpm checks the OpenPGP signature (`.asc`) that a
+Maven repository publishes next to each jar. Each key is named by its full fingerprint, with the packages it
+may sign: a group, a group with `*`, `group:artifact`, or `*`.
+
+```jsonc
+"trustedKeys": {
+  "BFCD 855F E7DC 80E9 1F2D 06BA 9E15 3708 47B8 D788": "com.example",
+  "ABA6E444CCEEB44EE78C293B28DEA147D8ED39D9": ["org.apache.*", "com.google.guava:guava"]
+}
+```
+
+A signed jar must be signed by a key that is trusted for it (or by one of its signing subkeys), and the
+signature must match the jar; otherwise the install fails before `project.lock` is written, and the error
+names the key that signed it. A jar without a published signature passes. Keys are fetched by fingerprint
+from [keys.openpgp.org](https://keys.openpgp.org) (`JPM_KEYSERVER` names another server) into `~/.jpm/keys`;
+a key that is not published there can be put in `~/.jpm/keys/<FINGERPRINT>.asc` (`gpg --armor --export`).
+RSA, Ed25519 and NIST P-256/384/521 keys are supported. See [ADR 0019](adr/0019-signatures.md).
 
 **Minimum release age.** A compromised release is usually found and pulled within days, so a project can
 wait that long before it takes a new version. In the workspace root:

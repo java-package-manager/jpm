@@ -19,6 +19,7 @@ $ jpm check --sarif check.sarif --junit check.xml
   extension lint:
   + github:me/jpm-lint 1.0.0
       Locked 1 package (1 added, 0 changed, 0 removed)
+    Checking every listed repository serves a locked package (repositories)
     Checking files and folders the manifests name exist (paths)
 error: project.jsonc:7: the source folder generated does not exist
 warning: project.jsonc:8: the filter *.yml matches no resource
@@ -69,15 +70,16 @@ Test run finished after <n> ms
 [         1 tests failed          ]
 
 error: test/app/MainTest.java:9: app.MainTest > adds(): expected: <3> but was: <2>
-error: jpm check found problems (9 checks: 3 errors, 5 warnings)
+error: jpm check found problems (10 checks: 3 errors, 5 warnings)
 [exit 1]
 
 --- check.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="jpm check" tests="9" failures="2" errors="0" skipped="0">
+  <testsuite name="jpm check" tests="10" failures="2" errors="0" skipped="0">
     <testcase classname="jpm check" name="manifest"/>
     <testcase classname="jpm check" name="dependencies"/>
+    <testcase classname="jpm check" name="repositories"/>
     <testcase classname="jpm check" name="paths">
       <failure message="2 errors">project.jsonc:7: error: the source folder generated does not exist
 project.jsonc:9: error: the script file gen.java (gen) does not exist
@@ -123,12 +125,13 @@ error: jpm check found problems (2 checks: 2 errors, 2 warnings)
 
 $ jpm check --no-test pahts
 error: No check named pahts
-  hint: the checks are manifest, dependencies, release-age, paths, license, compile, unused-dependencies, duplicate-classes, lint:style, tests
+  hint: the checks are manifest, dependencies, release-age, repositories, paths, license, compile, unused-dependencies, duplicate-classes, lint:style, tests
 [exit 2]
 
 $ jpm check --fail-on-warning --no-test
     Checking project.jsonc loads (manifest)
     Checking dependencies resolve (dependencies)
+    Checking every listed repository serves a locked package (repositories)
     Checking files and folders the manifests name exist (paths)
 warning: project.jsonc:8: the filter *.yml matches no resource
   hint: globs are relative to the resource folder, such as "*.properties" or "config/**.yml"
@@ -146,12 +149,13 @@ warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 
     Checking the code has style (lint:style)
 jpm-lint ran with --style
 warning: src/app/Main.java:1: Main is too long
-error: jpm check found problems (8 checks: 0 errors, 5 warnings)
+error: jpm check found problems (9 checks: 0 errors, 5 warnings)
 [exit 1]
 
 $ jpm check --no-test
     Checking project.jsonc loads (manifest)
     Checking dependencies resolve (dependencies)
+    Checking every listed repository serves a locked package (repositories)
     Checking files and folders the manifests name exist (paths)
 warning: project.jsonc:8: the filter *.yml matches no resource
   hint: globs are relative to the resource folder, such as "*.properties" or "config/**.yml"
@@ -168,5 +172,5 @@ warning: project.jsonc: app: money-1.0.0.jar and money-copy-1.0.0.jar both have 
     Checking the code has style (lint:style)
 jpm-lint ran with --style
 warning: src/app/Main.java:1: Main is too long
-     Checked 8 checks: 0 errors, 5 warnings
+     Checked 9 checks: 0 errors, 5 warnings
 

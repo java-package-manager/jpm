@@ -43,7 +43,7 @@ public final class Manifest {
      */
     public static final Set<String> FIELDS = Set.of("name", "version", "group", "java", "target", "main", "runtime", "dev", "test",
             "define", "scripts", "hooks", "patches", "workspace", "visibility", "isolated", "repositories", "defineClass",
-            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "groovy", "scala", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "minimumReleaseAge", "releaseAgeExceptions", "$schema");
+            "javacArgs", "nativeArgs", "testJvmArgs", "kotlin", "groovy", "scala", "exclude", "layout", "sources", "resources", "filter", "relocate", "package", "description", "license", "url", "extensions", "extension", "minimumReleaseAge", "releaseAgeExceptions", "trustedKeys", "$schema");
 
     /**
      * The dependency sections of a manifest; {@link #key} is the section's name in {@code project.jsonc}.
@@ -206,6 +206,11 @@ public final class Manifest {
      * Package id to the one version of it that may be younger than {@link #minimumReleaseAge}.
      */
     public final Map<String, String> releaseAgeExceptions;
+    /**
+     * OpenPGP key fingerprint (upper case, no spaces) to the package patterns the key may sign; empty when signatures
+     * are not checked (see {@code dev.jpm.signing.Signatures}).
+     */
+    public final Map<String, List<String>> trustedKeys;
 
     public final String defineClass;
     public final List<String> javacArgs;
@@ -481,6 +486,7 @@ public final class Manifest {
         this.repositories = reader.stringList("repositories");
         this.minimumReleaseAge = releaseAge(parent);
         this.releaseAgeExceptions = releaseAgeExceptions(parent);
+        this.trustedKeys = trustedKeys(parent);
         this.javacArgs = parent == null ? reader.stringList("javacArgs") : concat(parent.javacArgs, reader.stringList("javacArgs"));
         this.nativeArgs = parent == null ? reader.stringList("nativeArgs") : concat(parent.nativeArgs, reader.stringList("nativeArgs"));
         this.testJvmArgs = parent == null ? reader.stringList("testJvmArgs") : concat(parent.testJvmArgs, reader.stringList("testJvmArgs"));
@@ -691,6 +697,31 @@ public final class Manifest {
             case 'd' -> Duration.ofDays(n);
             default -> Duration.ofDays(7 * n);
         };
+    }
+
+    private Map<String, List<String>> trustedKeys(Manifest parent) {
+        Jsonc.Node n = root.get("trustedKeys");
+        if (n == null) return Map.of();
+        if (parent != null) throw err(n, "set trustedKeys in the workspace root's " + FILE + ", not in a module's");
+        String shape = "trustedKeys must be an object of OpenPGP key fingerprint to the packages the key signs, such as"
+                + " {\"7A1E 4B8C ... 9F02\": \"com.example\"} or [\"com.example\", \"org.other:lib\"]";
+        if (!n.isObject()) throw err(n, shape);
+        Map<String, List<String>> out = new LinkedHashMap<>();
+        for (Jsonc.Member e : n.members.values()) {
+            String fpr = dev.jpm.signing.Signatures.fingerprint(e.key);
+            if (!fpr.matches("[0-9A-F]{40}")) {
+                throw JpmException.at(file, line(e.keyStart), "trustedKeys: \"" + e.key + "\" is not a key fingerprint (40 hexadecimal digits)")
+                        .withHint("`gpg --fingerprint <key>` shows it; a short key id is not enough to trust a key by");
+            }
+            List<String> patterns = new ArrayList<>();
+            if (e.value.isString()) patterns.add((String) e.value.value);
+            else if (e.value.isArray() && e.value.items.stream().allMatch(Jsonc.Node::isString)) {
+                for (Jsonc.Node x : e.value.items) patterns.add((String) x.value);
+            } else throw err(e.value, shape);
+            if (patterns.isEmpty() || patterns.stream().anyMatch(String::isBlank)) throw err(e.value, shape);
+            out.put(fpr, List.copyOf(patterns));
+        }
+        return out;
     }
 
     private Map<String, String> releaseAgeExceptions(Manifest parent) {

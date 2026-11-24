@@ -67,7 +67,25 @@ public final class MavenImport {
             Map<String, Object> man = module(m, rootModel, coordsToModule, workspace, out);
             out.manifests.put(m.dir, man);
         }
+        Map<String, Map<String, Object>> spotless = new LinkedHashMap<>();
+        Map<String, Object> rootSpotless = spotless(rootModel, plugins(rootModel, true), out, "");
+        if (rootSpotless != null) spotless.put("", rootSpotless);
+        for (Module m : modules) {
+            if (m.dir.isEmpty()) continue;
+            Map<String, Object> cfg = spotless(m.pom, plugins(m.pom, false), out, m.dir);
+            if (cfg != null) spotless.put(m.dir, cfg);
+        }
+        Spotless.place(out, spotless);
         return out;
+    }
+
+    private static Map<String, Object> spotless(Pom pom, List<Element> plugins, Imported imp, String where) {
+        for (Element p : plugins) {
+            if (!"spotless-maven-plugin".equals(textOf(p, "artifactId"))) continue;
+            Element conf = childOf(p, "configuration");
+            if (conf != null) return Spotless.fromMaven(conf, s -> interp(pom, s), imp, where);
+        }
+        return null;
     }
 
     private static void collect(Path root, Path pomFile, String dir, Pom.Loader loader, List<Module> out,

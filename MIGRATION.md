@@ -125,6 +125,7 @@ resolved into the exact versions they stood for, so the build is reproducible wi
 | `<repositories>` | `"repositories"` (Maven Central is always included) |
 | main class (jar, exec, shade, assembly, Spring Boot plugins) | `"main"` |
 | profiles | only modules of profiles active by default are imported |
+| `spotless-maven-plugin` | jpm-format's settings in `"extensions": { "format": … }`; see [Importing](docs/importing.md) |
 | resource filtering (`${…}` in resources) | `"filter": ["app.properties"]`; see [`filter`](docs/manifest.md#filter) |
 
 ### Commands
@@ -163,6 +164,7 @@ resolved into the exact versions they stood for, so the build is reproducible wi
 | `java { toolchain { languageVersion = … } }` | `"java"` (installed automatically) and `"target"` |
 | `application { mainClass = … }` | `"main"` |
 | `repositories { maven { url = … } }` | `"repositories"` |
+| `spotless { java { … } }` and the other formats | jpm-format's settings in `"extensions": { "format": … }`; see [Importing](docs/importing.md) |
 | tasks, `buildSrc`, convention plugins | not carried over; see [Custom build logic](#custom-build-logic) |
 | `kotlin("jvm")`, `kotlin { compilerOptions { … } }` | `"kotlin": "<version>"`, or `{ "version", "plugins", "args" }`; see [Kotlin](docs/building.md#kotlin) |
 | `java-gradle-plugin`, `kotlin-dsl`, `gradleApi()`, `gradleTestKit()` | `"gradle:api": "<Gradle version>"` in `"dev"` and `"test"`; see [Gradle plugins](docs/building.md#gradle-plugins) |

@@ -1030,6 +1030,19 @@
         "minLength": 1
       }
     },
+    "trustedKeys": {
+      "type": "object",
+      "description": "OpenPGP keys that sign the Maven packages, by fingerprint, each with the packages it may sign: a group (`com.example`), a group with `*` (`org.apache.*`), `group:artifact`, or `*`. With it, jpm checks the `.asc` signature published next to every jar: a signed jar must be signed by a key trusted for it, and its signature must match. Packages without a signature pass. Keys are fetched by fingerprint from keys.openpgp.org (`JPM_KEYSERVER`). Only in the workspace root.",
+      "propertyNames": {
+        "pattern": "^[0-9A-Fa-f ]{40,}$"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string", "minLength": 1 },
+          { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+        ]
+      }
+    },
     "javacArgs": {
       "type": "array",
       "description": "Extra arguments for javac.",

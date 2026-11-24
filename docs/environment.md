@@ -18,6 +18,7 @@
 | `JPM_TEST_JVM_ARGS` | JVM options for the JVM running the tests (`jpm test`), after `testJvmArgs` |
 | `JPM_BUNDLE_CACHE` | Where bundles unpack their nested jars (default: the temp directory) |
 | `JPM_MAVEN_CENTRAL`, `JPM_FOOJAY_URL` | Mirrors for Maven Central and the JDK index |
+| `JPM_KEYSERVER` | Where `"trustedKeys"` are fetched from: the fingerprint is appended (default `https://keys.openpgp.org/vks/v1/by-fingerprint/`) |
 | `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Proxy for downloads (any case), unless the `https.proxyHost` / `http.proxyHost` system properties set one |
 | `SSL_CERT_FILE`, `SSL_CERT_DIR` | Extra trusted certificates (PEM), e.g. a proxy's CA; without them the system bundle (`/etc/ssl/certs/ca-certificates.crt` and the like) is added to the built-in ones |
 | `JPM_VERSION_OVERRIDE` | Every module's version, e.g. one CI computes for publishing |

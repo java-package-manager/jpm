@@ -83,6 +83,15 @@ public final class Graph {
          * False for packages that have no jar (Maven pom packaging).
          */
         public boolean hasJar = true;
+        /**
+         * Maven only: the repository the package's files came from, when it is not the first one searched (Maven
+         * Central); jpm searches it first for the package next time.
+         */
+        public String repository;
+        /**
+         * Maven only: whether {@link #repository} is known, null meaning the first repository (transient).
+         */
+        public boolean originKnown;
 
         public final Map<String, Edge> deps = new TreeMap<>();
         /**

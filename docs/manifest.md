@@ -219,6 +219,12 @@ Packages that may be younger than `minimumReleaseAge`, each with the one version
 
 Type: an object.
 
+### `trustedKeys`
+
+OpenPGP keys that sign the Maven packages, by fingerprint, each with the packages it may sign: a group (`com.example`), a group with `*` (`org.apache.*`), `group:artifact`, or `*`. With it, jpm checks the `.asc` signature published next to every jar: a signed jar must be signed by a key trusted for it, and its signature must match. Packages without a signature pass. Keys are fetched by fingerprint from keys.openpgp.org (`JPM_KEYSERVER`). Only in the workspace root.
+
+Type: an object.
+
 ### `javacArgs`
 
 Extra arguments for javac.

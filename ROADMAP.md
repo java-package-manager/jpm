@@ -17,21 +17,10 @@ Still skipped there:
 
 - [ ] Kotlin Multiplatform builds with targets other than the JVM.
 
-## Import
-
-- [ ] `jpm import` translates Spotless config (`spotless-maven-plugin`, Gradle's `spotless { }`) into
-      `formatter` settings.
-
 ## Errors and supply chain
 
 - [ ] **Actionable errors:** every error says what went wrong, where (file and line for manifest
       errors), and what to do next; no stack traces unless `--verbose`.
-- [ ] **Signatures:** check `.asc` signatures where published, against a list of trusted keys.
-
-## Extensions
-
-- [ ] **Extension registry:** a list of known extensions (jpm-publish, jpm-changeset, …). The template for
-      writing new ones is [jpm-extension-template](https://github.com/java-package-manager/jpm-extension-template).
 
 ## Tests
 
@@ -46,9 +35,8 @@ Still skipped there:
 ## Other projects
 
 - jpm-format: [ROADMAP.md](https://github.com/java-package-manager/jpm-format/blob/main/ROADMAP.md)
-  (IntelliJ parity in formatting and lint, `project.jsonc` in the language server, the native binary).
-- jpm-intellij: [ROADMAP.md](https://github.com/java-package-manager/jpm-intellij/blob/main/ROADMAP.md)
-  (format on save).
+  (IntelliJ parity in formatting and lint, the native binary).
+- jpm-intellij: [ROADMAP.md](https://github.com/java-package-manager/jpm-intellij/blob/main/ROADMAP.md).
 
 ## Last: Renovate
 

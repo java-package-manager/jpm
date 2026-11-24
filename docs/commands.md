@@ -10,7 +10,7 @@ Every command jpm has, from its command registry (the same list `jpm help` print
 | Command | |
 |---|---|
 | `jpm init [name]` | Create a project; `--license <SPDX id>` sets its license and writes `LICENSE` (as `jpm license` does) |
-| `jpm add <dep>[@version]` | Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). An extension (a Git project with `"extension"` in its manifest) is declared in the root's `"extensions"` instead; `-g` installs one globally. Without a version: latest release (Maven) or `^latest-tag` (Git) |
+| `jpm add <dep>[@version]` | Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). An extension (a Git project with `"extension"` in its manifest) is declared in the root's `"extensions"` instead; `-g` installs one globally. A known extension can be added by its name (`jpm add format`). Without a version: latest release (Maven) or `^latest-tag` (Git) |
 | `jpm remove <dep>` | Remove dependencies, or a declared extension by name or key (`-g` removes a global extension) |
 | `jpm install` | Resolve dependencies and declared extensions and write `project.lock`; `--frozen` fails if the lock is stale (CI) |
 | `jpm update [dep...]` | Re-resolve within ranges; `--latest` rewrites the manifest past them. `update -g [name…]` updates global extensions |

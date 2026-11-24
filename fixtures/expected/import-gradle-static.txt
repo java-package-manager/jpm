@@ -4,6 +4,7 @@ $ jpm import --static
     Imported app/project.jsonc from Gradle
 warning: the Gradle build was read without running it; check the result
 warning: core: platform com.fasterxml.jackson:jackson-bom is not carried over; the versions it manages are written out instead
+warning: the Spotless settings are in "extensions": { "format": ... } for jpm-format; add it with `jpm add format`, then `jpm format` is spotlessApply and `jpm format --check` spotlessCheck
      Ignored .cache/, dist/, .env.local in .gitignore
    Resolving dependencies
   + com.fasterxml.jackson.core:jackson-databind 2.17.2
@@ -20,7 +21,20 @@ Next: `jpm build` and `jpm test`. Sources stay where they are ("layout": "maven"
   "$schema": "https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json",
   "name": "demo",
   "version": "1.4.0",
-  "workspace": ["core", "app"]
+  "workspace": ["core", "app"],
+  "extensions": {
+    "format": {
+      "formatter": {
+        "style": "palantir@2.50.0"
+      },
+      "files": [
+        {
+          "include": ["**/*.gradle.kts"],
+          "steps": ["ktlint"]
+        }
+      ]
+    }
+  }
 }
 
 --- core/project.jsonc

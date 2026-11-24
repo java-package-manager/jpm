@@ -11,6 +11,7 @@ import dev.jpm.resolve.Extensions;
 import dev.jpm.resolve.GitModule;
 import dev.jpm.resolve.Graph;
 import dev.jpm.resolve.Install;
+import dev.jpm.resolve.KnownExtensions;
 import dev.jpm.resolve.ReleaseAge;
 import dev.jpm.resolve.Resolver;
 import dev.jpm.util.Fs;
@@ -37,7 +38,7 @@ final class AddCommand extends Command {
     List<Usage> usages() {
         return List.of(
                 new Usage(Group.PROJECT, "add <dep>[@version]", "Add dependencies or extensions (--dev, --test; -r <url> adds a Maven repository; -g installs globally)",
-                        "Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). An extension (a Git project with `\"extension\"` in its manifest) is declared in the root's `\"extensions\"` instead; `-g` installs one globally. Without a version: latest release (Maven) or `^latest-tag` (Git)"));
+                        "Add dependencies (`--dev`, `--test`, `-r <url>` to add a Maven repository). An extension (a Git project with `\"extension\"` in its manifest) is declared in the root's `\"extensions\"` instead; `-g` installs one globally. A known extension can be added by its name (`jpm add format`). Without a version: latest release (Maven) or `^latest-tag` (Git)"));
     }
 
     @Override
@@ -54,6 +55,7 @@ final class AddCommand extends Command {
         noMoreFlags(args);
         if (args.isEmpty()) throw new JpmException("Usage: jpm add [-r <repository url>] <dependency>[@version] [--dev | --test]");
         if (dev && test) throw new JpmException("Choose one of --dev and --test");
+        args = new ArrayList<>(args.stream().map(KnownExtensions::expand).toList());
         if (global) return GlobalExtensions.add(args);
         Manifest.Scope scope = dev ? Manifest.Scope.DEV : test ? Manifest.Scope.TEST : Manifest.Scope.RUNTIME;
         Project p = Project.find(cwd);

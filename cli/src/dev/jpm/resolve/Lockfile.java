@@ -190,6 +190,7 @@ public final class Lockfile {
                 p.sha256 = (String) entry.get("sha256");
                 p.pomSha256 = (String) entry.get("pom");
                 if (Boolean.FALSE.equals(entry.get("jar"))) p.hasJar = false;
+                p.repository = (String) entry.get("repository");
                 Object deps = entry.get("dependencies");
                 if (deps instanceof Map<?, ?> dm) {
                     for (Map.Entry<?, ?> d : dm.entrySet()) {
@@ -245,6 +246,7 @@ public final class Lockfile {
             if (p.sha256 != null) entry.put("sha256", p.sha256);
             if (p.pomSha256 != null) entry.put("pom", p.pomSha256);
             if (!p.hasJar) entry.put("jar", Boolean.FALSE);
+            if (p.repository != null) entry.put("repository", p.repository);
             if (!p.deps.isEmpty()) {
                 Map<String, Object> deps = new LinkedHashMap<>();
                 for (Graph.Edge e : p.deps.values()) deps.put(e.target(), e.encode());

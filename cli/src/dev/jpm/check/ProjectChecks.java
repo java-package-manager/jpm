@@ -38,6 +38,42 @@ public final class ProjectChecks {
     }
 
     /**
+     * A warning for every repository the manifests list that no locked Maven package came from. It says nothing when
+     * the origin of some package is not known (files downloaded before jpm recorded it).
+     */
+    public static List<Problem> repositories(Project p, Graph g, MavenRepo repo) {
+        List<Graph> all = new ArrayList<>(List.of(g));
+        all.addAll(g.isolated.values());
+        all.addAll(g.extensions.values());
+        String first = repo.repositories().get(0);
+        Set<String> used = new HashSet<>();
+        for (Graph graph : all) {
+            for (Graph.Pkg pkg : graph.pkgs.values()) {
+                if (pkg.kind != Graph.Kind.MAVEN) continue;
+                if (!pkg.originKnown) return List.of();
+                used.add(slash(pkg.repository != null ? pkg.repository : first));
+            }
+        }
+        List<Problem> out = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        List<Manifest> manifests = new ArrayList<>(List.of(p.root));
+        for (Project.Module m : p.modules) if (!manifests.contains(m.manifest)) manifests.add(m.manifest);
+        for (Manifest mf : manifests) {
+            for (String r : mf.repositories) {
+                String url = slash(r);
+                if (used.contains(url) || !seen.add(url)) continue;
+                out.add(Problem.warning("repositories", "no locked package comes from the repository " + r, mf.file, line(mf, "repositories"))
+                        .withHint("remove it from \"repositories\" if nothing needs it (a parent POM or BOM may still come from it)"));
+            }
+        }
+        return out;
+    }
+
+    private static String slash(String s) {
+        return s.endsWith("/") ? s : s + "/";
+    }
+
+    /**
      * Every field that names a file or folder names one that exists: sources, resources, patches, script and hook files;
      * and every {@code filter} glob matches a resource.
      */
