@@ -4,6 +4,15 @@ What is still to come for jpm, in this order. An item is removed in the commit t
 shipped is in [CHANGELOG.md](cli/CHANGELOG.md) and [docs/](docs). jpm-format and jpm-intellij have roadmaps of
 their own (*Other projects*).
 
+## Updates
+
+- [ ] Fix: `jpm update [extension]` does not change the version. `jpm update --latest` leaves
+      `"github:java-package-manager/jpm-format": "0.6.0"` at 0.6.0 when 0.7.0 is out.
+- [ ] `jpm update extensions (--latest|--check)` updates only the project's extensions, not its
+      dependencies.
+- [ ] Remove `jpm outdated` in favor of `--check`: `jpm update --check` reports what a project would update,
+      as `jpm update -g --check` already does for global extensions.
+
 ## Windows
 
 The end-to-end sessions run on Windows in CI, on the JVM and on the native binary (paths normalized to `/`).
